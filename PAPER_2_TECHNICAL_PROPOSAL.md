@@ -72,15 +72,21 @@ changing thermodynamic constraints.
 These continuous time-domain waveforms \(h(t)\) are passed through automated
 Fourier Transforms to generate discrete numerical frequency vectors for neural layer
 intake:
-\(H(f)=\int _{-\infty }^{\infty }h(t)e^{-i2\pi ft}dt\)
+
+$$H(f)=\int _{-\infty }^{\infty }h(t)e^{-i2\pi ft}dt\$$
+
 3.2 Objective Function Re-alignment
 Traditional models minimize cross-entropy loss over a discrete vocabulary \(V\):
-\(\mathcal{L}_{\text{text}}=-\sum _{w\in V}y_{w}\log (\^{y}_{w})\)
+
+$$\mathcal{L}_{\text{text}}=-\sum _{w\in V}y_{w}\log \(^{y}_{w})\$$
+
 The FS-AI architecture eliminates vocabulary prediction entirely. Its objective function
 minimizes phase variance and harmonic incoherence relative to the golden ratio (\(\phi
 \)) scaling laws found in balanced ecosystems:
-\(\mathcal{L}_{\text{resonance}}=\left|\frac{f_{\text{predicted}}}{f_{\text{baseline}}}-\ph
-i \right|\)
+
+$$\mathcal{L}_{\text{resonance}}=\left|\frac{f_{\text{predicted}}}{f_{\text{baseline}}}-ph
+i \right|\$$
+
 By rewarding the network for matching and sustaining the mathematical equilibrium of
 a living ecosystem, the system absorbs an implicit blueprint of symbiosis,
 interdependence, and unified balance.
