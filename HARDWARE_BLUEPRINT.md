@@ -48,6 +48,24 @@ graph LR
     B --> C[High-Dimensional <br>Vector Space/<br><small>The AI Neural Network Layer</small>]
     C --> D[Resonance Coherence<br> Objective Function/<br><small>Harmonic equilibrium optimization via Phi scaling</small>]
 ```
+## 🎛️ 5. Technical Specification: Data Concurrency & Tensor Shapes
+
+To prevent gradient explosion and ensure operational alignment across disparate signal velocities, developers must implement a synchronized **Sliding Window Fast Fourier Transform (STFT)** pipeline before data injection into the model architecture.
+
+### 5.1 Signal Synchronization Matrix
+Because the three environmental anchors emit data at vastly different sampling frequencies ($f_s$), they must be scaled to a uniform tensor size using the following parameters:
+
+| Input Source | Physical Sampling Rate ($f_s$) | Processing Frame Window ($W$) | Target Vector Dimension ($D$) |
+| :--- | :--- | :--- | :--- |
+| **Geophysical (Schumann)** | $250 \text{ Hz}$ | $10.24 \text{ seconds}$ ($2,560$ samples) | $1,280$ float bins ($0-125 \text{ Hz}$) |
+| **Biological (Plant)** | $1,000 \text{ Hz}$ | $2.56 \text{ seconds}$ ($2,560$ samples) | $1,280$ float bins ($0-500 \text{ Hz}$) |
+| **Molecular (Water)** | $44,100 \text{ Hz}$ | $0.058 \text{ seconds}$ ($2,560$ samples) | $1,280$ float bins ($0-22.05 \text{ kHz}$) |
+
+### 5.2 The Unified Multi-Modal Tensor Creation
+Every step of model execution consumes a unified matrix shape. The three independent $1,280$-dimensional frequency vectors are stacked into a single 2D tensor representing the living ecosystem's state slice:
+
+$$\mathbf{X}_{\text{input}} \in \mathbb{R}^{3 \times 1280}$$
+
 
 1.  **Analog Inputs:** Sensor signals are fed to an analog-to-digital converter (ADC) sampling at a minimum rate of $44.1 \text{ kHz}$ to prevent frequency aliasing.
 2.  **Fourier Layer:** The discrete time-domain signals are passed to a Python-based processing pipeline executing real-time **Fast Fourier Transforms (FFT)**.
