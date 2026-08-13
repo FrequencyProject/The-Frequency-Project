@@ -41,16 +41,24 @@ def test_deterministic_generator_seeding():
 def test_vector_dimensions_and_frequency_peak():
     """Verify that the FFT processing layer outputs exactly the target 1280 dimension size and peaks near a pure tone."""
     sampling_rate = 1000
+    target_dim = 1280
+    nfft = 2 * (target_dim - 1)
     duration = 2.56
+    
     t = np.linspace(0, duration, int(sampling_rate * duration), endpoint=False)
-    raw_wave = np.sin(2 * np.pi * 10 * t)
+    raw_wave = np.sin(2 * np.pi * 10 * t)  # Simulate pure 10 Hz tone
 
-    vector, freqs = process_to_frequency_vector(raw_wave, sampling_rate, target_dim=1280)
+    vector, freqs = process_to_frequency_vector(raw_wave, sampling_rate, target_dim=target_dim)
     assert len(vector) == 1280, f"FFT output dimension was {len(vector)}, expected 1280"
     assert len(freqs) == 1280, f"Frequency axis length was {len(freqs)}, expected 1280"
 
     peak_idx = int(np.argmax(vector))
-    assert abs(freqs[peak_idx] - 10.0) < 2.0, f"Peak frequency {freqs[peak_idx]} not near 10 Hz"
+    
+    # Calculate exact mathematical grid spacing resolution: Delta_f = fs / nfft
+    frequency_resolution = sampling_rate / nfft
+    
+    # Assert peak accuracy strictly within the physical grid resolution boundary
+    assert abs(freqs[peak_idx] - 10.0) <= frequency_resolution, f"Peak frequency {freqs[peak_idx]} exceeded exact mathematical grid resolution bound"
 
 def test_execute_pipeline_shape():
     """Verify that the full multi-channel integration pipeline aggregates exactly into a 3x1280 stacked tensor."""
