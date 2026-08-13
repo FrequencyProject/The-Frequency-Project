@@ -15,33 +15,29 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-        
-    - name: Set up Pipeline Cache
-      uses: actions/cache@v3
+
+    - name: Cache pip
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('test-requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    - name: Install Test Dependencies (Excluding Heavy ML Wheels)
+    - name: Install test dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install numpy scipy pytest black mypy
-        
-    - name: Run Code Style Checks (Black Linter)
-      run: |
-        black --check prototype_simulation.py test_pipeline.py sensor_adapter.py
+        pip install -r test-requirements.txt
 
-    - name: Run Static Code Type Verification (Mypy)
+    - name: Run Lint/Format check
       run: |
-        mypy --ignore-missing-imports prototype_simulation.py test_pipeline.py sensor_adapter.py
+        black --check .
 
-    - name: Run Mathematical Verification Tests
+    - name: Run tests
       run: |
-        pytest test_pipeline.py
+        pytest -q
