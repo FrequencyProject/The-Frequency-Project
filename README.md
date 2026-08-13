@@ -37,6 +37,7 @@ This project is organized cleanly to provide clear delineation between philosoph
 *   📄 **`requirements.txt`** — One-click dependency manifest containing required processing libraries (`numpy`, `pytest`, etc.).
 *   📄 **`prototype_simulation.py`** — Robust executable script modeling deterministic signal ingestion, Fourier transforms, and tensor stacking.
 *   📄 **`test_pipeline.py`** — Automated validation script testing edge-cases, flat sensor lines, and normalization boundaries.
+*   📄 **`sensor_adapter.py`** — Hardware interface driver scaffold defining ADC calibration routines and real-time physical streaming hooks for contributors.
 *   📄 **`HARDWARE_BLUEPRINT.md`** — Comprehensive hardware sensor configuration specs and multidimensional tensor shape specs.
 *   📄 **`PAPER_1_DIALOGUE.md`** — Verbatim conversational transcript tracking the basketball-to-metaphysics catalytic journey.
 *   📄 **`PAPER_2_TECHNICAL_PROPOSAL.md`** — Formal peer-review whitepaper draft engineered for the academic machine learning community.
