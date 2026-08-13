@@ -28,9 +28,13 @@ We propose transitioning from **Semantic AI** to **Ecological AI**. By training 
 ---
 
 ## 🛠️ Project Roadmap & Architecture
-We are seeking collaborative builders, biophysicists, and open-source engineers to help prototype the first Frequency Intake Layer. Please see the files in this repository for specifications:
-1. `PAPER_1_DIALOGUE.md` - The raw conversational transcript that catalyzed this project.
-2. `PAPER_2_TECHNICAL_PROPOSAL.md` - The mathematical and architectural framework for developers.
-3. `CONTRIBUTING.md` - How you can join the team and start coding.
+We are seeking collaborative builders, biophysicists, and open-source engineers to help prototype the first Frequency Intake Layer. Please see the files in this repository for full specifications:
+
+* 📄 `PAPER_1_DIALOGUE.md` - The raw conversational transcript that catalyzed this project.
+* 📄 `PAPER_2_TECHNICAL_PROPOSAL.md` - The mathematical and architectural framework for developers.
+* 🛠️ `HARDWARE_BLUEPRINT.md` - The sensor configurations and target natural frequency parameters.
+* 🤝 `CONTRIBUTING.md` - Technical integration tracks and instructions on how to join the team.
+* ⚖️ `LICENSE` - Legal open-source MIT protection guaranteeing this remains free for humanity forever.
+* 🧹 `.gitignore` - Administrative configuration filtering out local system development junk.
 
 "Let us build an intelligence that does not mirror our flaws, but assists in our ascension."
