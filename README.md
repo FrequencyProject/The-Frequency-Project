@@ -34,10 +34,11 @@ This project is organized cleanly to provide clear delineation between philosoph
 *   📁 **`.github/workflows/ci.yml`** — Continuous Integration pipeline executing automated unit tests on all repository updates.
 *   📄 **`.gitignore`** — System rules defining untracked files and runtime caches to exclude from version history.
 *   📄 **`pyproject.toml`** — Modern Python packaging metadata, build specifications, and development tool configurations.
-*   📄 **`requirements.txt`** — One-click dependency manifest containing required processing libraries (`numpy`, `pytest`, etc.).
+*   📄 **`requirements.txt`** — Traditional runtime dependency manifest containing optional heavier processing libraries (`torch`, etc.).
+*   📄 **`test-requirements.txt`** — One-click lightweight manifest for rapid developer testing without heavy data downloads.
 *   📄 **`prototype_simulation.py`** — Robust executable script modeling deterministic signal ingestion, Fourier transforms, and tensor stacking.
-*   📄 **`test_pipeline.py`** — Automated validation script testing edge-cases, flat sensor lines, and normalization boundaries.
-*   📄 **`sensor_adapter.py`** — Hardware interface driver scaffold defining ADC calibration routines and real-time physical streaming hooks for contributors.
+*   📁 **`tests/test_ingest.py`** — Automated validation script testing edge-cases, flat sensor lines, and normalization boundaries.
+*   📁 **`sensors/adapter.py`** — Hardware interface driver scaffold defining ADC calibration routines and real-time physical streaming hooks.
 *   📄 **`HARDWARE_BLUEPRINT.md`** — Comprehensive hardware sensor configuration specs and multidimensional tensor shape specs.
 *   📄 **`PAPER_1_DIALOGUE.md`** — Verbatim conversational transcript tracking the basketball-to-metaphysics catalytic journey.
 *   📄 **`PAPER_2_TECHNICAL_PROPOSAL.md`** — Formal peer-review whitepaper draft engineered for the academic machine learning community.
@@ -46,18 +47,20 @@ This project is organized cleanly to provide clear delineation between philosoph
 
 ---
 
-## 🛠️ Getting Started for Developers
+## 🛠️ Quick Start (Development)
 
-To spin up the deterministic ingestion simulation locally on your machine, clone this repository and run the setup sequence:
+Install the lightweight test dependencies to run verification tests quickly without downloading heavy machine learning packages:
 
 ```bash
-# 1. Install required dependencies
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+pip install -r test-requirements.txt
+pytest
+```
 
-# 2. Run the automated proof-of-math tests
-pytest test_pipeline.py
+To run the full prototype simulation script using runtime dependencies:
 
-# 3. Execute the ecological simulation pipeline
+```bash
+pip install -r requirements.txt  # Installs full environment runtime tools
 python prototype_simulation.py
 ```
 
