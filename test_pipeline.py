@@ -16,18 +16,20 @@ def test_normalization_edge_case_flat_signal():
     """Verify that a completely static/flat sensor reading does not crash the system with division-by-zero."""
     flat_vector = np.array([10.0, 10.0, 10.0, 10.0])
     normalized = apply_log_min_max_normalization(flat_vector)
-    
-    # System should safely output a matrix of zeros rather than crashing
     assert np.all(normalized == 0.0), "Flat sensor reading failed to normalize safely to zeros matrix"
 
-def test_deterministic_seeding():
-    """Verify that passing an explicit seed parameter forces identical simulation outputs."""
-    wave_1 = generate_mock_sensor_wave(frequency=7.83, sampling_rate=250, duration=5.0, seed=100)
-    wave_2 = generate_mock_sensor_wave(frequency=7.83, sampling_rate=250, duration=5.0, seed=100)
-    wave_3 = generate_mock_sensor_wave(frequency=7.83, sampling_rate=250, duration=5.0, seed=200)
+def test_deterministic_generator_seeding():
+    """Verify that using isolated numpy Generator instances forces identical deterministic simulation outputs."""
+    rng_1a = np.random.default_rng(42)
+    rng_1b = np.random.default_rng(42)
+    rng_2  = np.random.default_rng(100)
 
-    assert np.array_equal(wave_1, wave_2), "Deterministic seeding failed; identical seeds yielded unique outputs"
-    assert not np.array_equal(wave_1, wave_3), "Seeding failed; unique seeds yielded identical outputs"
+    wave_1a = generate_mock_sensor_wave(frequency=7.83, sampling_rate=250, duration=5.0, rng=rng_1a)
+    wave_1b = generate_mock_sensor_wave(frequency=7.83, sampling_rate=250, duration=5.0, rng=rng_1b)
+    wave_2  = generate_mock_sensor_wave(frequency=7.83, sampling_rate=250, duration=5.0, rng=rng_2)
+
+    assert np.array_equal(wave_1a, wave_1b), "Isolated generators with matching seeds produced unique outputs"
+    assert not np.array_equal(wave_1a, wave_2), "Isolated generators with unique seeds produced identical outputs"
 
 def test_vector_dimensions():
     """Verify that the FFT processing layer outputs exactly the target 1280 dimension size."""
@@ -38,4 +40,3 @@ def test_vector_dimensions():
     
     vector = process_to_frequency_vector(raw_wave, sampling_rate, target_dim=1280)
     assert len(vector) == 1280, f"FFT output dimension was {len(vector)}, expected 1280"
-
