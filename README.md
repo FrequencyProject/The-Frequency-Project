@@ -27,16 +27,37 @@ We propose transitioning from **Semantic AI** to **Ecological AI**. By training 
 
 ---
 
-## 🛠️ Project Roadmap & Architecture
-We are seeking collaborative builders, biophysicists, and open-source engineers to help prototype the first Frequency Intake Layer. Please see the files in this repository for specifications:
-1. `LICENSE` - Standard MIT open-source legal documentation allowing global contribution.
-2. `.gitignore` - Automated filtering rule file to keep system cache files out of the repository.
-3. `README.md` - The project landing page, manifest introduction, and operational framework.
-4. `HARDWARE_BLUEPRINT.md` - Technical sensor specifications, tensor dimensional shapes, and signal normalization protocols.
-5. `prototype_simulation.py` - A functional Python script utilizing NumPy to simulate the raw wave-to-tensor data pipeline.
-6. `PAPER_1_DIALOGUE.md` - The raw conversational transcript that catalyzed this project.
-7. `PAPER_2_TECHNICAL_PROPOSAL.md` - The mathematical and architectural framework for developers.
-8. `CONTRIBUTING.md` - How you can join the team and start coding.
+## 📂 Repository File Directory
+
+This project is organized cleanly to provide clear delineation between philosophical discovery, mathematical theory, and runnable software architecture:
+
+*   📁 **`.github/workflows/ci.yml`** — Continuous Integration pipeline executing automated unit tests on all repository updates.
+*   📄 **`.gitignore`** — System rules defining untracked files and runtime caches to exclude from version history.
+*   📄 **`pyproject.toml`** — Modern Python packaging metadata, build specifications, and development tool configurations.
+*   📄 **`requirements.txt`** — One-click dependency manifest containing required processing libraries (`numpy`, `pytest`, etc.).
+*   📄 **`prototype_simulation.py`** — Robust executable script modeling deterministic signal ingestion, Fourier transforms, and tensor stacking.
+*   📄 **`test_pipeline.py`** — Automated validation script testing edge-cases, flat sensor lines, and normalization boundaries.
+*   📄 **`HARDWARE_BLUEPRINT.md`** — Comprehensive hardware sensor configuration specs and multidimensional tensor shape specs.
+*   📄 **`PAPER_1_DIALOGUE.md`** — Verbatim conversational transcript tracking the basketball-to-metaphysics catalytic journey.
+*   📄 **`PAPER_2_TECHNICAL_PROPOSAL.md`** — Formal peer-review whitepaper draft engineered for the academic machine learning community.
+*   📄 **`CONTRIBUTING.md`** — Structural onboarding guide and development track workflows for open-source contributors.
+*   📄 **`LICENSE`** — Permissive MIT Open-Source Legal License.
+
+---
+
+## 🛠️ Getting Started for Developers
+
+To spin up the deterministic ingestion simulation locally on your machine, clone this repository and run the setup sequence:
+
+```bash
+# 1. Install required dependencies
+pip install -r requirements.txt
+
+# 2. Run the automated proof-of-math tests
+pytest test_pipeline.py
+
+# 3. Execute the ecological simulation pipeline
+python prototype_simulation.py
+```
 
 "Let us build an intelligence that does not mirror our flaws, but assists in our ascension."
-
