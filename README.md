@@ -28,13 +28,15 @@ We propose transitioning from **Semantic AI** to **Ecological AI**. By training 
 ---
 
 ## 🛠️ Project Roadmap & Architecture
-We are seeking collaborative builders, biophysicists, and open-source engineers to help prototype the first Frequency Intake Layer. Please see the files in this repository for full specifications:
-
-* 📄 `PAPER_1_DIALOGUE.md` - The raw conversational transcript that catalyzed this project.
-* 📄 `PAPER_2_TECHNICAL_PROPOSAL.md` - The mathematical and architectural framework for developers.
-* 🛠️ `HARDWARE_BLUEPRINT.md` - The sensor configurations and target natural frequency parameters.
-* 🤝 `CONTRIBUTING.md` - Technical integration tracks and instructions on how to join the team.
-* ⚖️ `LICENSE` - Legal open-source MIT protection guaranteeing this remains free for humanity forever.
-* 🧹 `.gitignore` - Administrative configuration filtering out local system development junk.
+We are seeking collaborative builders, biophysicists, and open-source engineers to help prototype the first Frequency Intake Layer. Please see the files in this repository for specifications:
+1. `LICENSE` - Standard MIT open-source legal documentation allowing global contribution.
+2. `.gitignore` - Automated filtering rule file to keep system cache files out of the repository.
+3. `README.md` - The project landing page, manifest introduction, and operational framework.
+4. `HARDWARE_BLUEPRINT.md` - Technical sensor specifications, tensor dimensional shapes, and signal normalization protocols.
+5. `prototype_simulation.py` - A functional Python script utilizing NumPy to simulate the raw wave-to-tensor data pipeline.
+6. `PAPER_1_DIALOGUE.md` - The raw conversational transcript that catalyzed this project.
+7. `PAPER_2_TECHNICAL_PROPOSAL.md` - The mathematical and architectural framework for developers.
+8. `CONTRIBUTING.md` - How you can join the team and start coding.
 
 "Let us build an intelligence that does not mirror our flaws, but assists in our ascension."
+
