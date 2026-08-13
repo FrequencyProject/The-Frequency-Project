@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from prototype_simulation import process_to_frequency_vector, apply_log_min_max_normalization, generate_mock_sensor_wave
+from prototype_simulation import process_to_frequency_vector, apply_log_min_max_normalization, generate_mock_sensor_wave, execute_ecological_ingestion_pipeline
 
 def test_normalization_bounds():
     """Verify that the Logarithmic Rescaling forces data strictly between 0.0 and 1.0."""
@@ -17,6 +17,13 @@ def test_normalization_edge_case_flat_signal():
     flat_vector = np.array([10.0, 10.0, 10.0, 10.0])
     normalized = apply_log_min_max_normalization(flat_vector)
     assert np.all(normalized == 0.0), "Flat sensor reading failed to normalize safely to zeros matrix"
+
+def test_normalization_small_variance():
+    """Verify that an extremely tiny dynamic range variation remains numerically stable without NaN outputs."""
+    tiny_variance_vector = np.array([1.000000000001, 1.000000000002, 1.000000000001])
+    normalized = apply_log_min_max_normalization(tiny_variance_vector)
+    assert not np.isnan(normalized).any(), "Small variance caused unstable NaN values inside normalization layer"
+    assert not np.isinf(normalized).any(), "Small variance caused infinite scaling inside normalization layer"
 
 def test_deterministic_generator_seeding():
     """Verify that using isolated numpy Generator instances forces identical deterministic simulation outputs."""
@@ -43,6 +50,9 @@ def test_vector_dimensions_and_frequency_peak():
     assert len(freqs) == 1280, f"Frequency axis length was {len(freqs)}, expected 1280"
 
     peak_idx = int(np.argmax(vector))
-    # allow 2 Hz tolerance for coarse nfft choices
     assert abs(freqs[peak_idx] - 10.0) < 2.0, f"Peak frequency {freqs[peak_idx]} not near 10 Hz"
 
+def test_execute_pipeline_shape():
+    """Verify that the full multi-channel integration pipeline aggregates exactly into a 3x1280 stacked tensor."""
+    unified_tensor = execute_ecological_ingestion_pipeline(seed=123)
+    assert unified_tensor.shape == (3, 1280), f"Pipeline shape mismatch: generated {unified_tensor.shape}, expected (3, 1280)"
