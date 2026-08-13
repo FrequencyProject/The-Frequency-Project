@@ -1,57 +1,66 @@
 import numpy as np
+from typing import Tuple
 
 def generate_mock_sensor_wave(frequency: float, sampling_rate: int, duration: float, rng: np.random.Generator = None) -> np.ndarray:
     """Generates a raw time-series sensor wave using modern, isolated, thread-safe RNG Generators."""
     if rng is None:
-        rng = np.random.default_rng()
-    
+        rng = np.random.default_rng()  # Fallback to an unseeded generator if none provided
+
     t = np.linspace(0, duration, int(sampling_rate * duration), endpoint=False)
+    # Generate core natural frequency wave
     pure_wave = np.sin(2 * np.pi * frequency * t)
+    # Add random background environmental noise using the isolated generator instance
     noise = rng.normal(0, 0.2, len(t))
     return pure_wave + noise
 
-def process_to_frequency_vector(raw_wave: np.ndarray, sampling_rate: int, target_dim: int = 1280, window: str = "hann") -> tuple[np.ndarray, np.ndarray]:
+def process_to_frequency_vector(raw_wave: np.ndarray, sampling_rate: int, target_dim: int = 1280, window: str = "hann") -> Tuple[np.ndarray, np.ndarray]:
+    """Compute a stable magnitude-spectrum of the input signal with a reproducible
+    number of frequency bins equal to target_dim.
+
+    Returns:
+      (fft_magnitudes, freqs) where freqs maps bins -> Hz (len = target_dim).
     """
-    Compute a stable magnitude-spectrum with a reproducible number of frequency bins.
-    Aligns the time-domain frame length precisely with nfft before windowing to prevent leakage.
-    """
+    # Desired rfft bins D = target_dim -> nfft = 2*(D - 1)
     nfft = 2 * (target_dim - 1)
 
-    # Signal-processing correction: Explicitly align time-domain frame length to nfft
+    # Prepare a time-domain frame of exactly nfft samples (trim or pad)
     if len(raw_wave) >= nfft:
         frame = raw_wave[:nfft]
     else:
-        frame = np.pad(raw_wave, (0, nfft - len(raw_wave)), 'constant')
+        frame = np.pad(raw_wave, (0, nfft - len(raw_wave)), "constant")
 
-    # Apply window to the perfectly aligned frame length
+    # Apply window of length nfft to reduce spectral leakage
     if window == "hann":
         win = np.hanning(nfft)
-        raw_win = frame * win
-    else:
-        raw_win = frame
+        frame = frame * win
 
-    fft_vals = np.abs(np.fft.rfft(raw_win, n=nfft))
+    # rfft with explicit n pads/truncates the time-domain signal as needed
+    fft_vals = np.abs(np.fft.rfft(frame, n=nfft))
 
+    # Ensure length matches target_dim (rfft length should be target_dim)
     if len(fft_vals) != target_dim:
-        fft_vals = np.resize(fft_vals, target_dim)
+        if len(fft_vals) > target_dim:
+            fft_vals = fft_vals[:target_dim]
+        else:
+            fft_vals = np.pad(fft_vals, (0, target_dim - len(fft_vals)), "constant")
 
+    # Frequency axis for bin mapping
     freqs = np.fft.rfftfreq(nfft, d=1.0 / sampling_rate)[:target_dim]
+
     return fft_vals, freqs
 
-def apply_log_min_max_normalization(vector: np.ndarray) -> np.ndarray:
-    """Applies log scaling and safely normalizes data with strong epsilon numerical stability bounds."""
+def apply_log_min_max_normalization(vector: np.ndarray, eps: float = 1e-12) -> np.ndarray:
+    """Applies log scaling and safely normalizes data between 0.0 and 1.0."""
     log_vector = np.log1p(vector)
     v_min, v_max = np.min(log_vector), np.max(log_vector)
-    
-    # Epsilon numerical safety hardening to prevent tiny dynamic range instability
-    eps = 1e-12
-    if np.isclose(v_max, v_min, atol=eps):
-        return np.zeros_like(log_vector)
-        
-    return (log_vector - v_min) / (v_max - v_min + eps)
+
+    # Stable denominator to avoid extreme scaling when variance is tiny
+    denom = max(v_max - v_min, eps)
+    return (log_vector - v_min) / denom
 
 def execute_ecological_ingestion_pipeline(seed: int = 42) -> np.ndarray:
-    """Simulates three natural frequency channels, processes them with windowing, and stacks into a 3x1280 tensor."""
+    """Simulates the three natural frequency channels using isolated RNG instances and outputs a 3x1280 tensor."""
+    # Instantiating isolated, thread-safe RNG instances for each unique data stream
     rng_geo = np.random.default_rng(seed)
     rng_bio = np.random.default_rng(seed + 1)
     rng_mol = np.random.default_rng(seed + 2)
