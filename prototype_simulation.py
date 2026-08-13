@@ -12,26 +12,10 @@ def generate_mock_sensor_wave(frequency: float, sampling_rate: int, duration: fl
     return pure_wave + noise
 
 def process_to_frequency_vector(raw_wave: np.ndarray, sampling_rate: int, target_dim: int = 1280, window: str = "hann") -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Compute a stable magnitude-spectrum of the input signal with a reproducible 
-    number of frequency bins equal to target_dim.
-
-    Data Alignment Protocol:
-      This function explicitly trims or pads the input to nfft samples before applying 
-      a Hann window; trimming is applied via slicing when len(raw_wave) > nfft, and 
-      zero-padding is applied via np.pad when len(raw_wave) < nfft. This guarantees 
-      the window is exactly nfft samples long, preventing implicit padding errors.
-
-    Amplitude Scaling Convention:
-      FFT magnitudes are scaled by (2.0 / nfft) to ensure absolute amplitude 
-      preservation in the physical frequency spectrum regardless of window size.
-
-    Returns:
-      (fft_magnitudes, freqs) where freqs maps bins -> Hz (len = target_dim).
-    """
+    # Desired rfft bins D = target_dim -> nfft = 2*(D - 1)
     nfft = 2 * (target_dim - 1)
 
-    # Signal-processing correction: Explicitly align time-domain frame length to nfft before windowing
+    # Prepare a time-domain frame of exactly nfft samples (trim or pad)
     if len(raw_wave) >= nfft:
         frame = raw_wave[:nfft]
     else:
@@ -42,22 +26,17 @@ def process_to_frequency_vector(raw_wave: np.ndarray, sampling_rate: int, target
         win = np.hanning(nfft)
         frame = frame * win
 
-    # Execute rfft with explicit n matching the frame geometry
+    # rfft with explicit n
     fft_vals = np.abs(np.fft.rfft(frame, n=nfft))
 
-    # Apply physical amplitude scaling factor (2.0 / nfft)
-    fft_vals = fft_vals * (2.0 / nfft)
-
-    # Ensure length matches target_dim
+    # Ensure length matches target_dim (rfft length should be target_dim)
     if len(fft_vals) != target_dim:
         if len(fft_vals) > target_dim:
             fft_vals = fft_vals[:target_dim]
         else:
             fft_vals = np.pad(fft_vals, (0, target_dim - len(fft_vals)), "constant")
 
-    # Frequency axis for bin mapping
     freqs = np.fft.rfftfreq(nfft, d=1.0 / sampling_rate)[:target_dim]
-
     return fft_vals, freqs
 
 def apply_log_min_max_normalization(vector: np.ndarray, eps: float = 1e-12) -> np.ndarray:
