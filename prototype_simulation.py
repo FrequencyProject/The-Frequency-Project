@@ -40,11 +40,8 @@ def process_to_frequency_vector(raw_wave: np.ndarray, sampling_rate: int, target
     return fft_vals, freqs
 
 def apply_log_min_max_normalization(vector: np.ndarray, eps: float = 1e-12) -> np.ndarray:
-    """Applies log scaling and safely normalizes data between 0.0 and 1.0."""
     log_vector = np.log1p(vector)
     v_min, v_max = np.min(log_vector), np.max(log_vector)
-
-    # Hardened stable denominator to avoid extreme scaling when variance is tiny
     denom = max(v_max - v_min, eps)
     return (log_vector - v_min) / denom
 
