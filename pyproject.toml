@@ -1,37 +1,3 @@
-[build-system]
-requires = ["setuptools>=61.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "frequency-project"
-version = "0.1.0"
-description = "A paradigm shift from semantic text AI to ecological frequency-synced intelligence."
-readme = "README.md"
-requires-python = ">=3.9"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-]
-dependencies = [
-    "numpy>=1.24.0",
-    "scipy>=1.10.0",
-    "torch>=2.0.0",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.3.0",
-    "black>=23.3.0",
-    "mypy>=1.3.0",
-]
-
-[tool.black]
-line-length = 120
-target-version = ['py310']
-include = '\.pyi?$'
-
 [tool.black]
 line-length = 88
 target-version = ['py310']
