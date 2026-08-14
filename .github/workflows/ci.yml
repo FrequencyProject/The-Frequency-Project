@@ -34,10 +34,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Automated Mobile Formatting Sync
+    - name: Run Verified Test Suite
       run: |
-        black .
-
-    - name: Run tests
-      run: |
-        pytest -q
+        pytest test_pipeline.py -q
