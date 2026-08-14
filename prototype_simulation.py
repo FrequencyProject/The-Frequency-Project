@@ -140,6 +140,44 @@ if __name__ == "__main__":
             f"\nVerification Bounds -> Min value found: {np.min(tensor)}, Max value found: {np.max(tensor)}"
         )
 
+    # Channel 2: Biological (Plant bio-potentials)
+    plant_raw = generate_mock_sensor_wave(
+        frequency=15.0, sampling_rate=1000, duration=2.56, rng=rng_bio
+    )
+    plant_vec, _ = process_to_frequency_vector(
+        plant_raw, sampling_rate=1000, target_dim=1280
+    )
+    plant_norm = apply_log_min_max_normalization(plant_vec)
+
+    # Channel 3: Molecular (Water acoustics)
+    water_raw = generate_mock_sensor_wave(
+        frequency=440.0, sampling_rate=44100, duration=0.058, rng=rng_mol
+    )
+    water_vec, _ = process_to_frequency_vector(
+        water_raw, sampling_rate=44100, target_dim=1280
+    )
+    water_norm = apply_log_min_max_normalization(water_vec)
+
+    unified_tensor = np.stack([schumann_norm, plant_norm, water_norm])
+    return unified_tensor
+
+
+if __name__ == "__main__":
+    tensor = execute_ecological_ingestion_pipeline()
+
+    # Gated behind a debug flag to keep testing, CI runs, and library imports silent
+    if "--debug" in sys.argv:
+        print(
+            "Initializing The Frequency Project Ecological Ingestion Simulation..."
+        )
+        print(
+            f"Success. Unified Matrix Tensor Shape Generated: {tensor.shape}"
+        )
+        print(f"Tensor Matrix Values (Truncated view):\n{tensor[:, :5]}")
+        print(
+            f"\nVerification Bounds -> Min value found: {np.min(tensor)}, Max value found: {np.max(tensor)}"
+        )
+
     # Channel 3: Molecular (Water acoustics)
     water_raw = generate_mock_sensor_wave(
         frequency=440.0, sampling_rate=44100, duration=0.058, rng=rng_mol
