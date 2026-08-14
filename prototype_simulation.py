@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from typing import Tuple
 
@@ -115,14 +116,17 @@ def execute_ecological_ingestion_pipeline(seed: int = 42) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    print(
-        "Initializing The Frequency Project Ecological Ingestion Simulation..."
-    )
     tensor = execute_ecological_ingestion_pipeline()
-    print(f"Success. Unified Matrix Tensor Shape Generated: {tensor.shape}")
-    print(f"Tensor Matrix Values (Truncated view):\n{tensor[:, :5]}")
 
-    # Absolute bounds verification output
-    print(
-        f"\nVerification Bounds -> Min value found: {np.min(tensor)}, Max value found: {np.max(tensor)}"
-    )
+    # Gated behind a debug flag to keep testing, CI runs, and library imports silent
+    if "--debug" in sys.argv:
+        print(
+            "Initializing The Frequency Project Ecological Ingestion Simulation..."
+        )
+        print(
+            f"Success. Unified Matrix Tensor Shape Generated: {tensor.shape}"
+        )
+        print(f"Tensor Matrix Values (Truncated view):\n{tensor[:, :5]}")
+        print(
+            f"\nVerification Bounds -> Min value found: {np.min(tensor)}, Max value found: {np.max(tensor)}"
+        )
