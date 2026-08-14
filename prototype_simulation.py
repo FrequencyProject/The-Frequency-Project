@@ -30,6 +30,10 @@ def process_to_frequency_vector(
     This function trims the input to nfft samples or zero-pads it to nfft before
     applying the window (truncation if longer, zero-padding if shorter).
 
+    Amplitude Scaling Note:
+        The returned raw magnitudes preserve the un-normalized absolute spectrum values.
+        Downstream cross-channel normalization is delegated to the logarithmic min-max step.
+
     Returns:
       (fft_magnitudes, freqs) where freqs maps bins -> Hz (len = target_dim).
     """
@@ -55,7 +59,7 @@ def process_to_frequency_vector(
         if len(fft_vals) > target_dim:
             fft_vals = fft_vals[:target_dim]
         else:
-            # FIX: Explicit assignment to catch and retain the zero-padded vector matrix
+            # Explicit assignment to catch and retain the zero-padded vector matrix
             fft_vals = np.pad(
                 fft_vals, (0, target_dim - len(fft_vals)), "constant"
             )
@@ -101,6 +105,18 @@ def execute_ecological_ingestion_pipeline(seed: int = 42) -> np.ndarray:
     water_raw = generate_mock_sensor_wave(
         frequency=440.0, sampling_rate=44100, duration=0.058, rng=rng_mol
     )
+    water_vec, _ = process_to_frequency_vector(
+        water_raw, sampling_rate=44100, target_dim=1280
+    )
+    water_norm = apply_log_min_max_normalization(water_vec)
+
+    unified_tensor = np.stack([schumann_norm, plant_norm, water_norm])
+    return unified_tensor
+
+
+if __name__ == "__main__":
+    # Internal execution check - running directly verifies shape alignment silently
+    execute_ecological_ingestion_pipeline()
     water_vec, _ = process_to_frequency_vector(
         water_raw, sampling_rate=44100, target_dim=1280
     )
