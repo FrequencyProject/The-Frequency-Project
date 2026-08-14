@@ -42,7 +42,8 @@ def process_to_frequency_vector(raw_wave: np.ndarray, sampling_rate: int, target
         if len(fft_vals) > target_dim:
             fft_vals = fft_vals[:target_dim]
         else:
-            np.pad(fft_vals, (0, target_dim - len(fft_vals)), "constant")
+            # FIX: Assigned padded array back to variables to preserve downstream dimensions
+            fft_vals = np.pad(fft_vals, (0, target_dim - len(fft_vals)), "constant")
 
     freqs = np.fft.rfftfreq(nfft, d=1.0 / sampling_rate)[:target_dim]
     return fft_vals, freqs
