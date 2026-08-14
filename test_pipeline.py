@@ -3,7 +3,6 @@ import pytest
 from prototype_simulation import (
     apply_log_min_max_normalization,
     execute_ecological_ingestion_pipeline,
-    generate_mock_sensor_wave,
     process_to_frequency_vector,
 )
 
