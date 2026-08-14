@@ -39,6 +39,7 @@ This project is organized cleanly to provide clear delineation between philosoph
 *   📄 **`prototype_simulation.py`** — Robust executable script modeling deterministic signal ingestion, Fourier transforms, and tensor stacking.
 *   📁 **`tests/test_ingest.py`** — Automated validation script testing edge-cases, flat sensor lines, and normalization boundaries.
 *   📁 **`sensors/adapter.py`** — Hardware interface driver scaffold defining ADC calibration routines and real-time physical streaming hooks.
+*   📄 **`SYSTEM_FLOW.md`** — The end-to-end data lifecycle map tracking waveforms from the ecosystem to neural nodes.
 *   📄 **`HARDWARE_BLUEPRINT.md`** — Comprehensive hardware sensor configuration specs and multidimensional tensor shape specs.
 *   📄 **`PAPER_1_DIALOGUE.md`** — Verbatim conversational transcript tracking the basketball-to-metaphysics catalytic journey.
 *   📄 **`PAPER_2_TECHNICAL_PROPOSAL.md`** — Formal peer-review whitepaper draft engineered for the academic machine learning community.
