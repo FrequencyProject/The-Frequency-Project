@@ -115,34 +115,6 @@ def execute_ecological_ingestion_pipeline(seed: int = 42) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    # Internal execution check - running directly verifies shape alignment silently
-    execute_ecological_ingestion_pipeline()
-    # Channel 3: Molecular (Water acoustics)
-    water_raw = generate_mock_sensor_wave(
-        frequency=440.0, sampling_rate=44100, duration=0.058, rng=rng_mol
-    )
-    water_vec, _ = process_to_frequency_vector(
-        water_raw, sampling_rate=44100, target_dim=1280
-    )
-    water_norm = apply_log_min_max_normalization(water_vec)
-
-    unified_tensor = np.stack([schumann_norm, plant_norm, water_norm])
-    return unified_tensor
-
-
-if __name__ == "__main__":
-    # Internal execution check - running directly verifies shape alignment silently
-    execute_ecological_ingestion_pipeline()
-    water_vec, _ = process_to_frequency_vector(
-        water_raw, sampling_rate=44100, target_dim=1280
-    )
-    water_norm = apply_log_min_max_normalization(water_vec)
-
-    unified_tensor = np.stack([schumann_norm, plant_norm, water_norm])
-    return unified_tensor
-
-
-if __name__ == "__main__":
     print(
         "Initializing The Frequency Project Ecological Ingestion Simulation..."
     )
