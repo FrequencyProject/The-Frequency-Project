@@ -45,7 +45,7 @@ This project is organized cleanly to provide clear delineation between philosoph
 *   📄 **`SYSTEM_FLOW.md`** — The end-to-end data lifecycle map tracking waveforms from the ecosystem to neural nodes.
 *   📄 **`prototype_simulation.py`** — Robust executable script modeling deterministic signal ingestion, Fourier transforms, and tensor stacking.
 *   📄 **`pyproject.toml`** — Modern Python packaging metadata, build specifications, and development tool configurations.
-*   📄 **`requirements.txt`** — Traditional runtime dependency manifest containing operational processing libraries.
+*   📄 **`requirements.txt`** — Primary version-pinned manifest containing operational processing and environment testing packages.
 *   📄 **`sensor_adapter.py`** — Hardware interface driver scaffold defining ADC calibration routines and real-time physical streaming hooks.
 *   📄 **`test_pipeline.py`** — Automated script testing validation edge-cases, flat sensor lines, and normalization boundaries.
 
@@ -53,12 +53,11 @@ This project is organized cleanly to provide clear delineation between philosoph
 
 ## 🛠️ Quick Start (Development)
 
-Install the lightweight dependencies and formatting tools to run verification tests locally before submitting a Pull Request:
+Install the version-locked dependencies and formatting tools to execute verification tests locally before submitting a Pull Request:
 
 ```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-pip install black pytest
 
 # Enforce clean formatting matching the repository CI configuration
 black .
