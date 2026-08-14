@@ -12,6 +12,14 @@ def generate_mock_sensor_wave(frequency: float, sampling_rate: int, duration: fl
     return pure_wave + noise
 
 def process_to_frequency_vector(raw_wave: np.ndarray, sampling_rate: int, target_dim: int = 1280, window: str = "hann") -> Tuple[np.ndarray, np.ndarray]:
+    """Compute a stable magnitude-spectrum of the input signal with a reproducible
+    number of frequency bins equal to target_dim.
+
+    This function trims the input to nfft samples or zero-pads it to nfft before applying the window (truncation if longer, zero-padding if shorter).
+
+    Returns:
+      (fft_magnitudes, freqs) where freqs maps bins -> Hz (len = target_dim).
+    """
     # Desired rfft bins D = target_dim -> nfft = 2*(D - 1)
     nfft = 2 * (target_dim - 1)
 
@@ -34,7 +42,7 @@ def process_to_frequency_vector(raw_wave: np.ndarray, sampling_rate: int, target
         if len(fft_vals) > target_dim:
             fft_vals = fft_vals[:target_dim]
         else:
-            fft_vals = np.pad(fft_vals, (0, target_dim - len(fft_vals)), "constant")
+            np.pad(fft_vals, (0, target_dim - len(fft_vals)), "constant")
 
     freqs = np.fft.rfftfreq(nfft, d=1.0 / sampling_rate)[:target_dim]
     return fft_vals, freqs
@@ -74,3 +82,6 @@ if __name__ == "__main__":
     tensor = execute_ecological_ingestion_pipeline()
     print(f"Success. Unified Matrix Tensor Shape Generated: {tensor.shape}")
     print(f"Tensor Matrix Values (Truncated view):\n{tensor[:, :5]}")
+    
+    # Absolute bounds verification output
+    print(f"\nVerification Bounds -> Min value found: {np.min(tensor)}, Max value found: {np.max(tensor)}")
