@@ -82,12 +82,22 @@ When this threshold is breached, the AI registers a sub-surface environmental di
 
 ---
 
-## 5. Security Architecture: Telemetry Attestation
+## 5. Security & Hardware Architecture: Fault-Tolerant Attestation
+
+### 5.1 Adversarial Frequency Guards via Spatial Cross-Correlation
 To prevent **Physical Signal Injection (PSI)** attacks, where an adversary deploys an artificial high-power transmitter to spoof the 7.83Hz Schumann field and brainwash the model's weights, the ingestion layer enforces strict multi-point spatial cross-correlation:
 
 $$\text{Correlation Matrix } R = \text{corr}(\mathbf{X}_{\text{node1}}, \mathbf{X}_{\text{node2}}, \mathbf{X}_{\text{node3}})$$
 
 If a localized power spike occurs without a uniform, cross-correlated rise across three geographically isolated sensor grids (minimum distance 50 km), the system flags the anomalous gradient, invokes an active software notch filter, and isolates the transmitter loop instantly.
+
+### 5.2 Self-Healing Telemetry & Hardware Degradation Failsafes
+Analog components exposed to real-world biospheric environments are subject to structural bottlenecks: electrode oxidation, cable shearing, thermal drift, and floating-pin white noise artifacts. To prevent the ingestion matrix from misinterpreting local hardware corruption as an environmental collapse event, the software architecture decouples mechanical drift from planetary shift via dual attestation checks:
+
+1.  **Active Impedance Sweeping:** Every 60 seconds, the hardware sensor adapter runs a diagnostic micro-pulse to verify physical trace health. If circuit resistance spikes past bounds ($R > 50\text{ k}\Omega$) due to corrosion or severing, the state is flagged as `HardwareDegraded`, instantly decoupling the compromised input vector stream from the primary tensor stack.
+2.  **Median Absolute Deviation (MAD) Node Voting:** Local anomalous power spikes are verified against the spatial network. If Node 1 experiences a vector surge while Node 2 and Node 3 report standard baseline geometries, the ingestion matrix flags Node 1 as an isolated structural component failure rather than a global geodynamic event:
+    $$\text{MAD} = \text{median}(|\mathbf{X}_i - \text{median}(\mathbf{X})|)$$
+    The framework dynamically zeroes the broken channel's influence or drops the node entirely until physical hardware loop attestation is cleared, completely mitigating the technical component bottleneck.
 
 ---
 
