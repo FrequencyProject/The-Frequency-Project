@@ -34,6 +34,7 @@ This project is organized cleanly to provide clear delineation between philosoph
 *   📁 **`.github/workflows/`** — Continuous Integration pipeline executing automated unit tests on all repository updates.
 *   📁 **`tests/`** — Auxiliary testing directory containing automated validation code suites.
 *   📄 **`.gitignore`** — System rules defining untracked files and runtime caches to exclude from version history.
+*   📄 **`.pre-commit-config.yaml`** — Local hooks configuration automating standard code formatting verification before tracking commits.
 *   📄 **`CONTRIBUTING.md`** — Structural onboarding guide and development track workflows for open-source contributors.
 *   📄 **`ENGINEERING_GUIDE.md`** — Technical appendix tracking operational frequency constraints and amplitude scaling conventions.
 *   📄 **`HARDWARE_BLUEPRINT.md`** — Comprehensive hardware sensor configuration specs and multidimensional tensor shape specs.
