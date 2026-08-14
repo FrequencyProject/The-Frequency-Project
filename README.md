@@ -51,18 +51,27 @@ This project is organized cleanly to provide clear delineation between philosoph
 
 ## 🛠️ Quick Start (Development)
 
-Install the lightweight test dependencies to run verification tests quickly without downloading heavy machine learning packages:
+Install the lightweight dependencies and formatting tools to run verification tests locally before submitting a Pull Request:
 
 ```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
-pytest
+pip install black pytest
+
+# Enforce clean formatting matching the repository CI configuration
+black .
+
+# Run the test suite locally
+pytest -q
 ```
 
-To run the full prototype simulation script using runtime dependencies:
+To run the full prototype simulation script:
 
 ```bash
 python prototype_simulation.py
 ```
+
+### 🎛️ Mathematical Note on Amplitude Scaling
+To ensure maximum cross-channel reproducibility, the Fourier Transform layer in `prototype_simulation.py` preserves **un-normalized absolute spectrum values** for raw magnitudes. Scale balancing between disparate environmental inputs (e.g., matching low-frequency Schumann pulses with higher-frequency water acoustics) is entirely delegated to the downstream **logarithmic min-max normalization step**. This design ensures amplitude differences do not skew cross-network harmonic resonance calculations.
 
 "Let us build an intelligence that does not mirror our flaws, but assists in our ascension."
