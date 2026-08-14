@@ -31,20 +31,21 @@ We propose transitioning from **Semantic AI** to **Ecological AI**. By training 
 
 This project is organized cleanly to provide clear delineation between philosophical discovery, mathematical theory, and runnable software architecture:
 
-*   📁 **`.github/workflows/ci.yml`** — Continuous Integration pipeline executing automated unit tests on all repository updates.
+*   📁 **`.github/workflows/`** — Continuous Integration pipeline executing automated unit tests on all repository updates.
+*   📁 **`tests/`** — Auxiliary testing directory containing automated validation code suites.
 *   📄 **`.gitignore`** — System rules defining untracked files and runtime caches to exclude from version history.
-*   📄 **`pyproject.toml`** — Modern Python packaging metadata, build specifications, and development tool configurations.
-*   📄 **`requirements.txt`** — Traditional runtime dependency manifest containing optional heavier processing libraries (`torch`, etc.).
-*   📄 **`test-requirements.txt`** — One-click lightweight manifest for rapid developer testing without heavy data downloads.
-*   📄 **`prototype_simulation.py`** — Robust executable script modeling deterministic signal ingestion, Fourier transforms, and tensor stacking.
-*   📁 **`tests/test_ingest.py`** — Automated validation script testing edge-cases, flat sensor lines, and normalization boundaries.
-*   📁 **`sensors/adapter.py`** — Hardware interface driver scaffold defining ADC calibration routines and real-time physical streaming hooks.
-*   📄 **`SYSTEM_FLOW.md`** — The end-to-end data lifecycle map tracking waveforms from the ecosystem to neural nodes.
+*   📄 **`CONTRIBUTING.md`** — Structural onboarding guide and development track workflows for open-source contributors.
 *   📄 **`HARDWARE_BLUEPRINT.md`** — Comprehensive hardware sensor configuration specs and multidimensional tensor shape specs.
+*   📄 **`LICENSE`** — Permissive MIT Open-Source Legal License.
 *   📄 **`PAPER_1_DIALOGUE.md`** — Verbatim conversational transcript tracking the basketball-to-metaphysics catalytic journey.
 *   📄 **`PAPER_2_TECHNICAL_PROPOSAL.md`** — Formal peer-review whitepaper draft engineered for the academic machine learning community.
-*   📄 **`CONTRIBUTING.md`** — Structural onboarding guide and development track workflows for open-source contributors.
-*   📄 **`LICENSE`** — Permissive MIT Open-Source Legal License.
+*   📄 **`README.md`** — Core documentation ledger containing project manifestos and deployment guides.
+*   📄 **`SYSTEM_FLOW.md`** — The end-to-end data lifecycle map tracking waveforms from the ecosystem to neural nodes.
+*   📄 **`prototype_simulation.py`** — Robust executable script modeling deterministic signal ingestion, Fourier transforms, and tensor stacking.
+*   📄 **`pyproject.toml`** — Modern Python packaging metadata, build specifications, and development tool configurations.
+*   📄 **`requirements.txt`** — Traditional runtime dependency manifest containing operational processing libraries.
+*   📄 **`sensor_adapter.py`** — Hardware interface driver scaffold defining ADC calibration routines and real-time physical streaming hooks.
+*   📄 **`test_pipeline.py`** — Automated script testing validation edge-cases, flat sensor lines, and normalization boundaries.
 
 ---
 
@@ -54,14 +55,13 @@ Install the lightweight test dependencies to run verification tests quickly with
 
 ```bash
 python -m pip install --upgrade pip
-pip install -r test-requirements.txt
+pip install -r requirements.txt
 pytest
 ```
 
 To run the full prototype simulation script using runtime dependencies:
 
 ```bash
-pip install -r requirements.txt  # Installs full environment runtime tools
 python prototype_simulation.py
 ```
 
