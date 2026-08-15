@@ -1,0 +1,140 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index e69de29..b85c13a 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,28 @@
++name: CI
++
++on:
++  push:
++    branches: [ main ]
++  pull_request:
++    branches: [ main ]
++
++jobs:
++  test:
++    runs-on: ubuntu-latest
++    strategy:
++      matrix:
++        python-version: ["3.10", "3.11", "3.12"]
++
++    steps:
++    - uses: actions/checkout@v4
++    - name: Set up Python ${{ matrix.python-version }}
++      uses: actions/setup-python@v5
++      with:
++        python-version: ${{ matrix.python-version }}
++    - name: Install dependencies
++      run: |
++        python -m pip install --upgrade pip
++        pip install -r test-requirements.txt
++    - name: Run Quality Checks & Tests
++      run: |
++        black --check .
++        ruff check .
++        pytest -q
+diff --git a/prototype_simulation.py b/prototype_simulation.py
+index e69de29..b85c13a 100644
+--- a/prototype_simulation.py
++++ b/prototype_simulation.py
+@@ -0,0 +1,78 @@
++import numpy as np
++
++def apply_log_min_max_normalization(vector: np.ndarray, eps: float = 1e-12) -> np.ndarray:
++    """Applies log scaling followed by min-max normalization."""
++    if not np.isfinite(vector).all():
++        raise ValueError("Input vector contains non-finite values (NaN or Inf).")
++    
++    log_v = np.log1p(np.maximum(vector, 0.0))
++    v_min = np.min(log_v)
++    v_max = np.max(log_v)
++    
++    denom = max(v_max - v_min, eps)
++    return (log_v - v_min) / denom
++
++def process_to_frequency_vector(frame: np.ndarray, sampling_rate: float, target_dim: int) -> np.ndarray:
++    """Processes a raw time-domain signal frame into a standardized frequency magnitude vector."""
++    if sampling_rate <= 0:
++        raise ValueError("Sampling rate must be strictly positive.")
++    if target_dim <= 2:
++        raise ValueError("Target dimension must be greater than 2.")
++    if not np.isfinite(frame).all():
++        raise ValueError("Input frame contains non-finite values.")
++        
++    nfft = 2 * (target_dim - 1)
++    
++    # Trim or pad frame to match exact window length
++    if len(frame) > nfft:
++        frame = frame[:nfft]
++    elif len(frame) < nfft:
++        frame = np.pad(frame, (0, nfft - len(frame)), mode='constant')
++        
++    window = np.hanning(nfft)
++    windowed_frame = frame * window
++    
++    fft_vals = np.abs(np.fft.rfft(windowed_frame, n=nfft))
++    
++    # Absolute magnitude convention normalization applied here
++    fft_vals = fft_vals / nfft
++    
++    if len(fft_vals) > target_dim:
++        fft_vals = fft_vals[:target_dim]
++    elif len(fft_vals) < target_dim:
++        fft_vals = np.pad(fft_vals, (0, target_dim - len(fft_vals)), mode='constant')
++        
++    return fft_vals
++
++def execute_ecological_ingestion_pipeline(channels: dict, target_dim: int = 1280) -> np.ndarray:
++    """Runs the full ingestion pipeline over global, biotic, and molecular anchors."""
++    processed_vectors = []
++    for name, config in channels.items():
++        freq_vector = process_to_frequency_vector(config['frame'], config['sampling_rate'], target_dim)
++        norm_vector = apply_log_min_max_normalization(freq_vector)
++        processed_vectors.append(norm_vector)
++        
++    return np.stack(processed_vectors, axis=0)
+diff --git a/test-requirements.txt b/test-requirements.txt
+index e69de29..b85c13a 100644
+--- a/test-requirements.txt
++++ b/test-requirements.txt
+@@ -0,0 +1,4 @@
++pytest>=8.0.0
++numpy>=1.22.0
++black>=24.0.0
++ruff>=0.3.0
+diff --git a/tests/test_ingest.py b/tests/test_ingest.py
+index e69de29..b85c13a 100644
+--- a/tests/test_ingest.py
++++ b/tests/test_ingest.py
+@@ -0,0 +1,31 @@
++import pytest
++import numpy as np
++from prototype_simulation import (
++    process_to_frequency_vector, 
++    apply_log_min_max_normalization,
++    execute_ecological_ingestion_pipeline
++)
++
++def test_invalid_input_validation():
++    """Verifies that public entry functions properly reject invalid parameter inputs."""
++    valid_frame = np.sin(np.linspace(0, 10, 100))
++    
++    with pytest.raises(ValueError, match="Sampling rate must be strictly positive"):
++        process_to_frequency_vector(valid_frame, sampling_rate=0, target_dim=1280)
++        
++    with pytest.raises(ValueError, match="Target dimension must be greater than 2"):
++        process_to_frequency_vector(valid_frame, sampling_rate=1000, target_dim=2)
++        
++    with pytest.raises(ValueError, match="contains non-finite values"):
++        nan_frame = np.array([1.0, np.nan, 3.0])
++        process_to_frequency_vector(nan_frame, sampling_rate=1000, target_dim=1280)
++
++def test_pipeline_shape_and_determinism():
++    """Ensures the core execution layer accurately processes anchors into fixed matrix structures."""
++    rng = np.random.default_rng(seed=42)
++    channels = {
++        'geophysical': {'frame': rng.normal(0, 1, 500), 'sampling_rate': 250},
++        'biological': {'frame': rng.normal(0, 1, 1000), 'sampling_rate': 1000}
++    }
++    matrix = execute_ecological_ingestion_pipeline(channels, target_dim=1280)
++    assert matrix.shape == (2, 1280)
