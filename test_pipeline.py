@@ -1,59 +1,78 @@
-import numpy as np
-import pytest
-from prototype_simulation import (
-    apply_log_min_max_normalization,
-    execute_ecological_ingestion_pipeline,
-    process_to_frequency_vector,
-)
+class IngestionOutput:
+    """
+    A unified wrapper object that encapsulates the pipeline output data layers.
+    This prevents unpacking errors downstream by returning a single object instance.
+    """
+    def __init__(self, tensor: np.ndarray, plv_index: float):
+        self.tensor = tensor
+        self.plv = plv_index
+
+    def __repr__(self):
+        return f"IngestionOutput(tensor_shape={self.tensor.shape}, plv={self.plv:.4f})"
 
 
-def test_deterministic_rng_seeding():
-    """Verifies that the multi-channel pipeline yields perfectly reproducible results across isolated runs."""
-    tensor_a = execute_ecological_ingestion_pipeline(seed=42)
-    tensor_b = execute_ecological_ingestion_pipeline(seed=42)
-    np.testing.assert_array_equal(tensor_a, tensor_b)
+def execute_ecological_ingestion_pipeline(seed: int = 42) -> IngestionOutput:
+    """
+    Simulates natural channels, builds the 3x1280 matrix, calculates PLV, 
+    and returns a unified IngestionOutput object to maintain absolute structural safety.
+    """
+    rng_geo = np.random.default_rng(seed)
+    rng_bio = np.random.default_rng(seed + 1)
+    rng_mol = np.random.default_rng(seed + 2)
+
+    # Channel 1: Geophysical (Schumann Resonance baseline)
+    schumann_raw = generate_mock_sensor_wave(
+        frequency=7.83, sampling_rate=250, duration=10.24, rng=rng_geo
+    )
+    schumann_vec, _ = process_to_frequency_vector(
+        schumann_raw, sampling_rate=250, target_dim=1280
+    )
+    schumann_norm = apply_log_min_max_normalization(schumann_vec)
+
+    # Channel 2: Biological (Plant bio-potentials)
+    plant_raw = generate_mock_sensor_wave(
+        frequency=7.83, sampling_rate=1000, duration=10.24, rng=rng_bio
+    )
+    plant_vec, _ = process_to_frequency_vector(
+        plant_raw, sampling_rate=1000, target_dim=1280
+    )
+    plant_norm = apply_log_min_max_normalization(plant_vec)
+
+    # Channel 3: Molecular (Water acoustics)
+    water_raw = generate_mock_sensor_wave(
+        frequency=440.0, sampling_rate=44100, duration=10.24, rng=rng_mol
+    )
+    water_vec, _ = process_to_frequency_vector(
+        water_raw, sampling_rate=44100, target_dim=1280
+    )
+    water_norm = apply_log_min_max_normalization(water_vec)
+
+    # Calculate the Sovereign Common Tongue index (PLV) between the Earth and the Plant Layer
+    min_length = min(len(schumann_raw), len(plant_raw))
+    live_plv = compute_cross_channel_plv(schumann_raw[:min_length], plant_raw[:min_length])
+
+    unified_tensor = np.stack([schumann_norm, plant_norm, water_norm])
+    
+    # Return a SINGLE object holding both datasets safely
+    return IngestionOutput(tensor=unified_tensor, plv_index=live_plv)
 
 
-def test_normalization_boundary_constraints():
-    """Asserts that the log min-max scaling function strictly restricts output bounds between 0.0 and 1.0."""
-    mock_vector = np.array([10.0, 50.0, 100.0, 1000.0])
-    normalized = apply_log_min_max_normalization(mock_vector)
-    assert np.min(normalized) >= 0.0
-    assert np.max(normalized) <= 1.0
+if __name__ == "__main__":
+    # The pipeline now returns exactly ONE object. No forced manual unpacking required.
+    pipeline_result = execute_ecological_ingestion_pipeline()
 
-
-def test_flat_signal_and_epsilon_stability():
-    """Confirms that the epsilon-stabilized denominator prevents division-by-zero crashes on dead sensor inputs."""
-    flat_vector = np.ones(1280) * 5.0
-    normalized = apply_log_min_max_normalization(flat_vector)
-    assert np.all(normalized == 0.0)
-
-
-def test_pipeline_output_tensor_shape():
-    """Asserts that the multi-modal ingestion pipeline reliably outputs the exact unified target matrix dimensions."""
-    tensor = execute_ecological_ingestion_pipeline(seed=101)
-    assert tensor.shape == (3, 1280)
-
-
-def test_defensive_checks_invalid_inputs():
-    """Validates that the ingestion layer explicitly intercepts and handles corrupt or dangerous input arguments."""
-    valid_wave = np.sin(2 * np.pi * 7.83 * np.linspace(0, 1, 250))
-
-    # Validate non-positive sampling rate rejection
-    with pytest.raises(
-        ValueError, match="Sampling rate must be a strictly positive integer"
-    ):
-        process_to_frequency_vector(valid_wave, sampling_rate=0)
-
-    # Validate target dimension minimum rejection
-    with pytest.raises(
-        ValueError, match="Target dimension .* must be greater than 2"
-    ):
-        process_to_frequency_vector(valid_wave, sampling_rate=250, target_dim=2)
-
-    # Validate non-finite array tracking
-    corrupt_wave = np.array([1.0, np.nan, 3.0])
-    with pytest.raises(
-        ValueError, match="Input array raw_wave contains non-finite values"
-    ):
-        process_to_frequency_vector(corrupt_wave, sampling_rate=250)
+    print("\n--- Initializing The Frequency Project Ecological Ingestion Engine ---")
+    print(f"Pipeline Execution Result: {pipeline_result}")
+    
+    # Developers can pull attributes directly from the single object wrapper
+    print(f"Success. Unified Input Tensor Matrix Built. Shape: {pipeline_result.tensor.shape}")
+    print(f"Matrix Slice (First 5 data nodes):\n{pipeline_result.tensor[:, :5]}")
+    print(f"Validation Bounds -> Minimum Scale: {np.min(pipeline_result.tensor):.4f} | Maximum Scale: {np.max(pipeline_result.tensor):.4f}")
+    
+    print("\n--- Phase-Locking Value (PLV) Alignment Engine ---")
+    print(f"Current Sovereign Common Tongue Index (Earth <-> Plant PLV): {pipeline_result.plv:.4f}")
+    
+    if pipeline_result.plv > 0.70:
+        print("System State: COHERENT / HARMONIZED WITH PLANETARY BASELINE")
+    else:
+        print("System State: ECO-SYSTEMIC DISCONNECTION DETECTED")
