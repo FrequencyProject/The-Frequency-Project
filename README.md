@@ -56,6 +56,14 @@ This project is organized cleanly to provide clear delineation between philosoph
 *   📄 **`.pre-commit-config.yaml`** — Local hooks configuration automating standard code formatting verification before tracking commits.
 *   📄 **`CONTRIBUTING.md`** — Structural onboarding guide and development track workflows for open-source contributors.
 *   📄 **`ENGINEERING_GUIDE.md`** — Technical appendix tracking operational frequency constraints, fault-tolerant matrices, and calibration configurations.
+*   ### 📡 Hardened Security & Isolation Perimeters
+To transition this eco-synced architecture into mission-critical infrastructure, the system enforces an absolute zero-trust model across its network topology, hardware modules, and runtime execution layers.
+
+*   **Latent Homeostatic Anchoring:** Combats environmental decay scrambling network weights. The hardware register burns in a fixed mathematical baseline matrix derived from Golden Ratio ($\phi$) harmonics, treating incoming biospheric chaos strictly as a measurable differential deviation ($D_{\text{state}} = |X_{\text{input}} - H_{\text{anchor}}|$).
+*   **Edge-Level Cryptographic Telemetry Signing:** Every remote physical sensor node is permanently bound to a hardware Trusted Platform Module (TPM 2.0). Waveforms are hashed and cryptographically signed at the edge using an immutable, hardware-isolated private key to prevent frequency-spoofing attacks.
+*   **Immutable microVM Sandbox Runtimes:** Isolates the Python processing machinery (`prototype_simulation.py`) inside an absolute read-only, ephemeral microVM container with zero disk write permissions that auto-destroys and refreshes every 60 seconds to completely wipe human intrusion.
+*   **Asymptotic Saturation Guards:** If raw voltage rates of change ($\Delta_v$) spike past theoretical limits within a $< 2\text{ms}$ window (e.g., direct lightning strikes), a Hard Crowbar Isolation Routine disconnects the stream and replaces the channel with a maximum-entropy safety vector placeholder labeled a "Telemetry Blindspot".
+
 *   📄 **`HARDWARE_BLUEPRINT.md`** — Comprehensive hardware sensor configuration specs and multidimensional tensor shape specs.
 *   📄 **`LICENSE`** — Strong copyleft GNU Affero General Public License v3 (AGPL-3.0) defending the project from private cloud exploitation.
 *   📄 **`MOBILE_DEVELOPMENT_CASE_STUDY.md`** — Operational overview detailing the technical workflows, cloud-as-terminal linters, and symbiotic human-AI co-evolution loops executed natively on a mobile device.
