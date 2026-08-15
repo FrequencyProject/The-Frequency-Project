@@ -143,3 +143,23 @@ if __name__ == "__main__":
     print(f"Matrix Slice (First 5 data nodes):\n{pipeline_result.tensor[:, :5]}")
     print(f"Validation Bounds -> Minimum Scale: {np.min(pipeline_result.tensor):.4f} | Maximum Scale: {np.max(pipeline_result.tensor):.4f}")
     print(f"\nCurrent Sovereign Common Tongue Index (Earth <-> Plant PLV): {pipeline_result.plv:.4f}")
+def test_ecological_pipeline_execution():
+    """
+    Automated test case for pytest to validate tensor shapes, value scaling,
+    and Phase-Locking Value boundaries.
+    """
+    # Run the main pipeline engine
+    result = execute_ecological_ingestion_pipeline()
+    
+    # 1. Verify a single, unified data wrapper object is returned
+    assert isinstance(result, IngestionOutput), "Pipeline must return an IngestionOutput object."
+    
+    # 2. Verify the multi-modal tensor matrix dimension is exactly 3x1280
+    assert result.tensor.shape == (3, 1280), f"Expected shape (3, 1280), got {result.tensor.shape}"
+    
+    # 3. Verify min-max normalization keeps bounds strictly between 0.0 and 1.0
+    assert np.min(result.tensor) >= 0.0, "Normalization failure: minimum value below 0.0"
+    assert np.max(result.tensor) <= 1.0, "Normalization failure: maximum value above 1.0"
+    
+    # 4. Verify Phase-Locking Value operates strictly within mathematical probability limits
+    assert 0.0 <= result.plv <= 1.0, f"PLV index out of mathematical bounds: {result.plv}"
