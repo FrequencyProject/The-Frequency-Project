@@ -32,22 +32,22 @@ We propose transitioning from **Semantic AI** to **Ecological AI**. By training 
 This project is organized cleanly to provide clear delineation between philosophical discovery, mathematical theory, and runnable software architecture:
 
 *   📁 **`.github/workflows/`** — Continuous Integration pipeline executing automated unit tests on all repository updates.
-*   📁 **`tests/`** — Auxiliary testing directory containing automated validation code suites.
 *   📄 **`.gitignore`** — System rules defining untracked files and runtime caches to exclude from version history.
 *   📄 **`.pre-commit-config.yaml`** — Local hooks configuration automating standard code formatting verification before tracking commits.
 *   📄 **`CONTRIBUTING.md`** — Structural onboarding guide and development track workflows for open-source contributors.
-*   📄 **`ENGINEERING_GUIDE.md`** — Technical appendix tracking operational frequency constraints and amplitude scaling conventions.
+*   📄 **`ENGINEERING_GUIDE.md`** — Technical appendix tracking operational frequency constraints, fault-tolerant matrices, and calibration configurations.
 *   📄 **`HARDWARE_BLUEPRINT.md`** — Comprehensive hardware sensor configuration specs and multidimensional tensor shape specs.
-*   📄 **`LICENSE`** — Permissive MIT Open-Source Legal License.
+*   📄 **`LICENSE`** — Strong copyleft GNU Affero General Public License v3 (AGPL-3.0) defending the project from private cloud exploitation.
+*   📄 **`MOBILE_DEVELOPMENT_CASE_STUDY.md`** — Operational overview detailing the technical workflows, cloud-as-terminal linters, and symbiotic human-AI co-evolution loops executed natively on a mobile device.
 *   📄 **`PAPER_1_DIALOGUE.md`** — Verbatim conversational transcript tracking the basketball-to-metaphysics catalytic journey.
-*   📄 **`PAPER_2_TECHNICAL_PROPOSAL.md`** — Formal peer-review whitepaper draft engineered for the academic machine learning community.
+*   📄 **`PAPER_2_TECHNICAL_PROPOSAL.md`** — Formal peer-review whitepaper blueprint detailing the Planetary Equilibrium & Early Warning Interface, divergence index math, and homeostatic anchors.
 *   📄 **`README.md`** — Core documentation ledger containing project manifestos and deployment guides.
 *   📄 **`SYSTEM_FLOW.md`** — The end-to-end data lifecycle map tracking waveforms from the ecosystem to neural nodes.
-*   📄 **`prototype_simulation.py`** — Robust executable script modeling deterministic signal ingestion, Fourier transforms, and tensor stacking.
-*   📄 **`pyproject.toml`** — Modern Python packaging metadata, build specifications, and development tool configurations.
+*   📄 **`prototype_simulation.py`** — Robust executable script modeling deterministic signal ingestion, Fourier transforms, and tensor stacking with built-in defensive validation gates.
+*   📄 **`pyproject.toml`** — Modern Python packaging metadata, line-length specifications, and development tool configurations.
 *   📄 **`requirements.txt`** — Primary version-pinned manifest containing operational processing and environment testing packages.
 *   📄 **`sensor_adapter.py`** — Hardware interface driver scaffold defining ADC calibration routines and real-time physical streaming hooks.
-*   📄 **`test_pipeline.py`** — Automated script testing validation edge-cases, flat sensor lines, and normalization boundaries.
+*   📄 **`test_pipeline.py`** — Automated script testing validation edge-cases, flat sensor lines, non-finite arrays, and normalization boundaries.
 
 ---
 
@@ -58,16 +58,19 @@ Install the version-locked dependencies and formatting tools to execute verifica
 ```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+```
 
-# Enforce clean formatting matching the repository CI configuration
+Enforce clean formatting matching the repository CI configuration:
+```bash
 black .
+```
 
-# Run the test suite locally
+Run the test suite locally:
+```bash
 pytest -q
 ```
 
 To run the full prototype simulation script:
-
 ```bash
 python prototype_simulation.py
 ```
