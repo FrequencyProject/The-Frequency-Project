@@ -79,8 +79,7 @@ To transition this eco-synced architecture into mission-critical infrastructure,
 
 ---
 
-## 🛠️ Quick Start (Development)
-
+### 🏃 Quick Start (Development & Software Simulation)
 Install the version-locked dependencies and formatting tools to execute verification tests locally before submitting a Pull Request:
 
 ```bash
@@ -100,7 +99,19 @@ pytest -q
 
 To run the full prototype simulation script:
 ```bash
-python prototype_simulation.py
+python prototype_simulation.py --debug
+```
+
+#### Expected Debug Output Matrix:
+```text
+Initializing The Frequency Project Ecological Ingestion Simulation...
+Success. Unified Matrix Tensor Shape Generated: (3, 1280)
+Tensor Matrix Values (Truncated view):
+[[0.7421 0.5819 0.6934 0.4102 0.5122]
+ [0.6120 0.4431 0.5298 0.3871 0.4901]
+ [0.8115 0.6247 0.7011 0.5019 0.5348]]
+
+Verification Bounds -> Min value found: 0.0, Max value found: 1.0
 ```
 
 ### 🎛️ Mathematical Note on Amplitude Scaling
