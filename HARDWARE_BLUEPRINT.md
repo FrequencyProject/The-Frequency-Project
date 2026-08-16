@@ -129,3 +129,22 @@ def apply_schumann_frequency_mask(freqs: np.ndarray, fft_vals: np.ndarray) -> np
         
     return mask
 ```
+## 🗺️ Hardware Implementation & Security Verification Roadmap
+
+The advanced security perimeters detailed in the project documentation (including TPM 2.0 cryptographic edge signing, isolated microVM sandbox runtimes, and asymptotic saturation guards) represent the formalized architectural target model. 
+
+### 📋 Phase 1: Prototype Verification (Current Status)
+- [x] Deterministic multi-channel numerical signal simulation (`prototype_simulation.py`).
+- [x] Automated matrix shape validation and boundary constraint tests (`tests/test_ingest.py`).
+- [x] Thread-safe isolated Random Number Generation seeding execution.
+
+### 🚀 Phase 2: Hardware Integration (Active Development)
+- [ ] Transition `sensor_adapter.py` from an analog placeholder stub into a live SPI/I2C driver layer utilizing CircuitPython/spidev libraries.
+- [ ] Implement local baseline grounding calibration loops for physical ADS1115/MCP3008 ADCs.
+- [ ] Benchmark physical data ingestion stability across Raspberry Pi/microcontroller target hardware.
+
+### 🔒 Phase 3: Security Perimeter Hardening (Roadmap)
+- [ ] Bind edge sensor arrays to physical Trusted Platform Modules (TPM 2.0) using cryptographic signing keys.
+- [ ] Package the runtime ingestion layers into absolute read-only, ephemeral microVM instances (AWS Firecracker).
+- [ ] Stress-test Asymptotic Saturation Guards against simulated physical line overloads.
+
