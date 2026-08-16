@@ -1,5 +1,5 @@
-"""
-ECOLOGICAL SENSOR INTERFACE LAYER (STUB)
+"""ECOLOGICAL SENSOR INTERFACE LAYER (STUB)
+
 This module acts as the scaffolding adapter for connecting real physical hardware
 (via Analog-to-Digital Converters like ADS1115 or MCP3008) to the FS-AI input pipeline.
 """
@@ -69,7 +69,7 @@ if __name__ == "__main__":
             f"Hardware scaffolding bridge verified locally. Buffer shape: {mock_batch.shape}"
         )
 
-        # Test live fallback run to verify the fail-fast security gate trigger works
+        # Test live fallback run to verify the safety gate trigger works
         print("[HARDWARE] Verifying safety gate trigger bounds...")
         hardware_bridge.read_analog_stream(channel_id=1, num_samples=2560)
     except HardwareStreamError as e:
