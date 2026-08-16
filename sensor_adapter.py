@@ -1,6 +1,6 @@
 """
 ECOLOGICAL SENSOR INTERFACE LAYER (STUB)
-This module acts as the scaffolding adapter for connecting real physical hardware 
+This module acts as the scaffolding adapter for connecting real physical hardware
 (via Analog-to-Digital Converters like ADS1115 or MCP3008) to the FS-AI input pipeline.
 """
 
