@@ -94,7 +94,7 @@ pip install -r requirements.txt
 
 Enforce clean formatting matching the repository CI configuration:
 ```bash
-black .
+black --check prototype_simulation.py sensor_adapter.py tests/
 ```
 
 Run the test suite locally:
