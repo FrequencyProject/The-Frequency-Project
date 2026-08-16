@@ -1,5 +1,4 @@
 import sys
-from typing import Tuple
 
 import numpy as np
 
@@ -12,13 +11,13 @@ def generate_mock_sensor_wave(
     sampling_rate: int,
     duration: float,
     rng: np.random.Generator = None,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     """Generates a raw time-series sensor wave using modern, isolated, thread-safe RNG Generators."""
     if rng is None:
         rng = np.random.default_rng()
 
-    # Fixed float-duration rounding hazard using explicit round() bounding
-    sample_count = int(round(sampling_rate * duration))
+    # Fixed float-duration rounding hazard using native round() bounding
+    sample_count = round(sampling_rate * duration)
     t = np.linspace(0, duration, sample_count, endpoint=False)
 
     # Defensive frame validation check
@@ -37,7 +36,7 @@ def process_to_frequency_vector(
     sampling_rate: int,
     target_dim: int = 1280,
     window: str = "hann",
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Compute a stable magnitude-spectrum of the input signal with a reproducible
     number of frequency bins equal to target_dim.
     """
@@ -123,7 +122,9 @@ def execute_ecological_ingestion_pipeline(seed: int = 42) -> np.ndarray:
     somatic_norm = np.zeros(1280)
 
     # Stacks channels vertically into the synchronized 4x1280 matrix
-    unified_tensor = np.stack([schumann_norm, plant_norm, water_norm, somatic_norm])
+    unified_tensor = np.stack(
+        [schumann_norm, plant_norm, water_norm, somatic_norm]
+    )
     return unified_tensor
 
 
