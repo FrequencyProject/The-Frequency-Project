@@ -110,15 +110,15 @@ python prototype_simulation.py --debug
 ### Expected Debug Output Matrix:
 ```text
 Initializing The Frequency Project Ecological Ingestion Simulation...
-Success. Unified Matrix Tensor Shape Generated: (3, 1280)
+Success. Unified Matrix Tensor Shape Generated: (4, 1280)
 Tensor Matrix Values (Truncated view):
 [[0.7421 0.5819 0.6934 0.4102 0.5122]
  [0.6120 0.4431 0.5298 0.3871 0.4901]
- [0.8115 0.6247 0.7011 0.5019 0.5348]]
+ [0.8115 0.6247 0.7011 0.5019 0.5348]
+ [0.0000 0.0000 0.0000 0.0000 0.0000]]
 
 Verification Bounds -> Min value found: 0.0, Max value found: 1.0
 ```
-
 ---
 
 ## 📊 7. Mathematical Note on Amplitude Scaling and Tensor Ingestion
