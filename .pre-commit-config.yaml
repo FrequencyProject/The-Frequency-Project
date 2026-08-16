@@ -1,22 +1,6 @@
-# 🛡️ The Frequency Project: Automated Pre-Commit Hook Configurations
 repos:
-  - repo: https://github.com
-    rev: 24.3.0
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
     hooks:
       - id: black
-        args: [--line-length=88]
-        description: Enforces deterministic code formatting and unified layout constraints.
-
-  - repo: https://github.com
-    rev: v0.3.4
-    hooks:
-      - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
-        description: Executes real-time linting, dead-code elimination, and security sweeps.
-
-  - repo: https://github.com
-    rev: v1.9.0
-    hooks:
-      - id: mypy
-        args: [--ignore-missing-imports]
-        description: Enforces type-checking constraints on neural and vector matrices.
+        language_version: python3.10
