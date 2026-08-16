@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from prototype_simulation import (
-    CANONICAL_CHANNELS,
     apply_log_min_max_normalization,
     execute_ecological_ingestion_pipeline,
     process_to_frequency_vector,
@@ -14,8 +13,8 @@ def test_pipeline_shape_and_determinism():
     tensor_1 = execute_ecological_ingestion_pipeline(seed=42)
     tensor_2 = execute_ecological_ingestion_pipeline(seed=42)
 
-    # Assert structural bounds dynamically reflect the canonical code specifications
-    assert tensor_1.shape == (CANONICAL_CHANNELS, 1280)
+    # Assert structural bounds reflect the unified 4-channel specifications
+    assert tensor_1.shape == (4, 1280)
     assert np.array_equal(tensor_1, tensor_2)
     assert np.min(tensor_1) >= 0.0
     assert np.max(tensor_1) <= 1.0
