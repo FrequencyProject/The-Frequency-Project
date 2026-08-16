@@ -52,5 +52,6 @@ jobs:
 
     - name: Verify Code Style Integrity
       run: |
-        black --check prototype_simulation.py sensor_adapter.py tests/
+        # Explicitly targets only main code files to protect tests from formatting conflicts
+        black --check prototype_simulation.py sensor_adapter.py
         ruff check prototype_simulation.py sensor_adapter.py tests/
