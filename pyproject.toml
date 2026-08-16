@@ -2,8 +2,6 @@
 line-length = 88
 target-version = ['py310', 'py311', 'py312']
 include = '\.pyi?$'
-# Explicitly ignores formatting validation checks inside markdown text files
-extend-exclude = '\.md$'
 
 [tool.ruff]
 line-length = 88
@@ -12,9 +10,3 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "W"]
 ignore = ["S101", "E501"]
-
-[tool.pytest.ini_options]
-# Restricts pytest to search ONLY inside the explicit tests/ directory path
-testpaths = ["tests"]
-# Prevents pytest from scanning or executing code snippets inside documentation files
-norecursedirs = [".git", ".github", "docs"]
