@@ -86,12 +86,13 @@ def execute_ecological_ingestion_pipeline(seed: int = 42) -> np.ndarray:
     plant_norm = apply_log_min_max_normalization(plant_vec)
 
     # Channel 3: Molecular (Water acoustics)
-    water_raw = generate_mock_sensor_wave(frequency=440.0, sampling_rate=44100, duration=0.058, rng=rng_mol)
+    # Uses precise ratio matching to avoid floating-point truncation bugs
+    water_duration = 2560 / 44100
+    water_raw = generate_mock_sensor_wave(frequency=440.0, sampling_rate=44100, duration=water_duration, rng=rng_mol)
     water_vec, _ = process_to_frequency_vector(water_raw, sampling_rate=44100, target_dim=1280)
     water_norm = apply_log_min_max_normalization(water_vec)
 
     # Channel 4: Somatic (Placeholder allocation synchronized with README matrix specs)
-    # Maps out 1,280 structural data positions; flagged as a placeholder until somatic input drivers compile natively
     somatic_norm = np.zeros(1280)
 
     # Stacks channels vertically into the synchronized 4x1280 matrix
