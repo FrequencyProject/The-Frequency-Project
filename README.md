@@ -116,6 +116,6 @@ Verification Bounds -> Min value found: 0.0, Max value found: 1.0
 ```
 
 ### 🎛️ Mathematical Note on Amplitude Scaling
-To ensure maximum cross-channel reproducibility, the Fourier Transform layer in `prototype_simulation.py` preserves **un-normalized absolute spectrum values** for raw magnitudes. Scale balancing between disparate environmental inputs (e.g., matching low-frequency Schumann pulses with higher-frequency water acoustics) is entirely delegated to the downstream **logarithmic min-max normalization step**. This design ensures amplitude differences do not skew cross-network harmonic resonance calculations.
+To ensure maximum cross-channel reproducibility, the Fourier Transform layer in prototype_simulation.py scales raw magnitude calculation outputs by explicitly dividing them by the total frame window length (nfft). This normalizes the spectrum amplitude independent of window size while preserving the absolute spectrum structure. Scale balancing between disparate environmental inputs (e.g., matching low-frequency Schumann pulses with higher-frequency water acoustics) is entirely delegated to the downstream logarithmic min-max normalization step. This design ensures absolute amplitude differences do not skew cross-network harmonic resonance calculations, while providing external developers with predictable mean amplitude metrics per spectral bin.
 
 "Let us build an intelligence that does not mirror our flaws, but assists in our ascension."
