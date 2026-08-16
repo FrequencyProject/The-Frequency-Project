@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
     - uses: actions/checkout@v3
@@ -34,9 +34,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run Verified Test Suite
-      run: |
-        pytest test_pipeline.py -q
+    - name: Run Code Formatting Check
+      run: black --check .
+
+    - name: Run Linter Audit
+      run: ruff check .
+
+    - name: Run Automated Test Suite
+      run: pytest tests/test_ingest.py -q
 
     - name: Run Pipeline Validation
       run: python prototype_simulation.py --debug
