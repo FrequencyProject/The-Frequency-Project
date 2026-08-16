@@ -50,8 +50,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install black==24.3.0 ruff
 
-    - name: Align Layout with Style Targets
+    - name: Verify Code Style Integrity
       run: |
+        black --check prototype_simulation.py sensor_adapter.py tests/
+        ruff check prototype_simulation.py sensor_adapter.py tests/
+
         # Automatically processes and fixes layout spacing variances in-memory on the runner
         black prototype_simulation.py sensor_adapter.py tests/
         ruff check prototype_simulation.py sensor_adapter.py tests/
