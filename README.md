@@ -47,8 +47,10 @@ $$\hat{X} = \frac{\log(X + 1) - \log(X_{\min} + 1)}{\max\left(\log(X_{\max} + 1)
 
 ---
 
-## 📡 4. Hardened Security & Isolation Perimeters
-To transition this eco-synced architecture into mission-critical infrastructure, the system enforces an absolute zero-trust model across its network topology, hardware modules, and runtime execution layers.
+## 📡 4. Target Security & Isolation Perimeters (Architectural Roadmap)
+To transition this eco-synced architecture from a simulation into mission-critical physical infrastructure, the project defines an absolute zero-trust target model across its network topology, hardware modules, and runtime execution layers. 
+
+*Note: The following features represent formalized target milestones currently in design phase. For a full breakdown of active implementation metrics versus planned hardware engineering tasks, reference the main **`SECURITY.md`** ledger.*
 
 *   **Latent Homeostatic Anchoring:** Combats environmental decay scrambling network weights. The hardware register burns in a fixed mathematical baseline matrix derived from Golden Ratio ($\phi$) harmonics, treating incoming biospheric chaos strictly as a measurable differential deviation ($D_{\text{state}} = |X_{\text{input}} - H_{\text{anchor}}|$).
 *   **Edge-Level Cryptographic Telemetry Signing:** Every remote physical sensor node is permanently bound to a hardware Trusted Platform Module (TPM 2.0). Waveforms are hashed and cryptographically signed at the edge using an immutable, hardware-isolated private key to prevent frequency-spoofing attacks.
