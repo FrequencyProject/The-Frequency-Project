@@ -109,7 +109,10 @@ def execute_ecological_ingestion_pipeline(seed: int = 42) -> np.ndarray:
     # Uses precise ratio matching to avoid floating-point truncation bugs
     water_duration = 2560 / 44100
     water_raw = generate_mock_sensor_wave(
-        frequency=440.0, sampling_rate=44100, duration=water_duration, rng=rng_mol
+        frequency=440.0,
+        sampling_rate=44100,
+        duration=water_duration,
+        rng=rng_mol,
     )
     water_vec, _ = process_to_frequency_vector(
         water_raw, sampling_rate=44100, target_dim=1280
@@ -120,7 +123,6 @@ def execute_ecological_ingestion_pipeline(seed: int = 42) -> np.ndarray:
     somatic_norm = np.zeros(1280)
 
     # Stacks channels vertically into the synchronized 4x1280 matrix
-        # Stacks channels vertically into the synchronized 4x1280 matrix
     unified_tensor = np.stack(
         [
             schumann_norm,
