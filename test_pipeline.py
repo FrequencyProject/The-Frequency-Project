@@ -2,25 +2,29 @@ import sys
 import numpy as np
 from prototype_simulation import execute_ecological_ingestion_pipeline
 
-def run_local_pipeline_assertions():
+def verify_canonical_pipeline_constraints():
     """
-    Executes structural and mathematical validation checks 
-    against the canonical execution pipeline.
+    Executes local structural, dimensional, and value-boundary 
+    assertions against the canonical execution module.
     """
-    print("[TEST] Initializing canonical verification hooks...")
+    print("[TEST] Running local pipeline synchronization checks...")
+    
+    # Ingest the unified tensor using the canonical parameters
     tensor = execute_ecological_ingestion_pipeline(seed=42)
     
-    # Assert exact matrix bounds required by the project specifications
-    assert tensor.shape == (3, 1280), f"Structural error: Expected (3, 1280), got {tensor.shape}"
-    assert np.min(tensor) >= 0.0, "Mathematical error: Tensor values dropped below normalized 0.0 floor"
-    assert np.max(tensor) <= 1.0, "Mathematical error: Tensor values exceeded normalized 1.0 ceiling"
+    # Assert the rigid 3x1280 matrix shape defined in the project blueprint
+    assert tensor.shape == (3, 1280), f"Dimensional mismatch: Expected (3, 1280), got {tensor.shape}"
     
-    print("[TEST] All local pipeline assertions passed successfully.")
+    # Validate that min-max normalization forces values precisely within [0, 1]
+    assert np.min(tensor) >= 0.0, "Boundary violation: Normalized data floor dropped below 0.0"
+    assert np.max(tensor) <= 1.0, "Boundary violation: Normalized data ceiling exceeded 1.0"
+    
+    print("[TEST] All local file assertions verified successfully.")
     return tensor
 
 if __name__ == "__main__":
-    matrix = run_local_pipeline_assertions()
+    matrix = verify_canonical_pipeline_constraints()
     
-    # Keep local debugging terminal outputs silent unless explicitly requested
+    # Run truncated matrix view if debug flag is explicitly passed
     if "--debug" in sys.argv:
-        print(f"[TEST] Matrix verification slice:\n{matrix[:, :3]}")
+        print(f"[TEST] Clean array slice evaluation:\n{matrix[:, :4]}")
