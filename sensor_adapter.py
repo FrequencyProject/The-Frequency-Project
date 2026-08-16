@@ -10,8 +10,6 @@ import numpy as np
 class HardwareStreamError(Exception):
     """Raised when the physical sensor streams return a flatline or missing data payload."""
 
-    pass
-
 
 class RealHardwareSensorAdapter:
 
