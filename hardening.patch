@@ -20,9 +20,3 @@ index 0000000..1b2c3d4
 +      - id: check-yaml
 +      - id: end-of-file-fixer
 +      - id: trailing-whitespace
-diff --git a/HARDWARE_BLUEPRINT.md b/HARDWARE_BLUEPRINT.md
-index 1a2b3c4..5e6f7g8 100644
---- a/HARDWARE_BLUEPRINT.md
-+++ b/HARDWARE_BLUEPRINT.md
-@@ -48,3 +48,16 @@ Every step of model execution consumes a unified matrix shape. The three indepen
- 3. **Vector Allocation:** The resulting frequency matrices directly populate the entry nodes of the neural network layer, bypassing linguistic interpretation entirely.
