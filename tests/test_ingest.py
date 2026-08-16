@@ -1,3 +1,4 @@
+# fmt: off
 import numpy as np
 import pytest
 
@@ -60,3 +61,4 @@ def test_normalization_with_flat_zero_input():
     normalized = apply_log_min_max_normalization(flat_array)
     assert np.all(normalized == 0.0)
     assert np.all(np.isfinite(normalized))
+# fmt: on
