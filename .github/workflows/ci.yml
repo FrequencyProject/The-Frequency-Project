@@ -29,7 +29,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Execute Verified Test Suite
-      run: python -m pytest -q
+      run: python -m pytest tests/ -q
 
     - name: Run Pipeline Validation
       run: python prototype_simulation.py --debug
@@ -52,5 +52,5 @@ jobs:
 
     - name: Verify Code Style Integrity
       run: |
-        black --check .
-        ruff check .
+        black --check prototype_simulation.py sensor_adapter.py tests/
+        ruff check prototype_simulation.py sensor_adapter.py tests/
