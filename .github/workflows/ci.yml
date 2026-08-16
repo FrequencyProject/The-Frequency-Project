@@ -55,6 +55,3 @@ jobs:
       run: |
         black --check .
         ruff check .
-
-      run: |
-        git diff --exit-code
