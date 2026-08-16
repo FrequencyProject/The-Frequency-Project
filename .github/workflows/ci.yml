@@ -28,14 +28,14 @@ jobs:
         pip install numpy pytest black ruff
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Run Code Formatting Check
-      run: black --check .
-
-    - name: Run Linter Audit
-      run: ruff check .
-
     - name: Execute Verified Test Suite
       run: python -m pytest -q
 
     - name: Run Pipeline Validation
       run: python prototype_simulation.py --debug
+
+    - name: Run Code Formatting Check
+      run: black --check .
+
+    - name: Run Linter Audit
+      run: ruff check .
