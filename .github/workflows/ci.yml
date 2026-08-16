@@ -33,8 +33,10 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
     - name: Run Verified Test Suite
       run: |
         pytest test_pipeline.py -q
-      - name: Run Pipeline Validation
-        run: python prototype_simulation.py --debug
+
+    - name: Run Pipeline Validation
+      run: python prototype_simulation.py --debug
