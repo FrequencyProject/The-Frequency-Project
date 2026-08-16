@@ -123,9 +123,8 @@ def execute_ecological_ingestion_pipeline(seed: int = 42) -> np.ndarray:
     somatic_norm = np.zeros(1280)
 
     # Stacks channels vertically into the synchronized 4x1280 matrix
-    unified_tensor = np.stack(
-        [schumann_norm, plant_norm, water_norm, somatic_norm]
-    )
+        # Stacks channels vertically into the synchronized 4x1280 matrix
+    unified_tensor = np.stack([schumann_norm, plant_norm, water_norm, somatic_norm])  # fmt: skip
     return unified_tensor
 
 
