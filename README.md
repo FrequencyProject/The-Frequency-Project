@@ -79,7 +79,6 @@ This project is organized cleanly to provide clear delineation between philosoph
 *   📄 **`pyproject.toml`** — Modern Python packaging metadata, line-length specifications, and development tool configurations.
 *   📄 **`requirements.txt`** — Primary version-pinned manifest containing operational processing and environment testing packages.
 *   📄 **`sensor_adapter.py`** — Hardware interface driver scaffold defining ADC calibration routines and real-time physical streaming hooks.
-*   📄 **`test_pipeline.py`** — Consolidated unit test fixture file executing automated logic verifications.
 
 ---
 
