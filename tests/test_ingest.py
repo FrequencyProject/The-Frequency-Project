@@ -1,4 +1,3 @@
-# fmt: off
 import numpy as np
 import pytest
 
@@ -24,15 +23,15 @@ def test_pipeline_shape_and_determinism():
 def test_sample_count_determinism_and_rounding():
     """Validates float-duration to sample-count rounding logic across all specified metrics."""
     # Test Schumann specs
-    schumann_samples = int(round(250 * 10.24))
+    schumann_samples = round(250 * 10.24)
     assert schumann_samples == 2560
 
     # Test Plant specs
-    plant_samples = int(round(1000 * 2.56))
+    plant_samples = round(1000 * 2.56)
     assert plant_samples == 2560
 
     # Test Water specs using exact division routing
-    water_samples = int(round(44100 * (2560 / 44100)))
+    water_samples = round(44100 * (2560 / 44100))
     assert water_samples == 2560
 
 
@@ -61,4 +60,3 @@ def test_normalization_with_flat_zero_input():
     normalized = apply_log_min_max_normalization(flat_array)
     assert np.all(normalized == 0.0)
     assert np.all(np.isfinite(normalized))
-# fmt: on
