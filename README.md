@@ -67,7 +67,7 @@ This project is organized cleanly to provide clear delineation between philosoph
 *   📄 **`.pre-commit-config.yaml`** — Local hooks configuration automating standard code formatting verification before tracking commits.
 *   📄 **`CONTRIBUTING.md`** — Structural onboarding guide and development track workflows for open-source contributors.
 *   📄 **`ENGINEERING_GUIDE.md`** — Technical appendix tracking operational frequency constraints, fault-tolerant matrices, and calibration configurations.
-*   📄 **`HARDING.PATCH`** – An explicit software HARDENING PATCH executing localized code-base safety configurations and runtime defensive adjustments.
+*   📄 **`HARDENING.PATCH`** – An explicit software HARDENING PATCH executing localized code-base safety configurations and runtime defensive adjustments.
 *   📄 **`HARDWARE_BLUEPRINT.md`** — Comprehensive hardware sensor configuration specs and multidimensional tensor shape specs.
 *   📄 **`LICENSE`** — Strong copyleft GNU Affero General Public License v3 (AGPL-3.0) defending the project from private cloud exploitation.
 *   📄 **`MOBILE_DEVELOPMENT_CASE_STUDY.md`** — Operational overview detailing the technical workflows natively on a mobile device.
