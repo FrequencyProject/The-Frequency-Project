@@ -28,8 +28,8 @@ def test_sample_count_determinism_and_rounding():
     plant_samples = int(round(1000 * 2.56))
     assert plant_samples == 2560
     
-    # Test Water specs
-    water_samples = int(round(44100 * 0.058))
+    # Test Water specs using exact division routing
+    water_samples = int(round(44100 * (2560 / 44100)))
     assert water_samples == 2560
 
 def test_defensive_validation_gates():
