@@ -54,7 +54,3 @@ jobs:
       run: |
         black --check prototype_simulation.py sensor_adapter.py tests/
         ruff check prototype_simulation.py sensor_adapter.py tests/
-
-        # Automatically processes and fixes layout spacing variances in-memory on the runner
-        black prototype_simulation.py sensor_adapter.py tests/
-        ruff check prototype_simulation.py sensor_adapter.py tests/
