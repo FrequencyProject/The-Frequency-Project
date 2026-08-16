@@ -53,8 +53,6 @@ jobs:
 
     - name: Run Code Formatting Check
       run: black --check .
-      continue-on-error: true
 
     - name: Run Linter Audit
       run: ruff check .
-      continue-on-error: true
