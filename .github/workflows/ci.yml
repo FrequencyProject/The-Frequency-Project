@@ -52,6 +52,5 @@ jobs:
 
     - name: Verify Code Style Integrity
       run: |
-        black --diff prototype_simulation.py
         black --check prototype_simulation.py sensor_adapter.py tests/
         ruff check prototype_simulation.py sensor_adapter.py tests/
