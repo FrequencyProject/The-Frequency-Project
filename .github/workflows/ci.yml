@@ -35,7 +35,7 @@ jobs:
     - name: Run Pipeline Validation
       run: python prototype_simulation.py --debug
 
-   style-audit:
+  style-audit:
     name: Code Formatting and Linting
     runs-on: ubuntu-latest
     steps:
@@ -59,14 +59,3 @@ jobs:
     - name: Enforce Strict Working Tree Integrity
       run: |
         git diff --exit-code
-        if [ $? -ne 0 ]; then
-          echo "💥 Code style violations detected! Run 'black .' and 'ruff check --fix .' locally before pushing."
-          exit 1
-        fi
-
-
-    - name: Run Automated Code Formatting
-      run: black .
-
-    - name: Run Linter Audit
-      run: ruff check --fix .
