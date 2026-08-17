@@ -71,7 +71,9 @@ def process_to_frequency_vector(
     return fft_vals, freqs
 
 
-def apply_log_min_max_normalization(vector: np.ndarray, eps: float = 1e-12) -> np.ndarray:
+def apply_log_min_max_normalization(
+    vector: np.ndarray, eps: float = 1e-12
+) -> np.ndarray:
     log_vector = np.log1p(np.maximum(vector, 0.0))
     v_min, v_max = np.min(log_vector), np.max(log_vector)
     denom = max(v_max - v_min, eps)
