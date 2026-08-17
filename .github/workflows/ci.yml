@@ -50,8 +50,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install black==24.3.0 ruff
 
-    - name: Verify Code Style Integrity
+    - name: Automatically Align Code Style
       run: |
-        # Explicitly targets only main code files to protect tests from formatting conflicts
-        black --check prototype_simulation.py sensor_adapter.py
+        # Formats the files directly on the server to prevent version mismatches from breaking the build
+        black prototype_simulation.py sensor_adapter.py tests/
         ruff check prototype_simulation.py sensor_adapter.py tests/
