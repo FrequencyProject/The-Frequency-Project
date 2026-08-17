@@ -10,8 +10,8 @@ def generate_mock_sensor_wave(
     frequency: float,
     sampling_rate: int,
     duration: float,
-    rng: np.random.Generator = None,
-) -> tuple[np.ndarray, np.ndarray]:
+    rng: np.random.Generator | None = None,
+) -> np.ndarray:
     """Generates a raw time-series sensor wave using modern, isolated, thread-safe RNG Generators."""
     if rng is None:
         rng = np.random.default_rng()
@@ -71,9 +71,7 @@ def process_to_frequency_vector(
     return fft_vals, freqs
 
 
-def apply_log_min_max_normalization(
-    vector: np.ndarray, eps: float = 1e-12
-) -> np.ndarray:
+def apply_log_min_max_normalization(vector: np.ndarray, eps: float = 1e-12) -> np.ndarray:
     log_vector = np.log1p(np.maximum(vector, 0.0))
     v_min, v_max = np.min(log_vector), np.max(log_vector)
     denom = max(v_max - v_min, eps)
