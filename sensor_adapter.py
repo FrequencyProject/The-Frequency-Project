@@ -16,6 +16,7 @@ class MultiChannelSensorAdapter:
     ) -> None:
         """Physical hardware adapter bridging edge serial streams to Vivic AI tensors.
 
+<<<<<<< Updated upstream
         Fully compatible across Python 3.10, 3.11, and 3.12 environments.
 
         :param port: Target file path of device connection (e.g., '/dev/ttyUSB0')
@@ -26,6 +27,9 @@ class MultiChannelSensorAdapter:
         self.baudrate = baudrate
         self.window_size = window_size
         self.num_channels = 4
+=======
+class RealHardwareSensorAdapter:
+>>>>>>> Stashed changes
 
         # Deques handle sliding operations natively at O(1) efficiency
         self.channels = [
