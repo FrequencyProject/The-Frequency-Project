@@ -9,21 +9,29 @@ on:
 jobs:
   code-quality-and-validation:
     runs-on: ubuntu-latest
-    
+    strategy:
+      fail-fast: false  # Ensures a failure on 3.10 won't cancel the 3.11 or 3.12 runners prematurely
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
     steps:
     - name: Check out repository code
       uses: actions/checkout@v4
 
-    - name: Set up Python Runtime
+    - name: Set up Python Runtime (Matrix Control)
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
     - name: Install Runtime and Validation Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install black mypy tomli numpy pyserial pytest
+        pip install black mypy numpy pyserial pytest
+        # Only install tomli as a fallback parser if running on Python 3.10
+        if [ "${{ matrix.python-version }}" = "3.10" ]; then
+          pip install tomli
+        fi
 
     - name: Enforce Code Style Formatting (Black)
       run: |
@@ -41,5 +49,3 @@ jobs:
           echo "[ERROR] System validation script missing from repository root."
           exit 1
         fi
-
-
