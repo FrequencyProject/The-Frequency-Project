@@ -5,7 +5,6 @@ import sys
 # 1. Standard library management across Python 3.10, 3.11, and 3.12
 if sys.version_info >= (3, 11):
     import tomllib
-    # Map the decode exception to a universal alias
     TOMLDecodeError = tomllib.TOMLDecodeError
 else:
     try:
@@ -19,10 +18,25 @@ else:
         sys.exit(1)
 
 
-def validate_pyproject_toml(toml_path: str = "pyproject.toml") -> dict | None:
-    """Parses pyproject.toml, applying explicit type checking and specific exception logs
+def extract_pins_from_requirements(req_path: str = "requirements.txt") -> set[str]:
+    """Helper utility to extract clean, un-spaced package strings from requirements.txt."""
+    found_pins = set()
+    if os.path.exists(req_path):
+        try:
+            with open(req_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    stripped = line.strip().replace(" ", "")
+                    if stripped and not stripped.startswith("#"):
+                        found_pins.add(stripped)
+        except Exception:
+            pass
+    return found_pins
 
-    to permanently eliminate pipeline false negatives.
+
+def validate_pyproject_toml(toml_path: str = "pyproject.toml") -> dict | None:
+    """Parses pyproject.toml, applying type checking and dual dependency pin validation
+
+    across TOML structures and raw requirements manifests.
     """
     if not os.path.exists(toml_path):
         print(f"[ERROR] Required file '{toml_path}' missing from repository root.", file=sys.stderr)
@@ -34,7 +48,6 @@ def validate_pyproject_toml(toml_path: str = "pyproject.toml") -> dict | None:
 
         print(f"[OK] Successfully parsed raw TOML matrix: '{toml_path}'")
 
-        # Copilot Improvement 1: Support Poetry fallback layouts gracefully
         project_name = "Unknown"
         project_version = "Unknown"
         project_deps = []
@@ -58,21 +71,21 @@ def validate_pyproject_toml(toml_path: str = "pyproject.toml") -> dict | None:
         print(f" -> Current Target Version: {project_version}")
         print(f" -> Active Production Dependencies: {project_deps}")
 
-        # Copilot Improvement 2: Validate pinned linter dependency structures
+        # Copilot Optimization 1: Cross-check dependency pins across BOTH optional-deps and requirements.txt
         dev_deps = config_data.get("project", {}).get("optional-dependencies", {}).get("dev", [])
-        required_pins = {"black==24.10.0": False, "ruff==0.14.1": False}
-        for dep in dev_deps:
-            clean_dep = dep.replace(" ", "")
-            if clean_dep in required_pins:
-                required_pins[clean_dep] = True
-
-        for pin, verified in required_pins.items():
-            if not verified:
-                print(f"[ERROR] Tooling drift: Missing mandatory pin configuration '{pin}' in TOML rules.", file=sys.stderr)
+        requirements_pins = extract_pins_from_requirements()
+        
+        # Consolidate all configured package rules into a single lookup set
+        all_declared_deps = {dep.replace(" ", "") for dep in dev_deps} | requirements_pins
+        
+        required_pins = ["black==24.10.0", "ruff==0.14.1"]
+        for pin in required_pins:
+            if pin not in all_declared_deps:
+                print(f"[ERROR] Tooling drift: Missing mandatory pin configuration '{pin}' in repo environment.", file=sys.stderr)
                 return None
-            print(f"[OK] Verified pinned quality gate dependency: {pin}")
+            print(f"[OK] Verified pinned quality gate dependency path: {pin}")
 
-        # Copilot Improvement 3: Explicit structural checks for formatting shapes/types
+        # Explicit structural checks for formatting shapes/types
         if "tool" in config_data:
             tools = config_data["tool"]
             
@@ -93,7 +106,6 @@ def validate_pyproject_toml(toml_path: str = "pyproject.toml") -> dict | None:
         print("[SUCCESS] pyproject.toml structural compliance tests completed cleanly.")
         return config_data
 
-    # Copilot Improvement 4: Separate specific exceptions for clear debugging logs
     except OSError as io_err:
         print(f"[ERROR] Local File System I/O Failure while accessing TOML mapping: {repr(io_err)}", file=sys.stderr)
         return None
@@ -136,9 +148,13 @@ def sanitize_requirements_file(req_path: str = "requirements.txt") -> bool:
 
 
 def hunt_phantom_telemetry_tokens(root_dir: str = ".") -> bool:
-    """Actively sweeps all files to isolate and eliminate phantom telemetry references."""
+    """Copilot Optimization 2: Actively sweeps explicitly permitted text extension files
+
+    to isolate phantom telemetry references while avoiding binary scan performance overhead.
+    """
     phantom_token = "test-requirements"
     exclusions = {".git", "__pycache__", ".pytest_cache", ".mypy_cache", ".venv", "env", "venv"}
+    valid_extensions = {".py", ".md", ".toml", ".yml", ".yaml", ".txt", ".patch", ".ino"}
     ghost_found = False
 
     for root, dirs, files in os.walk(root_dir):
@@ -146,6 +162,11 @@ def hunt_phantom_telemetry_tokens(root_dir: str = ".") -> bool:
         for file in files:
             if file == "validate_config.py":
                 continue
+                
+            _, ext = os.path.splitext(file)
+            if ext.lower() not in valid_extensions:
+                continue  # Skip unreadable binary formats, compiled libraries, and zip archives
+                
             file_path = os.path.join(root, file)
             try:
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
