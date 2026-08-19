@@ -1,4 +1,27 @@
-numpy==1.26.4
-pytest==8.1.1
-black==24.10.0
-ruff==0.14.1
+# ==============================================================================
+# VIVIC AI CORE RUNTIME DEPENDENCIES
+# ==============================================================================
+# High-performance multi-dimensional array calculations and tensor compilation
+numpy>=1.24.0,<2.0.0
+
+# Asynchronous serial bus hardware communication driver
+pyserial>=3.5
+
+# ==============================================================================
+# DEVELOPMENT, TESTING, AND LINTING DEPENDENCIES (Optional)
+# To install core runtimes only: pip install -r requirements.txt
+# To install development tools: pip install -r requirements.txt --install-option="--dev"
+# ==============================================================================
+# Automated modular unit assertion framework
+pytest>=7.3.0
+
+# Strict static type checker for continuous integration validation
+mypy>=1.3.0
+
+# Uniform code formatting enforcement engine
+black>=23.3.0
+
+# Fallback lightweight parser for pyproject.toml validation on Python < 3.11
+tomli>=2.0.1; python_version < '3.11'
+
+
