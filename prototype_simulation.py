@@ -14,9 +14,7 @@ class MultiChannelBioPotentialIngestion:
     def __init__(self, window_size: int = 1280) -> None:
         self.window_size = window_size
         self.num_channels = 4
-        self.channels = [
-            collections.deque(maxlen=window_size) for _ in range(self.num_channels)
-        ]
+        self.channels = [collections.deque(maxlen=window_size) for _ in range(self.num_channels)]
 
     def process_incoming_packet(self, packet_str: str) -> None:
         """Parses the firmware-formatted string and updates sliding window queues."""
@@ -37,9 +35,7 @@ class MultiChannelBioPotentialIngestion:
     def get_ai_features(self) -> np.ndarray:
         """Compiles historical deques into a normalized 4 x 1280 NumPy matrix."""
         # Ensure windows are completely full before returning data for AI inference
-        if any(
-            len(self.channels[i]) < self.window_size for i in range(self.num_channels)
-        ):
+        if any(len(self.channels[i]) < self.window_size for i in range(self.num_channels)):
             return np.zeros((self.num_channels, self.window_size), dtype=np.float32)
 
         feature_matrix = np.vstack([list(ch) for ch in self.channels])
@@ -73,14 +69,10 @@ class BiologicalSignalEmulator:
         ch1 = 15.0 * math.sin(2 * math.pi * 0.05 * t) + self.rng.uniform(-0.5, 0.5)
 
         # Channel 2: Mycelium Alpha - Ultra-slow chemical gradient decay (0.01 Hz) + micro-spikes
-        ch2 = 8.0 * math.cos(2 * math.pi * 0.01 * t) + (
-            2.5 if self.rng.random() > 0.99 else 0.0
-        )
+        ch2 = 8.0 * math.cos(2 * math.pi * 0.01 * t) + (2.5 if self.rng.random() > 0.99 else 0.0)
 
         # Channel 3: Mycelium Beta - Interdependent cross-coupling with 2-second phase lag
-        ch3 = 6.0 * math.cos(2 * math.pi * 0.01 * (t - 2.0)) + self.rng.uniform(
-            -0.2, 0.2
-        )
+        ch3 = 6.0 * math.cos(2 * math.pi * 0.01 * (t - 2.0)) + self.rng.uniform(-0.2, 0.2)
 
         # Channel 4: Local ELF Background - Ambient Schumann resonance fluctuations (7.83 Hz)
         ch4 = 1.2 * math.sin(2 * math.pi * 7.83 * t) + self.rng.uniform(-1.0, 1.0)
@@ -99,9 +91,7 @@ def run_simulation_test() -> None:
     engine = MultiChannelBioPotentialIngestion(window_size=1280)
     emulator = BiologicalSignalEmulator(sampling_rate_hz=20.0)
 
-    print(
-        "[INIT] Saturating rolling matrix window (Requires 1280 historical ticks)..."
-    )
+    print("[INIT] Saturating rolling matrix window (Requires 1280 historical ticks)...")
 
     # Fast-forward simulation data parsing to fill the memory buffer instantly
     for _ in range(1280):
@@ -118,12 +108,8 @@ def run_simulation_test() -> None:
     print("MATHEMATICAL INTEGRITY MATRIX RESULTS:")
     print(f" -> Tensor Matrix Output Shape : {ai_tensor.shape} (Expected: (4, 1280))")
     print(f" -> Array Underlying Data Type : {ai_tensor.dtype} (Expected: float32)")
-    print(
-        f" -> Channel 1 Z-Normalized Mean: {np.mean(ai_tensor):.6f} (Expected: ~0.000000)"
-    )
-    print(
-        f" -> Channel 1 Standard Deviation: {np.std(ai_tensor):.6f} (Expected: ~1.000000)"
-    )
+    print(f" -> Channel 1 Z-Normalized Mean: {np.mean(ai_tensor):.6f} (Expected: ~0.000000)")
+    print(f" -> Channel 1 Standard Deviation: {np.std(ai_tensor):.6f} (Expected: ~1.000000)")
     print(
         f" -> Comprehensive Tensor Bounds : Min = {np.min(ai_tensor):.4f} | Max = {np.max(ai_tensor):.4f}"
     )
@@ -131,16 +117,10 @@ def run_simulation_test() -> None:
 
     # Verify execution checks against standard AI system constraints
     assert ai_tensor.shape == (4, 1280), "[ERROR] Dimension mismatch."
-    assert (
-        ai_tensor.dtype == np.float32
-    ), "[ERROR] Memory compilation alignment failure."
-    assert (
-        abs(np.mean(ai_tensor)) < 1e-5
-    ), "[ERROR] Normalization mean shift failure."
+    assert ai_tensor.dtype == np.float32, "[ERROR] Memory compilation alignment failure."
+    assert abs(np.mean(ai_tensor)) < 1e-5, "[ERROR] Normalization mean shift failure."
 
-    print(
-        "[PASSED] Architecture is verified for integration on edge AI environments."
-    )
+    print("[PASSED] Architecture is verified for integration on edge AI environments.")
     print("=" * 70)
 
 
