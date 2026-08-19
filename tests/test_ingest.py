@@ -17,9 +17,7 @@ from sensor_adapter import MultiChannelSensorAdapter
 @pytest.fixture
 def clean_adapter() -> MultiChannelSensorAdapter:
     """Provides a fresh, isolated 4-channel sensor adapter instance before every test."""
-    return MultiChannelSensorAdapter(
-        port="MOCK_PORT", baudrate=115200, window_size=1280
-    )
+    return MultiChannelSensorAdapter(port="MOCK_PORT", baudrate=115200, window_size=1280)
 
 
 # ==============================================================================
@@ -38,9 +36,7 @@ def test_tensor_dimension_compliance(
         4,
         1280,
     ), "Tensor boundary matrix shape must remain constant."
-    assert np.all(
-        cold_tensor == 0.0
-    ), "Cold buffer must return absolute zeros prior to saturation."
+    assert np.all(cold_tensor == 0.0), "Cold buffer must return absolute zeros prior to saturation."
 
     # 2. Feed exactly 1,280 synchronized historical data packet frames
     for _ in range(1280):
@@ -76,9 +72,7 @@ def test_row_independent_zscore_normalization(
 
     # Multi-Version Fix: Explicitly unpack float indices to handle NumPy array string casting rules smoothly
     for frame in mock_signals:
-        packet = (
-            f"V1:{frame[0]:.4f},V2:{frame[1]:.4f},V3:{frame[2]:.4f},V4:{frame[3]:.4f}\n"
-        )
+        packet = f"V1:{frame[0]:.4f},V2:{frame[1]:.4f},V3:{frame[2]:.4f},V4:{frame[3]:.4f}\n"
         clean_adapter.process_incoming_packet(packet)
 
     normalized_tensor = clean_adapter.get_ai_features()
@@ -89,9 +83,7 @@ def test_row_independent_zscore_normalization(
         ch_std = np.std(normalized_tensor[ch_idx, :])
 
         # Z-Score mathematical bounds validation hooks
-        assert (
-            abs(ch_mean) < 1e-5
-        ), f"Channel {ch_idx+1} mean shifted away from 0.0 baseline."
+        assert abs(ch_mean) < 1e-5, f"Channel {ch_idx+1} mean shifted away from 0.0 baseline."
         assert (
             abs(ch_std - 1.0) < 1e-5
         ), f"Channel {ch_idx+1} standard deviation scaled away from unity."
