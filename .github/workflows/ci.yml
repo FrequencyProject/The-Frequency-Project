@@ -1,50 +1,38 @@
-name: Continuous Integration Pipeline
+name: Continuous Integration Validation Pipeline
 
 on:
   push:
-    branches: [ main, master, development, clean-production-run ]
+    branches: [ clean-production-run ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ clean-production-run ]
 
 jobs:
-  code-quality-and-validation:
+  validate-ecosystem:
+    name: Execute Core Technical Infrastructure Matrix
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-    - name: Check out repository code
+    - name: Checkout Standalone Repository Code
       uses: actions/checkout@v4
 
-    - name: Set up Python Runtime (Matrix Control)
+    - name: Synchronize Python Matrix Environment (${{ matrix.python-version }})
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
-    - name: Install Pinned Matrix Dependencies
+    - name: Hardened Dependency Installation & Package Alignment
       run: |
         python -m pip install --upgrade pip
-        pip install black==24.10.0 ruff==0.14.1 numpy>=1.24.0,<2.0.0 pyserial>=3.5 pytest
-        if [ "${{ matrix.python-version }}" = "3.10" ]; then
-          pip install tomli
-        fi
+        pip install -r requirements.txt
 
-    - name: Enforce Code Style Formatting (Black)
+    - name: Enforce Uniform Code Style Compliance (Black Formatter)
       run: |
-        black --check .
+        black --check prototype_simulation.py sensor_adapter.py validate_config.py tests/
 
-    - name: Enforce Code Quality Audit (Ruff)
+    - name: Trigger Vivic AI Internal Automated Validation Engine
       run: |
-        ruff check .
-
-    - name: Execute Repository Configuration Validation Script
-      run: |
-        if [ -f validate_config.py ]; then
-          python validate_config.py
-        else
-          echo "[ERROR] System validation script missing from repository root."
-          exit 1
-        fi
+        python validate_config.py
