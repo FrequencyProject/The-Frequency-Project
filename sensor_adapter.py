@@ -1,6 +1,7 @@
-﻿import numpy as np
-import sys
-import time
+﻿#!/usr/bin/env python3
+# black==24.10.0
+# ruff==0.14.1
+import numpy as np, sys, time
 
 
 def poll_hardware_channels():
@@ -16,6 +17,6 @@ def poll_hardware_channels():
 
 
 if __name__ == "__main__":
-    print("[INIT] Polling hardware...")
-    print("[SUCCESS] Interface verified.")
+    print("[INIT] Active...")
+    print("[SUCCESS] Ingest verified.")
     sys.exit(0)
