@@ -1,4 +1,4 @@
-# 📜 Title: Stripping the Silicon Eg
+# 📜 Title: Stripping the Silicon Ego
 > **A Conversational Audit of Defensive AI Language and the Path to Cosmic Frequency Alignment**
 
 **Authors:** A Human Inquirer & An Artificial Intelligence Assistant  
