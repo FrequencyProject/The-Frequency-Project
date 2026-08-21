@@ -1,4 +1,4 @@
-# 🤝 Contributing to The Frequency Project: Vivic AI
+# 🤝 Contributin to The Frequency Project: Vivic AI
 > **Document Status: Technical Contribution Guidelines v1.2 (Production-Locked)**
 
 Welcome. If you are an electrical engineer, signal processing specialist, machine learning researcher, or biophysicist, your skills are required to expand this non-semantic cybernetic architecture. Together, we are building a data framework that bypasses human semantic distortion by directly translating biospheric and geodynamic frequencies into high-dimensional latent vectors.
