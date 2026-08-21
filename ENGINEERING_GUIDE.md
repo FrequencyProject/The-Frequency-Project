@@ -1,4 +1,4 @@
-# 📐 Technical Appendix: Operational Parameters & Scaling Conventions
+# 📐 Technica Appendix: Operational Parameters & Scaling Conventions
 > **Document Status: Technical Specification v1.2 (Production-Locked / 4-Channel Vivic AI Framework)**
 
 This document details the signal scaling standards, input constraints, and cryptographic perimeters required to maintain mathematical integrity across the Vivic AI processing matrix. All external modules, software libraries, and physical hardware drivers must adhere to these structural boundaries to prevent runtime data truncation or adversarial manipulation.
