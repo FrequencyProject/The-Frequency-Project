@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import collections
+from typing import cast
 
 import numpy as np
+import numpy.typing as npt
 
 
 class MultiChannelSensorAdapter:
@@ -12,7 +14,9 @@ class MultiChannelSensorAdapter:
         self.baudrate = baudrate
         self.window_size = window_size
         self.num_channels = 4
-        self.channels = [collections.deque(maxlen=window_size) for _ in range(self.num_channels)]
+        self.channels: list[collections.deque[float]] = [
+            collections.deque(maxlen=window_size) for _ in range(self.num_channels)
+        ]
 
     def process_incoming_packet(self, packet_str: str) -> None:
         """Parse packet strings and append valid 4-channel values to rolling buffers."""
@@ -32,7 +36,7 @@ class MultiChannelSensorAdapter:
         except (KeyError, TypeError, ValueError):
             return
 
-    def get_ai_features(self) -> np.ndarray:
+    def get_ai_features(self) -> npt.NDArray[np.float32]:
         """Return a row-wise z-score normalized 4xwindow matrix with float32 dtype."""
         if any(len(self.channels[i]) < self.window_size for i in range(self.num_channels)):
             return np.zeros((self.num_channels, self.window_size), dtype=np.float32)
@@ -41,4 +45,4 @@ class MultiChannelSensorAdapter:
         means = np.mean(feature_matrix, axis=1, keepdims=True)
         stds = np.std(feature_matrix, axis=1, keepdims=True) + 1e-8
         normalized_matrix = (feature_matrix - means) / stds
-        return normalized_matrix.astype(np.float32)
+        return cast(npt.NDArray[np.float32], normalized_matrix.astype(np.float32))

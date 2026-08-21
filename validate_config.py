@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+from typing import Any
 
 # 1. Standard library management across Python 3.10, 3.11, and 3.12
 if sys.version_info >= (3, 11):
@@ -46,7 +47,7 @@ def validate_pyproject_toml(toml_path: str = "pyproject.toml") -> dict | None:
 
     try:
         with open(toml_path, "rb") as f:
-            config_data = tomllib.load(f)
+            config_data: dict[str, Any] = tomllib.load(f)
 
         print(f"[OK] Successfully parsed raw TOML matrix: '{toml_path}'")
 
