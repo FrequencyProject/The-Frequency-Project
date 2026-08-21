@@ -48,3 +48,5 @@ jobs:
     - name: Trigger Vivic AI Internal Automated Validation Engine
       run: |
         python validate_config.py
+
+# Force pipeline sync update trigger
