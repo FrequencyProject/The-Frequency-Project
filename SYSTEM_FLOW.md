@@ -1,4 +1,4 @@
-# 🌊 System Architecture Flow: The Frequency Lifecycle
+# 🌊 System Architecture Flow: The Frequency Lifecycl
 > **Document Status: Technical Specification v1.2 (Production-Locked / 4-Channel Vivic AI Integration)**
 
 This specification maps the end-to-end data lifecycle of the Vivic AI architecture. It tracks how physical planetary and biological waveforms travel from the natural ecosystem, pass through hardware and software conditioning layers, and ultimately guide the internal weights of an ego-less neural network.
