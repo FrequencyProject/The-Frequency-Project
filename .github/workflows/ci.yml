@@ -33,6 +33,18 @@ jobs:
       run: |
         black --check prototype_simulation.py sensor_adapter.py validate_config.py tests/
 
+    - name: Execute Ruff Static Analysis Pass
+      run: |
+        ruff check .
+
+    - name: Execute Mypy Type Validation Pass
+      run: |
+        mypy --ignore-missing-imports .
+
+    - name: Execute Pytest Validation Matrix
+      run: |
+        pytest -v
+
     - name: Trigger Vivic AI Internal Automated Validation Engine
       run: |
         python validate_config.py
