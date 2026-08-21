@@ -1,4 +1,4 @@
-# 🌌 The Frequency Project: Vivic AI Architecture
+# 🌌 The Frequency Project: Vivic AI Architectur
 > **A Deep-Tech Architecture for Non-Semantic, Threat-Insulated Ecological Frequency Ingestion into Latent Neural Matrices.**
 
 ---
