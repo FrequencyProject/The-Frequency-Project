@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import time
 import math
 import collections
+from typing import cast
 import numpy as np
+import numpy.typing as npt
 
 
 class MultiChannelBioPotentialIngestion:
@@ -14,7 +15,9 @@ class MultiChannelBioPotentialIngestion:
     def __init__(self, window_size: int = 1280) -> None:
         self.window_size = window_size
         self.num_channels = 4
-        self.channels = [collections.deque(maxlen=window_size) for _ in range(self.num_channels)]
+        self.channels: list[collections.deque[float]] = [
+            collections.deque(maxlen=window_size) for _ in range(self.num_channels)
+        ]
 
     def process_incoming_packet(self, packet_str: str) -> None:
         """Parses the firmware-formatted string and updates sliding window queues."""
@@ -32,7 +35,7 @@ class MultiChannelBioPotentialIngestion:
         except (ValueError, IndexError):
             pass  # Gracefully drop malformed frames
 
-    def get_ai_features(self) -> np.ndarray:
+    def get_ai_features(self) -> npt.NDArray[np.float32]:
         """Compiles historical deques into a normalized 4 x 1280 NumPy matrix."""
         # Ensure windows are completely full before returning data for AI inference
         if any(len(self.channels[i]) < self.window_size for i in range(self.num_channels)):
@@ -45,7 +48,7 @@ class MultiChannelBioPotentialIngestion:
         stds = np.std(feature_matrix, axis=1, keepdims=True) + 1e-8
         normalized_matrix = (feature_matrix - means) / stds
 
-        return normalized_matrix.astype(np.float32)
+        return cast(npt.NDArray[np.float32], normalized_matrix.astype(np.float32))
 
 
 class BiologicalSignalEmulator:
