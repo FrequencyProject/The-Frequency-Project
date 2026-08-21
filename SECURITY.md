@@ -1,4 +1,4 @@
-# 🛡️ Security & Architectural Maturity Polic
+# 🛡️ Security & Architectural Maturity Policy
 > **Document Status: Technical Audit v1.2 (Factual Production Baseline)**
 
 This policy defines the cryptographic boundary, runtime safety parameters, and hardware isolation constraints of the Vivic AI architecture. It explicitly delineates between active mathematical code controls and planned hardware deployment perimeters.
