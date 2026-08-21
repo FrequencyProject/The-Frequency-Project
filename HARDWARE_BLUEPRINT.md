@@ -1,4 +1,4 @@
-# 📐 Hardware Configuration Blueprint Directive
+# 📐 Hardware Configuration Blueprint Directives
 > **Security Tier: Hardware Isolation Enforcement / Production Configuration Specs**
 
 This section outlines the exact electrical hardware routing requirements, device pin interlocks, and sensor bus layout configurations. To verify system execution paths, custom layouts must match these pin-boundary assignments.
