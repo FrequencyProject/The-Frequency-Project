@@ -29,8 +29,6 @@ class HardenedSignalConditioner:
         filtered_data = signal.filtfilt(b, a, data)
         return list(filtered_data) if isinstance(filtered_data, list) else np.asarray(filtered_data)
 
-
-
     def extract_fft_magnitude(self, data: np.ndarray, expected_bins: int = 1280) -> np.ndarray:
         """Applies a Hanning window and computes the Real FFT magnitude spectrum."""
         # 1. Apply windowing to mitigate spectral leakage edge effects
@@ -91,7 +89,7 @@ class AsymmetricTensorPipeline:
         means = tensor.mean(axis=1, keepdims=True)
         stds = tensor.std(axis=1, keepdims=True)
         normalized_tensor = (tensor - means) / (stds + epsilon)
-        
+
         return np.asarray(normalized_tensor, dtype=np.float32)
 
 
