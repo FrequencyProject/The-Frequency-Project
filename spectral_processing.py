@@ -27,7 +27,7 @@ class HardenedSignalConditioner:
 
         # Execute zero-phase forward-backward digital filter to maintain temporal alignment
         filtered_data = signal.filtfilt(b, a, data)
-        return list(filtered_data) if isinstance(filtered_data, list) else np.asarray(filtered_data)
+        return np.asarray(filtered_data, dtype=np.float32)
 
     def extract_fft_magnitude(self, data: np.ndarray, expected_bins: int = 1280) -> np.ndarray:
         """Applies a Hanning window and computes the Real FFT magnitude spectrum."""
