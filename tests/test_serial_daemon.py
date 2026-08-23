@@ -3,17 +3,20 @@ import numpy as np
 import pytest
 from serial_daemon import HardwareSerialDaemon, ResilientSerialDaemon
 
+
 def test_legacy_compatibility_shim() -> None:
     daemon = HardwareSerialDaemon(port="TEST")
     parsed = daemon.parse_raw_line("V1:1.0,V2:2.0,V3:3.0,V4:4.0")
     assert parsed is not None
     np.testing.assert_allclose(parsed, [1.0, 2.0, 3.0, 4.0])
 
+
 def test_daemon_packet_parsing_and_extraction() -> None:
     daemon = ResilientSerialDaemon(port="TEST")
     success = daemon.ingest_packet_string("V1:1.23,V2:-0.44,V3:0.12,V4:5.67")
     assert success is True
     assert len(daemon.ch1_buffer) == 1
+
 
 def test_daemon_buffer_saturation_deterministic() -> None:
     daemon = ResilientSerialDaemon(port="TEST")

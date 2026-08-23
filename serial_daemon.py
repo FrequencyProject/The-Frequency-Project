@@ -12,10 +12,13 @@ import numpy as np
 import serial
 from spectral_processing import AsymmetricTensorPipeline
 
+
 class ResilientSerialDaemon:
     """Manages background serial port acquisition with decoupled concurrency processing."""
 
-    def __init__(self, port: str = "MOCK", baudrate: int = 115200, timeout: float = 1.0, packet_callback=None):
+    def __init__(
+        self, port: str = "MOCK", baudrate: int = 115200, timeout: float = 1.0, packet_callback=None
+    ):
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
@@ -73,14 +76,18 @@ class ResilientSerialDaemon:
             self.ch3_buffer.append(v3)
             self.ch4_buffer.append(v4)
 
-            if (len(self.ch1_buffer) >= 2560 and len(self.ch4_buffer) >= 2560 and 
-                len(self.ch2_buffer) >= 1280 and len(self.ch3_buffer) >= 1280):
+            if (
+                len(self.ch1_buffer) >= 2560
+                and len(self.ch4_buffer) >= 2560
+                and len(self.ch2_buffer) >= 1280
+                and len(self.ch3_buffer) >= 1280
+            ):
 
                 data_to_compute = (
                     np.array(self.ch1_buffer[-2560:], dtype=np.float32),
                     np.array(self.ch2_buffer[-1280:], dtype=np.float32),
                     np.array(self.ch3_buffer[-1280:], dtype=np.float32),
-                    np.array(self.ch4_buffer[-2560:], dtype=np.float32)
+                    np.array(self.ch4_buffer[-2560:], dtype=np.float32),
                 )
                 self.ch1_buffer = self.ch1_buffer[-5120:]
                 self.ch2_buffer = self.ch2_buffer[-2560:]
@@ -136,8 +143,10 @@ class ResilientSerialDaemon:
                         self.ingest_packet_string(decoded_line)
             except Exception:
                 if ser:
-                    try: ser.close()
-                    except Exception: pass
+                    try:
+                        ser.close()
+                    except Exception:
+                        pass
                 ser = None
                 time.sleep(1.0)
 
@@ -154,6 +163,6 @@ class ResilientSerialDaemon:
         with self._lock:
             return np.copy(self.latest_tensor)
 
+
 # Explicit backward-compatibility shim
 HardwareSerialDaemon = ResilientSerialDaemon
-
