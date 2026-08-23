@@ -21,7 +21,7 @@ class HardenedSignalConditioner:
         magnitude = np.abs(rfft_vals)
         if len(magnitude) > expected_bins:
             return magnitude[:expected_bins].astype(np.float32)
-        elif len(magnitude) < expedted_bins:
+        elif len(magnitude) < expected_bins:
             return np.pad(magnitude, (0, expected_bins - len(magnitude)), "constant").astype(
                 np.float32
             )
