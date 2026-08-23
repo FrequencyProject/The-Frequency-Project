@@ -11,34 +11,35 @@ import numpy as np
 import serial
 from spectral_processing import AsymmetricTensorPipeline
 
+
 class ResilientSerialDaemon:
     """Manages background serial port acquisition with strict syntax validation checks."""
-    
+
     def __init__(self, port: str = "MOCK", baudrate: int = 115200, timeout: float = 1.0):
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
-        
+
         # Operational Thread Control Flags
         self.is_running = False
         self._thread = None
         self._lock = threading.Lock()
-        
+
         # Telemetry Diagnostics Counters
         self.frames_received = 0
         self.frames_dropped = 0
-        
+
         # Ingestion Hardware Array Buffers
         self.ch1_buffer = []
         self.ch2_buffer = []
         self.ch3_buffer = []
         self.ch4_buffer = []
-        
+
         # Pre-compile your exact syntax verification pattern for optimal performance
         self.packet_pattern = re.compile(
             r"^V1:([+-]?\d+\.?\d*),V2:([+-]?\d+\.?\d*),V3:([+-]?\d+\.?\d*),V4:([+-]?\d+\.?\d*)"
         )
-        
+
         # Initialize Core Spectral Transformation Engine
         self.pipeline = AsymmetricTensorPipeline()
         self.latest_tensor = np.zeros((4, 1280), dtype=np.float32)
@@ -69,28 +70,34 @@ class ResilientSerialDaemon:
                 self._generate_mock_frame()
                 time.sleep(0.01)
                 continue
-                
+
             if ser is None or not ser.is_open:
                 try:
                     ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
                     ser.reset_input_buffer()
                     print(f"[HARDWARE] Serial communication established over port: {self.port}")
                 except Exception as err:
-                    print(f"[CONN_WAIT] Port {self.port} unavailable: {repr(err)}. Retrying in 3s...")
+                    print(
+                        f"[CONN_WAIT] Port {self.port} unavailable: {repr(err)}. Retrying in 3s..."
+                    )
                     time.sleep(3.0)
                     continue
 
             try:
                 if ser.in_waiting > 0:
                     raw_line = ser.readline()
-                    decoded_line = raw_line.decode('utf-8', errors='ignore').strip()
+                    decoded_line = raw_line.decode("utf-8", errors="ignore").strip()
                     if decoded_line:
                         self._process_packet_string(decoded_line)
             except Exception as err:
-                print(f"[BUS_ERR] Ingestion loop hit a hardware drop: {repr(err)}. Re-initializing tracking bus...")
+                print(
+                    f"[BUS_ERR] Ingestion loop hit a hardware drop: {repr(err)}. Re-initializing tracking bus..."
+                )
                 if ser:
-                    try: ser.close()
-                    except: pass
+                    try:
+                        ser.close()
+                    except:
+                        pass
                 ser = None
                 time.sleep(1.0)
 
@@ -100,8 +107,8 @@ class ResilientSerialDaemon:
         if not match:
             with self._lock:
                 self.frames_dropped += 1
-            return # Safely filter out malformed or corrupted partial messages
-            
+            return  # Safely filter out malformed or corrupted partial messages
+
         with self._lock:
             self.frames_received += 1
             # Unpack float parameters directly from match groups matching your data layout
@@ -118,7 +125,7 @@ class ResilientSerialDaemon:
         v2 = np.sin(2 * np.pi * 0.5 * t) + np.random.normal(0, 0.05)
         v3 = np.sin(2 * np.pi * 0.2 * t) + np.random.normal(0, 0.05)
         v4 = np.sin(2 * np.pi * 7.83 * t) + np.random.normal(0, 0.3)
-        
+
         with self._lock:
             self.frames_received += 1
             self.ch1_buffer.append(v1)
@@ -129,14 +136,20 @@ class ResilientSerialDaemon:
 
     def _evaluate_buffer_saturation(self):
         """Monitors spatial queues and executes asymmetric tensor compiling upon saturation."""
-        if len(self.ch1_buffer) >= 2560 and len(self.ch4_buffer) >= 2560 and len(self.ch2_buffer) >= 1280:
+        if (
+            len(self.ch1_buffer) >= 2560
+            and len(self.ch4_buffer) >= 2560
+            and len(self.ch2_buffer) >= 1280
+        ):
             ch1_arr = np.array(self.ch1_buffer[-2560:], dtype=np.float32)
             ch2_arr = np.array(self.ch2_buffer[-1280:], dtype=np.float32)
             ch3_arr = np.array(self.ch3_buffer[-1280:], dtype=np.float32)
             ch4_arr = np.array(self.ch4_buffer[-2560:], dtype=np.float32)
-            
-            self.latest_tensor = self.pipeline.compile_feature_tensor(ch1_arr, ch2_arr, ch3_arr, ch4_arr)
-            
+
+            self.latest_tensor = self.pipeline.compile_feature_tensor(
+                ch1_arr, ch2_arr, ch3_arr, ch4_arr
+            )
+
             # Recaps arrays to minimize continuous RAM usage shifts over time
             self.ch1_buffer = self.ch1_buffer[-5120:]
             self.ch2_buffer = self.ch2_buffer[-2560:]
