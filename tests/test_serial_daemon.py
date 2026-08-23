@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import numpy as np
-import pytest
 from serial_daemon import HardwareSerialDaemon, ResilientSerialDaemon
 
 

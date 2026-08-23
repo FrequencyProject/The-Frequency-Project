@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Unit tests verifying Spectral Processing Module conditioning and shape logic."""
 import numpy as np
-import pytest
 from spectral_processing import AsymmetricTensorPipeline, HardenedSignalConditioner
 
 

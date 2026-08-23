@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     out_tensor = pipeline.compile_feature_tensor(mock_ch1, mock_ch2, mock_ch3, mock_ch4)
 
-    print(f"[SUCCESS] Feature Tensor Matrix Compiled.")
+    print("[SUCCESS] Feature Tensor Matrix Compiled.")
     print(f" -> Output Shape: {out_tensor.shape} (Expected: (4, 1280))")
     print(f" -> Output Precision Data Type: {out_tensor.dtype}")
     print(f" -> Row Means: {out_tensor.mean(axis=1)}")
