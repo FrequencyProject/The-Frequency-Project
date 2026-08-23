@@ -29,6 +29,7 @@ class HardenedSignalConditioner:
         filtered_data = signal.filtfilt(b, a, data)
         return filtered_data
 
+
     def extract_fft_magnitude(self, data: np.ndarray, expected_bins: int = 1280) -> np.ndarray:
         """Applies a Hanning window and computes the Real FFT magnitude spectrum."""
         # 1. Apply windowing to mitigate spectral leakage edge effects
