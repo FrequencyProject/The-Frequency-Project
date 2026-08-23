@@ -11,7 +11,8 @@ class HardwareSerialDaemon:
         self.frames_received = 0
         self.frames_dropped = 0
 
-    from typing import Optional;
+    from typing import Optional
+
     def parse_raw_line(self, line: str) -> Optional[np.ndarray]:
         clean_str = line.strip()
         if not clean_str:
