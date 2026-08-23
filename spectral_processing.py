@@ -27,7 +27,8 @@ class HardenedSignalConditioner:
 
         # Execute zero-phase forward-backward digital filter to maintain temporal alignment
         filtered_data = signal.filtfilt(b, a, data)
-        return filtered_data
+        return list(filtered_data) if isinstance(filtered_data, list) else np.asarray(filtered_data)
+
 
 
     def extract_fft_magnitude(self, data: np.ndarray, expected_bins: int = 1280) -> np.ndarray:
