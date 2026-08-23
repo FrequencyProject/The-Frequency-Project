@@ -156,3 +156,4 @@ class ResilientSerialDaemon:
 
 # Explicit backward-compatibility shim
 HardwareSerialDaemon = ResilientSerialDaemon
+
