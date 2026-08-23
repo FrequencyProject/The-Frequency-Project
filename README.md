@@ -57,10 +57,6 @@ $$\hat{X}=\frac{X-\mu_{\text{window}}}{\sigma_{\text{window}}+\epsilon}$$
 
 Biological tissues exhibit massive source impedance and are highly susceptible to ambient grid contamination. Probes must bypass digital pins entirely and route through an isolated **Analog Front End (AFE)**.
 
-### 📡 4. Hardware Front-End Blueprint (Analog Interface Layout)
-
-Biological tissues exhibit massive source impedance and are highly susceptible to ambient grid contamination. Probes must bypass digital pins entirely and route through an isolated **Analog Front End (AFE)**.
-
 ```mermaid
 graph LR
     Probes["1. Electrode Probes<br>(Ag/AgCl or 316L Pins)"]
