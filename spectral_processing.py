@@ -91,8 +91,8 @@ class AsymmetricTensorPipeline:
         means = tensor.mean(axis=1, keepdims=True)
         stds = tensor.std(axis=1, keepdims=True)
         normalized_tensor = (tensor - means) / (stds + epsilon)
-
-        return normalized_tensor
+        
+        return np.asarray(normalized_tensor, dtype=np.float32)
 
 
 if __name__ == "__main__":
