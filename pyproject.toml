@@ -38,11 +38,12 @@ target-version = ["py310", "py311", "py312"]
 include = '\.pyi?$'
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 follow_imports = "silent"
+disable_error_code = ["import-untyped"]
 
 [[tool.mypy.overrides]]
 module = [
