@@ -4,7 +4,7 @@
 Combines strict regex validation with non-blocking threading,
 automatic port reconnection, and decoupled thread-safe window processing.
 """
-from typing import Optional
+from typing import Optional, cast
 import re
 import threading
 import time
@@ -41,7 +41,7 @@ class ResilientSerialDaemon:
         )
 
         self.pipeline = AsymmetricTensorPipeline()
-        self.latest_tensor = np.zeros((4, 1280), dtype=np.float32)
+        self.latest_tensor: np.ndarray = np.zeros((4, 1280), dtype=np.float32)
 
     def parse_raw_line(self, line: str) -> Optional[np.ndarray]:
         """Backward-compatible helper to parse and return a single packet frame."""
@@ -55,7 +55,7 @@ class ResilientSerialDaemon:
             return None
         with self._lock:
             self.frames_received += 1
-        return np.array([float(x) for x in match.groups()], dtype=np.float32)
+        return cast(np.ndarray, np.array([float(x) for x in match.groups()], dtype=np.float32))
 
     def ingest_packet_string(self, packet_str: str) -> bool:
         """Public ingestion interface that decouples heavy CPU math from thread locks."""
@@ -161,7 +161,7 @@ class ResilientSerialDaemon:
     def get_latest_ai_tensor(self) -> np.ndarray:
         """Thread-safe getter mapping the current (4, 1280) feature tensor."""
         with self._lock:
-            return np.copy(self.latest_tensor)
+            return cast(np.ndarray, np.copy(self.latest_tensor))
 
 
 # Explicit backward-compatibility shim

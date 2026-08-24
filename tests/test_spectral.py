@@ -28,3 +28,13 @@ def test_pipeline_output_tensor_dimensions() -> None:
     assert tensor.dtype == np.float32
     # Verify row independent scaling outputs close to zero-mean
     np.testing.assert_allclose(tensor.mean(axis=1), 0.0, atol=1e-5)
+
+
+def test_extract_fft_magnitude_enforces_shape_and_dtype() -> None:
+    conditioner = HardenedSignalConditioner()
+    signal_values = np.random.normal(0, 1, 2560)
+
+    magnitude = conditioner.extract_fft_magnitude(signal_values, expected_bins=1280)
+
+    assert magnitude.shape == (1280,)
+    assert magnitude.dtype == np.float32
