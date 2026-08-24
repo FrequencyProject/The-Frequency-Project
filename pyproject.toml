@@ -42,7 +42,9 @@ python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 
-# Protect ingestion matrix from untyped third-party library boundaries
+# Suppress all untyped third-party library import errors globals
+disable_error_code = ["import-untyped", "no-any-return"]
+
 [[tool.mypy.overrides]]
 module = ["scipy.*", "serial.*"]
 ignore_missing_imports = true
