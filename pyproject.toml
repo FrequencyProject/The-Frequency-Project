@@ -53,7 +53,9 @@ module = [
     "scipy",
     "scipy.*",
     "scipy-stubs",
-    "scipy-stubs.*"
+    "scipy-stubs.*",
+    "optype",
+    "optype.*"
 ]
 ignore_missing_imports = true
 follow_imports = "skip"
