@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-"""Phase 1: Spectral Processing & Signal Conditioning Module.
-
-Implements Direct Form II IIR Notch Filters and Asymmetric Real FFT 
-conversions to prepare raw analog feeds for Vivic AI network layers.
-"""
+"""Phase 1: Spectral Processing & Signal Conditioning Module."""
+from typing import Any, cast
 import numpy as np
 import scipy.signal as signal
 
