@@ -1,33 +1,43 @@
 #!/usr/bin/env python3
 import os
 import sys
+from pathlib import Path
 
 
-def run_configuration_audit():
+def run_configuration_audit() -> None:
     print("[INIT] Launching repository structural validation scan...")
     target_toml = "pyproject.toml"
     target_requirements = "requirements.txt"
-    target_workflow = ".github/workflows/vivic.yml"
+    workflows_dir = Path(".github/workflows")
 
-    if not all(os.path.exists(x) for x in [target_toml, target_requirements, target_workflow]):
+    if not os.path.exists(target_toml) or not os.path.exists(target_requirements):
         print("[ERROR] Missing critical repository architecture files.")
         sys.exit(1)
 
-    try:
-        with open(target_workflow, "r", encoding="utf-8") as f:
-            wf = f.read()
-
-        required_gates = ["black --check", "ruff check", "python -m mypy", "pytest -q"]
-        for gate in required_gates:
-            if gate not in wf:
-                print(f"[ERROR] Missing active CI gate: {gate}")
-                sys.exit(1)
-
-        print("[SUCCESS] Core technical infrastructure matrix checks out flawlessly.")
-        sys.exit(0)
-    except Exception as err:
-        print(f"[FATAL] Code validation execution failure: {repr(err)}")
+    if not workflows_dir.exists():
+        print("[ERROR] Missing .github/workflows directory.")
         sys.exit(1)
+
+    workflow_files = list(workflows_dir.glob("*.yml")) + list(workflows_dir.glob("*.yaml"))
+    if not workflow_files:
+        print("[ERROR] No workflow YAML files found.")
+        sys.exit(1)
+
+    required_gates = ["black --check", "ruff check", "python -m mypy", "pytest -q"]
+
+    for wf_path in workflow_files:
+        try:
+            wf = wf_path.read_text(encoding="utf-8")
+            if all(gate in wf for gate in required_gates):
+                print(f"[SUCCESS] Validation passed via workflow: {wf_path}")
+                sys.exit(0)
+        except Exception as err:
+            print(f"[WARN] Could not read {wf_path}: {err!r}")
+
+    print("[ERROR] No workflow contains all required CI gates.")
+    for gate in required_gates:
+        print(f" - required gate missing in aggregate validation target: {gate}")
+    sys.exit(1)
 
 
 if __name__ == "__main__":
