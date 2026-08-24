@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import os
-import pytest
-from validate_config import run_configuration_audit
 
 
 def test_validator_detects_complete_ci_matrix() -> None:
