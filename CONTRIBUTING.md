@@ -33,22 +33,25 @@ To prevent formatting loops and environment drift, this project enforces exact t
 *   **Ruff Quality Engine:** Locked tightly to `ruff==0.14.1` with strict target profiles set to Python 3.10.
 
 ### 2.2 The Development Lifecycle Gateways
-1.  **Fork and Branch:** Fork the master repository to your workspace and branch your development path from the active `development` branch (e.g., `feature/hardware-ads1256-driver`).
-2.  **Environment Syncing:** Configure your local workspace environment strictly using the repository's `environment.yml` and dependencies mapped inside `pyproject.toml`.
-3.  **Local Quality Validation:** Before logging a commit, execute our repository's static type checker and code formatter locally to prevent automation compilation breaks:
+1.  **Fork and Branch:** Fork the repository to your personal workspace and branch your development path directly from the active **`clean-production-run`** branch (e.g., `feature/hardware-ads1256-driver`).
+2.  **Environment Syncing:** Configure your local workspace environment dependencies strictly using the repository's **`requirements.txt`** and package layouts mapped inside **`pyproject.toml`**.
+3.  **Local Quality Validation:** Before logging a commit, execute our repository's static type checker, lint analyzer, and code formatter locally to prevent automation compilation breaks on the cloud runner:
     ```bash
-    # Enforce strict uniform code style guidelines
-    black --line-length=100 .
+    # Enforce strict uniform code style guidelines via the pinned engine
+    black prototype_simulation.py sensor_adapter.py spectral_processing.py serial_daemon.py validate_config.py tests/
     
-    # Enforce strict static type integrity checks
-    mypy --ignore-missing-imports .
+    # Run the static linter analysis loop locally
+    ruff check .
+    
+    # Enforce strict static type integrity checks bounded by our environment configurations
+    python -m mypy sensor_adapter.py spectral_processing.py serial_daemon.py validate_config.py prototype_simulation.py
     
     # Execute structural repository configuration tests
     python validate_config.py
     ```
 
 ### 2.3 Pull Request Acceptance Criteria
-*   **Zero-Warning Policy:** Pull requests will be automatically rejected by the automated GitHub Actions runners if `black` flags a code formatting drift or if `mypy` detects type syntax variance.
+*   **Zero-Warning Policy:** Pull requests will be automatically rejected by the automated GitHub Actions runners if `black`, `ruff`, or `mypy` detect styling drift, syntax errors, or type variance.
 *   **Simulation Verification:** Any change to the core ingestion code must successfully pass all automated execution assertions inside the `tests/` suite and run error-free inside `prototype_simulation.py` with the standard mock validation metrics intact.
 *   **Licensing Acknowledgment:** By submitting code to this repository, you agree to release your contribution under the strong copyleft terms of the **GNU Affero General Public License v3 (AGPL-3.0)**, preserving Vivic AI assets from private cloud enclosure or proprietary cloud API capture.
 
