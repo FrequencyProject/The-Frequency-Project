@@ -9,3 +9,5 @@ black==24.10.0
 ruff==0.14.1
 
 scipy==1.12.0
+scipy-stubs
+types-pyserial
