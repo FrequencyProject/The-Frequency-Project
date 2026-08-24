@@ -1,0 +1,38 @@
+name: Continuous Integration Validation Pipeline
+
+on:
+  push:
+    branches: [ clean-production-run ]
+  pull_request:
+    branches: [ clean-production-run ]
+
+jobs:
+  validate-ecosystem:
+    name: Execute Core Technical Infrastructure Matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - name: Checkout Standalone Repository Code
+      uses: actions/checkout@v4
+
+    - name: Synchronize Python Matrix Environment (${{ matrix.python-version }})
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: "pip"
+
+    - name: Hardened Dependency Installation & Package Alignment
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Enforce Uniform Code Style Compliance (Black Formatter)
+      run: |
+        black --check prototype_simulation.py sensor_adapter.py validate_config.py tests/
+
+    - name: Trigger Vivic AI Internal Automated Validation Engine
+      run: |
+        python validate_config.py
