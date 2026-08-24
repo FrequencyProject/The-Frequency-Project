@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+from pathlib import Path
 from typing import Any
 
 # 1. Standard library management across Python 3.10, 3.11, and 3.12
@@ -36,7 +37,14 @@ def extract_pins_from_requirements(req_path: str = "requirements.txt") -> set[st
     return found_pins
 
 
-def validate_pyproject_toml(toml_path: str = "pyproject.toml") -> dict | None:
+def extract_exact_pins(dependencies: list[str]) -> set[str]:
+    """Returns exact dependency pins declared in pyproject dependency lists."""
+    return {dependency.replace(" ", "") for dependency in dependencies if "==" in dependency}
+
+
+def validate_pyproject_toml(
+    toml_path: str = "pyproject.toml", req_path: str = "requirements.txt"
+) -> dict | None:
     """Parses pyproject.toml, applying type checking and dual dependency pin validation
 
     across TOML structures and raw requirements manifests.
@@ -79,22 +87,18 @@ def validate_pyproject_toml(toml_path: str = "pyproject.toml") -> dict | None:
         print(f" -> Current Target Version: {project_version}")
         print(f" -> Active Production Dependencies: {project_deps}")
 
-        # Copilot Optimization 1: Cross-check dependency pins across BOTH optional-deps and requirements.txt
         dev_deps = config_data.get("project", {}).get("optional-dependencies", {}).get("dev", [])
-        requirements_pins = extract_pins_from_requirements()
+        requirements_pins = extract_pins_from_requirements(req_path)
 
-        # Consolidate all configured package rules into a single lookup set
-        all_declared_deps = {dep.replace(" ", "") for dep in dev_deps} | requirements_pins
-
-        required_pins = ["black==24.10.0", "ruff==0.14.1"]
-        for pin in required_pins:
-            if pin not in all_declared_deps:
+        exact_dev_pins = extract_exact_pins(dev_deps)
+        for pin in sorted(exact_dev_pins):
+            if pin not in requirements_pins:
                 print(
-                    f"[ERROR] Tooling drift: Missing mandatory pin configuration '{pin}' in repo environment.",
+                    f"[ERROR] Tooling drift: Exact dev dependency '{pin}' is not present in '{req_path}'.",
                     file=sys.stderr,
                 )
                 return None
-            print(f"[OK] Verified pinned quality gate dependency path: {pin}")
+            print(f"[OK] Verified exact dev dependency pin in requirements.txt: {pin}")
 
         # Explicit structural checks for formatting shapes/types
         if "tool" in config_data:
@@ -176,45 +180,43 @@ def sanitize_requirements_file(req_path: str = "requirements.txt") -> bool:
         return False
 
 
-def hunt_phantom_telemetry_tokens(root_dir: str = ".") -> bool:
-    """Copilot Optimization 2: Actively sweeps explicitly permitted text extension files
-
-    to isolate phantom telemetry references while avoiding binary scan performance overhead.
-    """
-    phantom_token = "test-requirements"
-    exclusions = {".git", "__pycache__", ".pytest_cache", ".mypy_cache", ".venv", "env", "venv"}
-    valid_extensions = {".py", ".md", ".toml", ".yml", ".yaml", ".txt", ".patch", ".ino"}
-    ghost_found = False
-
-    for root, dirs, files in os.walk(root_dir):
-        dirs[:] = [d for d in dirs if d not in exclusions]
-        for file in files:
-            if file == "validate_config.py":
-                continue
-
-            _, ext = os.path.splitext(file)
-            if ext.lower() not in valid_extensions:
-                continue  # Skip unreadable binary formats, compiled libraries, and zip archives
-
-            file_path = os.path.join(root, file)
-            try:
-                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                    content = f.read()
-                if phantom_token in content.lower():
-                    print(
-                        f"[WARN] Phantom variable layout reference tracked inside file matrix: {file_path}"
-                    )
-                    ghost_found = True
-            except Exception:
-                continue
-
-    if ghost_found:
+def validate_ci_workflow(
+    workflow_path: str = ".github/workflows/ci.yml", req_path: str = "requirements.txt"
+) -> bool:
+    """Validates that the CI workflow installs the repository requirements and runs the validator."""
+    if not os.path.exists(workflow_path):
         print(
-            "[ERROR] Telemetry matrix contains dead tokens. Review file metrics before build deployment.",
+            f"[ERROR] Required workflow '{workflow_path}' missing from repository.", file=sys.stderr
+        )
+        return False
+
+    requirements_name = Path(req_path).name
+
+    try:
+        with open(workflow_path, "r", encoding="utf-8") as f:
+            workflow_text = f.read()
+    except OSError as io_err:
+        print(
+            f"[ERROR] Local File System I/O Failure while accessing workflow mapping: {repr(io_err)}",
             file=sys.stderr,
         )
         return False
-    print(f"[OK] Global repository audit complete. Zero traces of '{phantom_token}' uncovered.")
+
+    required_commands = (
+        "python -m pip install --upgrade pip",
+        f"pip install -r {requirements_name}",
+        "python validate_config.py",
+    )
+    for command in required_commands:
+        if command not in workflow_text:
+            print(
+                f"[ERROR] CI workflow missing required command: '{command}'.",
+                file=sys.stderr,
+            )
+            return False
+        print(f"[OK] Verified CI workflow command: {command}")
+
+    print("[SUCCESS] CI workflow validation completed cleanly.")
     return True
 
 
@@ -226,10 +228,10 @@ if __name__ == "__main__":
     # Trigger cascaded validation routines
     toml_valid = validate_pyproject_toml()
     reqs_valid = sanitize_requirements_file()
-    phantom_clean = hunt_phantom_telemetry_tokens()
+    workflow_valid = validate_ci_workflow()
 
     print("=" * 70)
-    if not toml_valid or not reqs_valid or not phantom_clean:
+    if not toml_valid or not reqs_valid or not workflow_valid:
         print("[ERROR] Structural repository configuration checks failed.", file=sys.stderr)
         sys.exit(1)
 
