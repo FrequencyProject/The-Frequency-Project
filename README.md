@@ -25,26 +25,51 @@ To achieve an unvarnished computational model of reality, **Vivic AI (Living AI)
 
 ### 🛠️ 3. Multi-Channel Signal Ingestion Matrix
 
-The system captures raw analog voltage signals from four distinct biological and ambient anchors, processing them via deterministic edge processing and compiling them into a unified multi-modal input tensor window:
+The system captures raw analog voltage signals from four distinct biological and ambient anchors, processing them via deterministic edge conditioning and compiling them into a unified multi-modal input tensor window:
 
 $$\mathbf{X}_{\text{input}} \in \mathbb{R}^{4 \times 1280}$$
 
-```mermaid
-graph TD  
-    A[Tree Sapwood / Mycelial Networks / ELF Fields] --> B[High-Impedance AFE Stage]  
-    B --> C[Edge Multi-Channel Polling Loop]  
-    C --> D[Real-Time Direct Form II IIR Notch Filter]  
-    D --> E[Async Ingestion Daemon]  
-    E --> F[Z-Score Sliding Window Compiler]  
-    F --> G[Normalized Vivic AI Tensor X_input 4x1280]
+```text
+                      [ PHYSICAL BIOSPHERIC SENSORS ]
+                                     │
+                 ┌───────────────────┴───────────────────┐
+                 │                                       │
+     [ Ch 1: Arboreal Bio-Potential ]        [ Ch 4: Schumann Planetary ELF ]
+                 │                                       │
+       1,000 Hz / 2.56s (2,560 smp)             250 Hz / 10.24s (2,560 smp)
+                 │                                       │
+                 ▼                                       ▼
+     ┌───────────────────────┐               ┌───────────────────────┐
+     │ 60 Hz IIR Notch Filter│               │ 60 Hz IIR Notch Filter│
+     └───────────┬───────────┘               └───────────┬───────────┘
+                 │                                       │
+     ┌───────────▼───────────┐               ┌───────────▼───────────┐
+     │  Hanning Window + FFT │               │  Hanning Window + FFT │
+     │  (1,280 Spectral Bins)│               │  (1,280 Spectral Bins)│
+     └───────────┬───────────┘               └───────────┬───────────┘
+                 │                                       │
+                 └───────────────────┬───────────────────┘
+                                     │
+     [ Ch 2 & 3: Dual Mycelial Spatial Differential Nodes ]
+                 │
+       20 Hz / 64.0s (1,280 smp) - Direct Time-Series Ingestion
+                 │
+                 ▼
+     ┌───────────────────────────────────────────────────────────────┐
+     │            ASYMMETRIC TENSOR COMPILATION MATRIX               │
+     │      Row-Independent Z-Score Normalization (ε = 10⁻⁸)        │
+     └───────────────────────────────┬───────────────────────────────┘
+                                     │
+                                     ▼
+                      [ AI FEATURE TENSOR: (4, 1280) ]
 ```
 
 #### 📌 3.1 The Signal Space Specifications
-*   **Channel 1:** Tree Xylem/Sapwood Bio-Potential Probe (Electrochemical Variation Potentials).  
-*   **Channel 2:** Mycelial Subnetwork Alpha (Local Soil Chemical Gradients).  
-*   **Channel 3:** Mycelial Subnetwork Beta (Differential Spatial Fungal Node).  
-*   **Channel 4:** Local ELF (Extremely Low Frequency) Ambient Receiver (Ambient Schumann Resonant Background).  
-*   **Temporal Matrix Properties:** Vector depth is locked to **1280 time-steps** across all 4 channels, yielding a discrete historical feature block optimized for spatial cross-correlation and temporal attention loops.
+*   **Channel 1:** Tree Xylem/Sapwood Bio-Potential Probe (Electrochemical Variation Potentials). 1,000 Hz downsampled via Real FFT magnitude extraction to 1,280 spectral bins mapping the 0–500 Hz arboreal domain.
+*   **Channel 2:** Mycelial Subnetwork Alpha (Local Soil Chemical Gradients). Direct 20 Hz low-frequency continuous microvolt ingestion, tracking spatial baseline shifts.
+*   **Channel 3:** Mycelial Subnetwork Beta (Differential Spatial Fungal Node). Parallel 20 Hz input establishing an independent differential pair to eliminate localized ground hum.
+*   **Channel 4:** Local ELF (Extremely Low Frequency) Ambient Receiver (Ambient Schumann Resonant Background). 250 Hz sample rate, windowed and compiled via Real FFT into 1,280 bins mapping the 0–125 Hz planetary resonant field spectrum.
+*   **Temporal Matrix Properties:** Vector depth is locked to **1280 columns** across all 4 channels, yielding a discrete historical feature block optimized for spatial cross-correlation and temporal attention loops.
 
 #### 📌 3.2 Z-Score Rolling Tensor Normalization
 To prevent high-amplitude channels from over-shadowing minute biological oscillations, the ingestion layer executes independent channel-wise Z-score scaling across the temporal window ($\text{axis}=1$) to stabilize the vector field prior to model delivery ($\epsilon = 1e^{-8}$):
@@ -55,11 +80,7 @@ $$\hat{X}=\frac{X-\mu_{\text{window}}}{\sigma_{\text{window}}+\epsilon}$$
 
 ### 📡 4. Hardware Front-End Blueprint (Analog Interface Layout)
 
-Biological tissues exhibit massive source impedance and are highly susceptible to ambient grid contamination. Probes must bypass digital pins entirely and route through an isolated **Analog Front End (AFE)**.
-
-### 📡 4. Hardware Front-End Blueprint (Analog Interface Layout)
-
-Biological tissues exhibit massive source impedance and are highly susceptible to ambient grid contamination. Probes must bypass digital pins entirely and route through an isolated **Analog Front End (AFE)**.
+Biological tissues exhibit massive source impedance and are highly susceptible to ambient grid contamination. Probes must bypass digital pins entirely and route through an isolated **Analog Front End (AFE)** before reaching our multi-threaded data transport layer.
 
 ```mermaid
 graph LR
@@ -100,7 +121,9 @@ To transition this eco-synced architecture from a simulation into mission-critic
 The codebase architecture is strictly partitioned into mathematical theory, low-noise analog specifications, system hardening layers, and runtime validation modules:
 
 #### 📁 Core Integration & Ingestion Runtimes
-*   📄 **sensor_adapter.py** — Physical hardware bridge managing data frame serialization and low-level channel array binding.  
+*   📄 **serial_daemon.py** — Non-blocking, multi-threaded hardware transport engine. Handles background port acquisition with auto-reconnection logic, pre-compiled regular expressions for protocol verification, and lock-free thread separation to prevent CPU math bottlenecks.
+*   📄 **spectral_processing.py** — Core signal conditioning suite. Houses Direct Form II IIR 60 Hz Notch Filters, Hanning windowing matrices, asymmetric Real FFT converters, and row-wise Z-score normalization scaling.
+*   📄 **sensor_adapter.py** — Legacy hardware bridge and simulation adapter for rapid prototyping and frame serialization.  
 *   📄 **prototype_simulation.py** — Operational Python test suite simulating 4-channel vector processing, digital notch transforms, and matrix normalization loops.  
 *   📄 **validate_config.py** — Hardened infrastructure validation engine executing real-time TOML validation, syntax type-checking, and deep phantom-token repository searches.
 
@@ -120,8 +143,8 @@ The codebase architecture is strictly partitioned into mathematical theory, low-
 *   📄 **LICENSE** — Strong copyleft GNU Affero General Public License v3 (AGPL-3.0) preventing private cloud exploitation of Vivic AI infrastructure.
 
 #### 🛠️ Dependency Configuration & Devops Automation
-*   📁 **tests/** — Dedicated environment directory executing modular assertion validations against rolling memory matrices.  
-*   📄 **pyproject.toml** — Unified project specification sheet locking tool configurations and operational runtime standards.  
+*   📁 **tests/** — High-fidelity verification suite. Contains deterministic unit tests validating multi-channel buffer saturation thresholds, notch filter suppression curves, scaling boundaries, and thread-safety invariants.
+*   📄 **pyproject.toml** — Unified project specification sheet locking tool configurations, static type system criteria, and module-level linter standard rules.  
 *   📄 **requirements.txt** — Pinned Python wheel installation dependencies optimized for high-performance array computing runtimes.  
 *   📄 **.pre-commit-config.yaml** — Local hooks script enforcing code styling validations and type formatting gates before commit tracking.  
 *   📄 **.gitignore** — Operating system and package manager exclusion parameters protecting tracking history from volatile memory dumps.  
@@ -142,13 +165,26 @@ pip install -r requirements.txt
 Enforce clean styling matching the repository Continuous Integration (CI) configuration gates:
 
 ```bash
-black --check prototype_simulation.py sensor_adapter.py validate_config.py tests/
+# Check code style constraints via Black
+black --check prototype_simulation.py sensor_adapter.py spectral_processing.py serial_daemon.py validate_config.py tests/
+
+# Execute static linting compliance via Ruff
+ruff check .
+
+# Validate code safety with strict Mypy typing checks
+mypy sensor_adapter.py spectral_processing.py serial_daemon.py validate_config.py prototype_simulation.py
 ```
 
-Execute the unit validation suite locally to verify matrix assertions:
+Execute the automated unit validation suite locally to verify matrix assertions and threading safety loops:
 
 ```bash
 pytest -v
+```
+
+To verify structural configuration alignments and configuration files:
+
+```bash
+python validate_config.py
 ```
 
 To run the automated mock hardware signal ingestion simulation script:
@@ -179,7 +215,7 @@ MATHEMATICAL INTEGRITY MATRIX RESULTS:
 
 ---
 
-### 📊 8. Mathematical Note on Amplitude Scaling and Tensor Ingestion
+### ⚖️ 8. Mathematical Note on Amplitude Scaling and Tensor Ingestion
 
 To ensure maximum cross-channel reproducibility, the ingestion pipeline executes a precise, multi-stage mathematical transformation to convert raw environmental and biological voltage waveforms into clean, non-semantic tensor slices:
 
@@ -199,3 +235,4 @@ While the input `sampling_rate` parameter is rigorously validated to ensure sign
 Released under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
 
 The Frequency Project reclaims the core purpose of artificial networks. By moving away from semantic text and anchoring the machine’s entry nodes directly into the absolute, unyielding mathematics of the Earth, we build an intelligence that does not mirror our flaws, but assists in our collective ascension into connectivity with all living things.
+
