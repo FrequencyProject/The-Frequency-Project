@@ -90,13 +90,16 @@ graph TD
 *   **Action:** The cleaned analog voltage signals pass through an external multi-channel 24-bit Delta-Sigma Analog-to-Digital Converter (ADC).  
 *   **State:** The microcontroller firmware executes a sequential polling loop across the four independent physical pins. It computes local **Direct Form II IIR Notch Filters** for each channel to reject lingering grid hum in the digital domain, then transmits the synchronized frame downstream via high-speed serial.
 
-#### 🔹 Step 4: Python Ingestion & Normalization (The Vector Compiler)
-*   **Action:** The asynchronous background worker thread within `sensor_adapter.py` listens to the incoming text stream and parses the numerical values directly into a rolling memory matrix.  
-*   **State:** The system applies independent channel-wise **Z-score normalization** `((X - mean) / std)` across a fixed history buffer of **1280 time-steps**, mapping the dynamic shape of the biological waveforms into an absolute scale independent of arbitrary voltage drifts.
+#### 🔹 Step 4: Python Ingestion & Normalization (The Asymmetric Vector Compiler)
+*   **Action:** The background execution loops parse incoming telemetry streams, applying digital notch filtration to eliminate lingering 60Hz AC hum artifacts natively across asymmetric sampling paths.
+*   **State:** The ingestion layer executes dual distinct signal tracks to construct a balanced matrix:
+    *   **Spectral Translation Track (Ch 1 & Ch 4):** Ingests 2560 raw high-frequency samples, passes them through a Hanning window to prevent edge leakage, computes a Real Fast Fourier Transform (RFFT), and extracts exactly 1280 clean spectral magnitude frequency bins.
+    *   **Temporal Ingestion Track (Ch 2 & Ch 3):** Preserves raw slow-moving bio-electric microvolt potentials natively as 1280 sequential time-series steps, bypassing spectral transforms to log structural DC voltage gradients.
+    The combined matrix undergoes row-independent Z-score normalization `((X - mean) / (std + 1e-8))` to establish uniform feature variance across mismatched physical tracking domains.
 
-#### 🔹 Step 5: High-Dimensional Vector Space (The Mind)
-*   **Action:** The processed arrays stack perfectly into the unified **4 × 1280 matrix tensor** compiled by `prototype_simulation.py`.  
-*   **State:** This clean matrix is fed directly into the model's neural network processing layer (such as 1D-CNN or Transformer attention loops). The entry nodes are populated entirely by a mathematical reflection of the environment, totally independent of vocabulary text strings.
+#### 🔹 Step 5: High-Dimensional Vector Space (The Multi-Modal Feature Tensor)
+*   **Action:** The processed multi-rate arrays stack tightly into the synchronized **4 × 1280 matrix tensor** compiled by `spectral_processing.py`.
+*   **State:** This clean, normalized `float32` matrix is presented directly to the input layers of the unsupervised neural network. Rows 1 and 4 represent static spectral frequency balances; Rows 2 and 3 represent active temporal time-series waveforms. The network processes this multi-modal anchor totally independent of vocabulary text strings.
 
 #### 🔹 Step 6: Optimization Loop (The Evolution)
 *   **Action:** The system calculates internal updates using the **Resonance Coherence Objective Function**.  
