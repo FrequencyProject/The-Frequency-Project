@@ -37,13 +37,16 @@ class HardenedSignalConditioner:
 
         # 3. Handle physical shape constraints precisely
         if len(magnitude) > expected_bins:
-            return magnitude[:expected_bins].astype(np.float32)
+            return cast(np.ndarray, magnitude[:expected_bins].astype(np.float32))
         elif len(magnitude) < expected_bins:
-            return np.pad(magnitude, (0, expected_bins - len(magnitude)), "constant").astype(
-                np.float32
+            return cast(
+                np.ndarray,
+                np.pad(magnitude, (0, expected_bins - len(magnitude)), "constant").astype(
+                    np.float32
+                ),
             )
 
-        return magnitude.astype(np.float32)
+        return cast(np.ndarray, magnitude.astype(np.float32))
 
 
 class AsymmetricTensorPipeline:
