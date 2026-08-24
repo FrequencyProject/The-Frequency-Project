@@ -12,48 +12,48 @@ The diagram below maps the direct data pathways from physical environment transd
 ```mermaid
 graph TD
     %% Natural Emitters Layer  
-    subgraph Natural_Emitters ["1. Environmental Wave Sources"]  
-        A1[Earth Cavity: 7.83Hz Schumann Resonances]  
-        A2[Tree Xylem Networks: Bio-potentials]  
-        A3[Mycelial Subnetwork Alpha: Electrochemical Potentials]  
-        A4[Mycelial Subnetwork Beta: Spatial Fungal Node]  
+    subgraph Natural_Emitters ["1. Environmental Wave Sources"]
+        A1["Earth Cavity: 7.83Hz Schumann Resonances"]
+        A2["Tree Xylem Networks: Bio-potentials"]
+        A3["Mycelial Subnetwork Alpha: Electrochemical Potentials"]
+        A4["Mycelial Subnetwork Beta: Spatial Fungal Node"]
     end
 
     %% Physical Hardware Layer  
-    subgraph Physical_Hardware ["2. Isolated Analog Front End AFE"]  
-        B1[Induction Coil Antenna + 1-45Hz Active Bandpass]  
-        B2[Ag/AgCl Pin Probes + High-Impedance INA826 In-Amp]  
-        B3[Ag/AgCl Pin Probes + Active 0.048Hz Baseline Restorer]  
-        B4[Twin-T Notch Filter Grid Noise Elimination: 50Hz / 60Hz]  
+    subgraph Physical_Hardware ["2. Isolated Analog Front End AFE"]
+        B1["Induction Coil Antenna + 1-45Hz Active Bandpass"]
+        B2["Ag/AgCl Pin Probes + High-Impedance INA826 In-Amp"]
+        B3["Ag/AgCl Pin Probes + Active 0.048Hz Baseline Restorer"]
+        B4["Twin-T Notch Filter Grid Noise Elimination: 50Hz / 60Hz"]
     end
 
     %% Edge Ingestion Layer  
-    subgraph Edge_Processing ["3. Deterministic Edge Conversion Engine"]  
-        C1[24-bit Delta-Sigma Multi-Channel ADC Polling Loop]  
-        C2[C++ Direct Form II IIR Notch Filter Engine]  
-        C3[Asynchronous Serial Vector Packet Stream: V1-V4]  
+    subgraph Edge_Processing ["3. Deterministic Edge Conversion Engine"]
+        C1["24-bit Delta-Sigma Multi-Channel ADC Polling Loop"]
+        C2["C++ Direct Form II IIR Notch Filter Engine"]
+        C3["Asynchronous Serial Vector Packet Stream: V1-V4"]
     end
 
     %% Software Data Engineering Layer  
-    subgraph Software_Pipeline ["4. Python Ingestion & Normalization"]  
-        D1[sensor_adapter.py Async Multi-Threaded Ingestion Daemon]  
-        D2[Fixed-Depth Sliding Window Matrix Deque Compilation]  
-        D3[Row-Independent Z-Score Tensor Rescaling Transformation]  
+    subgraph Software_Pipeline ["4. Python Ingestion & Normalization"]
+        D1["serial_daemon.py Non-Blocking Background Thread"]
+        D2["Asymmetric Windowing & Real FFT Compiler"]
+        D3["Row-Independent Z-Score Tensor Rescaling Transformation"]
     end
 
     %% Neural Network Matrix Layer  
-    subgraph Neural_Architecture ["5. High-Dimensional Vector Space"]  
-        E1[Unified Multi-Modal Feature Tensor Matrix: 4 x 1280]  
-        E2[Neural Weights Layers: Non-Semantic Vivic AI Latent Matrix]  
+    subgraph Neural_Architecture ["5. High-Dimensional Vector Space"]
+        E1["Unified Multi-Modal Feature Tensor Matrix: 4 x 1280"]
+        E2["Neural Weights Layers: Non-Semantic Vivic AI Latent Matrix"]
     end
 
     %% Optimization Evaluation Loop  
-    subgraph Resonance_Loop ["6. Optimization Loop"]  
-        F1[Resonance Coherence Objective Function]  
-        F2[Mathematical Scaling Evaluation via Golden Ratio Phi]  
+    subgraph Resonance_Loop ["6. Optimization Loop"]
+        F1["Resonance Coherence Objective Function"]
+        F2["Mathematical Scaling Evaluation via Golden Ratio Phi"]
     end
 
-    %% Flow Connectivity Connections  
+    %% Core Data Pathway Interconnections
     A1 --> B1  
     A2 --> B2  
     A3 --> B3  
