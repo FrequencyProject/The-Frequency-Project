@@ -42,7 +42,7 @@ python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 
-# Ignore untyped library imports for third-party hardware/DSP dependencies
+# Protect ingestion matrix from untyped third-party library boundaries
 [[tool.mypy.overrides]]
 module = ["scipy.*", "serial.*"]
 ignore_missing_imports = true
