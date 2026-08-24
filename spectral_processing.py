@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Phase 1: Spectral Processing & Signal Conditioning Module."""
-from typing import Any, cast
+from typing import cast
 import numpy as np
 import scipy.signal as signal
 
