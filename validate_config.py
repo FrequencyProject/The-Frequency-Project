@@ -7,7 +7,7 @@ def run_configuration_audit():
     print("[INIT] Launching repository structural validation scan...")
     target_toml = "pyproject.toml"
     target_requirements = "requirements.txt"
-    target_workflow = ".github/workflows/ci.yml"
+    target_workflow = ".github/workflows/vivic.yml"
 
     if not all(os.path.exists(x) for x in [target_toml, target_requirements, target_workflow]):
         print("[ERROR] Missing critical repository architecture files.")
@@ -17,10 +17,10 @@ def run_configuration_audit():
         with open(target_workflow, "r", encoding="utf-8") as f:
             wf = f.read()
 
-        required_gates = ["black --check", "ruff check", "mypy", "pytest -v"]
+        required_gates = ["black --check", "ruff check", "python -m mypy", "pytest -q"]
         for gate in required_gates:
             if gate not in wf:
-                print(f"[ERROR] Stale contract layout detected. Missing active CI gate: {gate}")
+                print(f"[ERROR] Missing active CI gate: {gate}")
                 sys.exit(1)
 
         print("[SUCCESS] Core technical infrastructure matrix checks out flawlessly.")

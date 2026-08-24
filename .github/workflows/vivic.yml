@@ -1,0 +1,50 @@
+name: Vivic Core CI Matrix
+
+on:
+  push:
+    branches: [ clean-production-run ]
+  pull_request:
+    branches: [ clean-production-run ]
+
+jobs:
+  validate-ecosystem:
+    name: Execute Core Technical Infrastructure Matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python (${{ matrix.python-version }})
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: "pip"
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Code Style Check (Black)
+      run: |
+        black --check prototype_simulation.py sensor_adapter.py spectral_processing.py serial_daemon.py validate_config.py tests/
+
+    - name: Static Lint Analysis (Ruff)
+      run: |
+        ruff check .
+
+    - name: Type Safety Verification (Mypy)
+      run: |
+        python -m mypy sensor_adapter.py spectral_processing.py serial_daemon.py validate_config.py prototype_simulation.py
+
+    - name: Execute Full Test Suite (Pytest)
+      run: |
+        pytest -q
+
+    - name: Repository Configuration Audit
+      run: |
+        python validate_config.py
