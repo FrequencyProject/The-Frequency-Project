@@ -39,15 +39,10 @@ include = '\.pyi?$'
 
 [tool.mypy]
 python_version = "3.10"
-no_site_packages = true
 warn_return_any = true
 warn_unused_configs = true
-
-# Suppress return issues where loose third-party typing defaults to Any
-disable_error_code = ["no-any-return"]
-
-# Completely insulate the runner from third-party type stub syntax anomalies
-[[tool.mypy.overrides]]
-module = ["scipy.*", "serial.*"]
 ignore_missing_imports = true
-follow_imports = "skip"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
