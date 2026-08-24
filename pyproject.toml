@@ -52,8 +52,6 @@ module = [
     "serial.*",
     "scipy",
     "scipy.*",
-    "scipy-stubs",
-    "scipy-stubs.*",
     "optype",
     "optype.*"
 ]
