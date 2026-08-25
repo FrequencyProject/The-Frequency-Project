@@ -32,6 +32,7 @@ def run_configuration_audit():
         "train_engine.py",
         "latent_monitor.py",
         "run_session.py",
+        "stress_harness.py",
     ]
 
     print("[INIT] Scanning core multi-modal pipeline files...")
