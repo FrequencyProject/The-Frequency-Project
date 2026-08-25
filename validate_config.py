@@ -31,6 +31,7 @@ def run_configuration_audit():
         "resonance_loss.py",
         "train_engine.py",
         "latent_monitor.py",
+        "run_session.py",
     ]
 
     print("[INIT] Scanning core multi-modal pipeline files...")
