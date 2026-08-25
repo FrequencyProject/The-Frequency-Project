@@ -25,29 +25,50 @@ To achieve an unvarnished computational model of reality, **Vivic AI (Living AI)
 
 ### 🛠️ 3. Multi-Channel Signal Ingestion Matrix
 
-The system captures raw analog voltage signals from four distinct biological and ambient anchors, processing them via deterministic edge processing and compiling them into a unified multi-modal input tensor window:
-
-$$\mathbf{X}_{\text{input}} \in \mathbb{R}^{4 \times 1280}$$
+The system maps data from four distinct sensors into a unified $4 \times 1280$ input tensor ($X_{\text{input}}$), reflecting the asymmetric, multi-modal structure [1.1].
 
 ```mermaid
-graph TD  
-    A[Tree Sapwood / Mycelial Networks / ELF Fields] --> B[High-Impedance AFE Stage]  
-    B --> C[Edge Multi-Channel Polling Loop]  
-    C --> D[Real-Time Direct Form II IIR Notch Filter]  
-    D --> E[Async Ingestion Daemon]  
-    E --> F[Z-Score Sliding Window Compiler]  
-    F --> G[Normalized Vivic AI Tensor X_input 4x1280]
+graph TD
+    %% Input Sources
+    In_Ch1["Ch1: Bio-potentials (2560 Samples)"]
+    In_Ch2["Ch2: Mycelial A (1280 Steps)"]
+    In_Ch3["Ch3: Mycelial B (1280 Steps)"]
+    In_Ch4["Ch4: Schumann ELF (2560 Samples)"]
+
+    %% Processing Paths
+    subgraph Spec_Track ["Asymmetric Spectral (Ch1, Ch4)"]
+        FFT_Proc["60Hz Notch -> RFFT"]
+        Spec_Out["1280 Spectral Bins"]
+    end
+
+    subgraph Time_Track ["Asymmetric Temporal (Ch2, Ch3)"]
+        Time_Proc["60Hz Notch -> Time-Series"]
+        Time_Out["1280 Raw Voltage Ticks"]
+    end
+
+    %% Normalization & Output
+    Norm_Block["Z-Score Normalization (Axis=1)"]
+    Final_Tensor["Final Tensor X_input (4 x 1280)"]
+
+    %% Connections
+    In_Ch1 --> FFT_Proc
+    In_Ch4 --> FFT_Proc
+    FFT_Proc --> Spec_Out
+    In_Ch2 --> Time_Proc
+    In_Ch3 --> Time_Proc
+    Time_Proc --> Time_Out
+    Spec_Out --> Norm_Block
+    Time_Out --> Norm_Block
+    Norm_Block --> Final_Tensor
 ```
 
-#### 📌 3.1 The Signal Space Specifications
-*   **Channel 1:** Tree Xylem/Sapwood Bio-Potential Probe (Electrochemical Variation Potentials).  
-*   **Channel 2:** Mycelial Subnetwork Alpha (Local Soil Chemical Gradients).  
-*   **Channel 3:** Mycelial Subnetwork Beta (Differential Spatial Fungal Node).  
-*   **Channel 4:** Local ELF (Extremely Low Frequency) Ambient Receiver (Ambient Schumann Resonant Background).  
-*   **Temporal Matrix Properties:** Vector depth is locked to **1280 time-steps** across all 4 channels, yielding a discrete historical feature block optimized for spatial cross-correlation and temporal attention loops.
+#### 📌 3.1 The Asymmetric Signal Space Specifications
+*   **Channels 1 & 4:** 2,560 samples processed via RFFT into 1,280 spectral bins [1.1].
+*   **Channels 2 & 3:** 1,280 direct temporal voltage ticks (20Hz) [1.1].
+*   **Combined Tensor:** A ($4 \times 1280$) matrix combining static spectral profiles and dynamic time-series data [1.1].
 
 #### 📌 3.2 Z-Score Rolling Tensor Normalization
-To prevent high-amplitude channels from over-shadowing minute biological oscillations, the ingestion layer executes independent channel-wise Z-score scaling across the temporal window ($\text{axis}=1$) to stabilize the vector field prior to model delivery ($\epsilon = 1e^{-8}$):
+The system normalizes the data to handle variance between input types, applying Z-score scaling across the temporal/spectral axis to stabilize the input tensor [1.1].
 
 $$\hat{X}=\frac{X-\mu_{\text{window}}}{\sigma_{\text{window}}+\epsilon}$$
 
