@@ -30,6 +30,7 @@ def run_configuration_audit():
         "model_architecture.py",
         "resonance_loss.py",
         "train_engine.py",
+        "latent_monitor.py",
     ]
 
     print("[INIT] Scanning core multi-modal pipeline files...")
