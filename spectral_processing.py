@@ -56,8 +56,9 @@ class AsymmetricTensorPipeline:
                 return np.pad(filtered, (0, 1280 - len(filtered)), 'constant').astype(np.float32)
             return filtered.astype(np.float32)
 
-        ch2_features = process_time_series(ch2_raw, sample_rate=20.0)
-        ch3_features = process_time_series(ch3_raw, sample_rate=20.0)
+        ch2_features = process_time_series(ch2_raw, 20.0)
+        ch3_features = process_time_series(ch3_raw, 20.0)
+
 
         # Ch 4: Geophysical (250 Hz, 2560 samples -> 1280 spectral bins)
         ch4_filtered = self.conditioner.apply_notch_filter(ch4_raw, sample_rate=250.0)
