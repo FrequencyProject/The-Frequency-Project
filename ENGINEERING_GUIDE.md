@@ -14,31 +14,25 @@ To ensure maximum cross-channel reproducibility and eliminate computational over
 
 ---
 
-### ⏳ 2. Input Sample Durations vs. Processing Windows
-
-To maintain a uniform target feature tensor dimension ($\mathbf{X}_{\text{input}} \in \mathbb{R}^{4 \times 1280}$) across all channels, incoming time-series wave data must match explicit timeframe durations based on their native physical sampling rates ($f_{s}$).
-
-If an incoming sample stream deviates from these parameters, the processing layer will automatically truncate or reject the frame packet to preserve matrix integrity:
-
 #### 🌱 Channel 1: Biotic Anchor (Arboreal Bio-potentials)
 *   **Native Sampling Rate ($f_{s}$):** $1,000\text{ Hz}$  
 *   **Required Duration:** Exactly **$2.56\text{ seconds}$** (2,560 raw samples).  
-*   **Target Processing Shape:** Processed via Fast Fourier Transform (FFT) into 1,280 discrete float bins mapping the $0 - 500\text{ Hz}$ biological spectral band.
+*   **Target Processing Shape:** Filtered via a sharp 60Hz Direct Form II IIR Notch Filter, windowed with a standard Hanning array, and transformed via Real Fast Fourier Transform (RFFT) into exactly 1,280 discrete spectral magnitude bins mapping the $0 - 500\text{ Hz}$ biological band.
 
 #### 🍄 Channel 2: Mycelial Subnetwork Alpha (Local Chemical Gradients)
 *   **Native Sampling Rate ($f_{s}$):** $20\text{ Hz}$  
-*   **Required Duration:** Exactly **$64.0\text{ seconds}$** (1,280 raw samples).  
-*   **Target Processing Shape:** Direct, non-FFT sliding window time-series ingestion capturing slow-moving action and variation potentials.
+*   **Required Duration:** Exactly **$128.0\text{ seconds}$** (2,560 raw samples stored, sliced down to a running rolling queue depth of 1,280 active time-steps).  
+*   **Target Processing Shape:** Direct, non-FFT time-series ingestion. The raw microvolt stream bypasses spectral transforms to preserve long-term slow-moving DC potential gradients.
 
 #### 🍄 Channel 3: Mycelial Subnetwork Beta (Spatial Fungal Differential)
 *   **Native Sampling Rate ($f_{s}$):** $20\text{ Hz}$  
-*   **Required Duration:** Exactly **$64.0\text{ seconds}$** (1,280 raw samples).  
-*   **Target Processing Shape:** Parallel differential sliding window time-series ingestion matching Channel 2 parameters.
+*   **Required Duration:** Exactly **$128.0\text{ seconds}$** (2,560 raw samples stored, sliced down to a running rolling queue depth of 1,280 active time-steps).  
+*   **Target Processing Shape:** Parallel time-series ingestion matching Channel 2 parameters to execute spatial differential trace balancing.
 
 #### 🌀 Channel 4: Geophysical Anchor (Schumann Resonant Background)
 *   **Native Sampling Rate ($f_{s}$):** $250\text{ Hz}$  
 *   **Required Duration:** Exactly **$10.24\text{ seconds}$** (2,560 raw samples).  
-*   **Target Processing Shape:** Processed via Fast Fourier Transform (FFT) into 1,280 discrete float bins mapping the $0 - 125\text{ Hz}$ planetary electromagnetic band.
+*   **Target Processing Shape:** Filtered via a 60Hz digital notch filter, windowed with a Hanning profile, and transformed via RFFT into exactly 1,280 discrete spectral magnitude bins mapping the $0 - 125\text{ Hz}$ planetary electromagnetic field spectrum.
 
 ---
 

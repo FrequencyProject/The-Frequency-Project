@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
-import numpy as np
+"""Unified Phase 2 Hardware Serial Ingestion Daemon.
+
+Combines strict regex validation with non-blocking threading,
+automatic port reconnection, and decoupled thread-safe window processing.
+"""
+
+from typing import Optional
 import re
 import threading
 import time
+import numpy as np
 
 
 class HardwareSerialDaemon:
+    """Manages background serial port acquisition, buffering, and parsing."""
+
     def __init__(self, packet_callback=None):
         self.packet_callback = packet_callback
         self.frames_received = 0
         self.frames_dropped = 0
 
-    from typing import Optional;
     def parse_raw_line(self, line: str) -> Optional[np.ndarray]:
         clean_str = line.strip()
         if not clean_str:
@@ -21,9 +29,11 @@ class HardwareSerialDaemon:
         )
         match = pattern.match(clean_str)
         if not match:
-            self.frames_dropped += 1
+            with threading.Lock():
+                self.frames_dropped += 1
             return None
-        self.frames_received += 1
+        with threading.Lock():
+            self.frames_received += 1
         return np.array([float(x) for x in match.groups()], dtype=np.float32)
 
 
