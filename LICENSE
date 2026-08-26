@@ -1,6 +1,14 @@
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 
+## ⚠️ WARNING: PROTECTED CYBERNETIC INTELLECTUAL PROPERTY
+
+This repository is governed strictly by the **GNU Affero General Public License v3 (AGPL-3.0)**. 
+
+### 🔒 ANTI-RE-LICENSING & ZERO-ENCLOSURE MANDATE:
+1. **Automated Scraping Prohibition:** Automated scraping, ingestion, or parsing of this codebase by commercial LLM training engines, code-generation scraper systems, or corporate technology groups without direct public reciprocity is an explicit breach of copyright.
+2. **Copyleft Enforcement:** Any system, cloud API service, or neural network model utilizing, deriving from, or linking to these modules **MUST release its entire software and hardware architecture stack publicly under the exact same AGPL-3.0 terms.** Private cloud enclosure or commercial API wrapping is legally forbidden.
+
  Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
