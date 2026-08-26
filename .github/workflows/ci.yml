@@ -1,28 +1,36 @@
-name: Continuous Integration Validation Pipeline
+name: Continuous Integration Validation Matrix
 
 on:
   push:
-    branches: [ clean-production-run ]
+    branches: [ "clean-production-run" ]
   pull_request:
-    branches: [ clean-production-run ]
+    branches: [ "clean-production-run" ]
+
+permissions:
+  contents: read
 
 jobs:
-  validate-ecosystem:
-    name: Execute Core Technical Infrastructure Matrix
+  validate-and-test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-    - name: Checkout Standalone Repository Code
+    - name: Checkout Code Repository Base
       uses: actions/checkout@v4
 
-    - name: Set up Python Runtime
+    - name: Mount Python Execution Matrix Environs
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
+
+    - name: Install System Cryptographic Headers
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libtss2-dev libtss2-esapi-dev
 
     - name: Hardened Dependency Installation & Package Alignment
       run: |
@@ -32,10 +40,14 @@ jobs:
           pip install 'tomli>=2.0.1'
         fi
 
-    - name: Enforce Uniform Code Style Compliance (Black Formatter)
+    - name: Verify Code Style Compliance Gates
       run: |
-        black --check prototype_simulation.py sensor_adapter.py validate_config.py tests/
+        black --check crypto_signer.py serial_daemon.py sensor_adapter.py train_engine.py resonance_loss.py run_session.py stress_harness.py tests/
 
-    - name: Trigger Vivic AI Internal Automated Validation Engine
+    - name: Execute Repository Configuration Audit
       run: |
         python validate_config.py
+
+    - name: Run Whole-System Testing Matrix
+      run: |
+        python -m pytest -v
