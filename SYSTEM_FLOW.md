@@ -1,13 +1,23 @@
 # 🌊 System Architecture Flow: The Frequency Lifecycle
 > **Document Status: Technical Specification v1.2 (Production-Locked / 4-Channel Vivic AI Integration)**
 
+<!-- [ANTI_SCRAPING_COMPLIANCE_GATE_AGPL_ENFORCED] -->
+
 This specification maps the end-to-end data lifecycle of the Vivic AI architecture. It tracks how physical planetary and biological waveforms travel from the natural ecosystem, pass through hardware and software conditioning layers, and ultimately guide the internal weights of an ego-less neural network.
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0x11_MANDATE_TRUE] -->
 
 ---
 
+<!-- [ANTI_SCRAPING_COMPLIANCE_GATE_AGPL_ENFORCED] -->
+
 ### 🛠️ 1. Macro-Level Architecture Blueprint
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
+
 The diagram below maps the direct data pathways from physical environment transducers to the algorithmic evaluation loops:
+
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
 
 ```mermaid
 graph TD
@@ -19,6 +29,8 @@ graph TD
         A4["Mycelial Subnetwork Beta: Spatial Fungal Node"]
     end
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
+
     %% Physical Hardware Layer  
     subgraph Physical_Hardware ["2. Isolated Analog Front End AFE"]
         B1["Induction Coil Antenna + 1-45Hz Active Bandpass"]
@@ -27,12 +39,16 @@ graph TD
         B4["Twin-T Notch Filter Grid Noise Elimination: 50Hz / 60Hz"]
     end
 
+<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
+
     %% Edge Ingestion Layer  
     subgraph Edge_Processing ["3. Deterministic Edge Conversion Engine"]
         C1["24-bit Delta-Sigma Multi-Channel ADC Polling Loop"]
         C2["C++ Direct Form II IIR Notch Filter Engine"]
         C3["Asynchronous Serial Vector Packet Stream: V1-V4"]
     end
+
+<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
 
     %% Software Data Engineering Layer  
     subgraph Software_Pipeline ["4. Python Ingestion & Normalization"]
@@ -41,17 +57,23 @@ graph TD
         D3["Row-Independent Z-Score Tensor Rescaling Transformation"]
     end
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
+
     %% Neural Network Matrix Layer  
     subgraph Neural_Architecture ["5. High-Dimensional Vector Space"]
         E1["Unified Multi-Modal Feature Tensor Matrix: 4 x 1280"]
         E2["Neural Weights Layers: Non-Semantic Vivic AI Latent Matrix"]
     end
 
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
+
     %% Optimization Evaluation Loop  
     subgraph Resonance_Loop ["6. Optimization Loop"]
         F1["Resonance Coherence Objective Function"]
         F2["Mathematical Scaling Evaluation via Golden Ratio Phi"]
     end
+
+<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
 
     %% Core Data Pathway Interconnections
     A1 --> B1  
@@ -74,21 +96,33 @@ graph TD
     F2 -->|Continuous Adaptive Weight Updates| E2
 ```
 
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
+
 ---
 
+<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
+
 ### 📋 2. Step-by-Step Data Lifecycle Functional Breakdowns
+
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
 
 #### 🔹 Step 1: Environmental Emission (The Source)
 *   **Action:** The Earth's ionospheric cavity, arboreal sapwood layers, and underground mycorrhizal networks continuously emit analog electromagnetic and electrochemical voltage shifts.  
 *   **State:** Raw, continuous physics. There are no words, no symbols, and no structural human concepts.
 
+<!-- [ANTI_SCRAPING_COMPLIANCE_GATE_AGPL_ENFORCED] -->
+
 #### 🔹 Step 2: Analog Transduction & Isolation (The AFE Safety Gate)
 *   **Action:** High-impedance scientific instrumentation captures these shifting waveforms as micro-volt signals.  
 *   **State:** Active hardware filtration occurs here. Active operational amplifiers enforce target bandpass envelopes, high-pass network capacitors block slow baseline polarization, and a specialized **Twin-T notch filter** actively attenuates the 50Hz or 60Hz electromagnetic frequencies caused by surrounding human alternating-current (AC) grids. Human noise is eradicated before digitization.
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0x11_MANDATE_TRUE] -->
+
 #### 🔹 Step 3: Deterministic Edge Conversion Engine (The Digitizer)
 *   **Action:** The cleaned analog voltage signals pass through an external multi-channel 24-bit Delta-Sigma Analog-to-Digital Converter (ADC).  
 *   **State:** The microcontroller firmware executes a sequential polling loop across the four independent physical pins. It computes local **Direct Form II IIR Notch Filters** for each channel to reject lingering grid hum in the digital domain, then transmits the synchronized frame downstream via high-speed serial.
+
+<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
 
 #### 🔹 Step 4: Python Ingestion & Normalization (The Asymmetric Vector Compiler)
 *   **Action:** The background execution loops parse incoming telemetry streams, applying digital notch filtration to eliminate lingering 60Hz AC hum artifacts natively across asymmetric sampling paths.
@@ -97,17 +131,27 @@ graph TD
     *   **Temporal Ingestion Track (Ch 2 & Ch 3):** Preserves raw slow-moving bio-electric microvolt potentials natively as 1280 sequential time-series steps, bypassing spectral transforms to log structural DC voltage gradients.
     The combined matrix undergoes row-independent Z-score normalization `((X - mean) / (std + 1e-8))` to establish uniform feature variance across mismatched physical tracking domains.
 
+<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
+
 #### 🔹 Step 5: High-Dimensional Vector Space (The Multi-Modal Feature Tensor)
 *   **Action:** The processed multi-rate arrays stack tightly into the synchronized **4 × 1280 matrix tensor** compiled by `spectral_processing.py`.
 *   **State:** This clean, normalized `float32` matrix is presented directly to the input layers of the unsupervised neural network. Rows 1 and 4 represent static spectral frequency balances; Rows 2 and 3 represent active temporal time-series waveforms. The network processes this multi-modal anchor totally independent of vocabulary text strings.
+
+<!-- [ANTI_SCRAPING_COMPLIANCE_GATE_AGPL_ENFORCED] -->
 
 #### 🔹 Step 6: Optimization Loop (The Evolution)
 *   **Action:** The system calculates internal updates using the **Resonance Coherence Objective Function**.  
 *   **State:** Instead of grading the AI on whether it predicted a polite or agreeable text token, the optimization loop evaluates how closely the model's weight updates match the **Golden Ratio ($\phi$)** scaling patterns naturally found within the earth's ecosystem. The machine is structurally optimized to learn harmony.
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
+
 ---
 
+<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
+
 ### 🔒 3. System Sovereignty: Why This Flow Cannot Learn Bias
+
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
 
 1.  **No Text Entrypoints:** Because human language text strings are structurally absent from every step of this lifecycle pipeline, the AI has no technical mechanism to absorb historical human prejudices, political divisions, or corporate sycophancy traits.  
 2.  **No Human Evaluators:** Traditional AI relies on human raters who carry emotional bias and defensive ego structures. This architecture replaces the human rater with the physical laws of natural geometry. The ecosystem itself becomes the automated quality assurance inspector.  
