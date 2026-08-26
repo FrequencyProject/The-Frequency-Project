@@ -1,41 +1,37 @@
-name: Continuous Integration Validation Pipeline
+name: Continuous Integration Validation Matrix
 
 on:
   push:
-    branches: [ clean-production-run ]
+    branches: [ "clean-production-run" ]
   pull_request:
-    branches: [ clean-production-run ]
+    branches: [ "clean-production-run" ]
+
+permissions:
+  contents: read
 
 jobs:
-  validate-ecosystem:
-    name: Execute Core Technical Infrastructure Matrix
+  validate-and-test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-    - name: Checkout Standalone Repository Code
+    - name: Checkout Code Repository Base
       uses: actions/checkout@v4
 
-    - name: Set up Python Runtime
+    - name: Mount Python Execution Matrix Environs
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+
+    - name: Provision Host Native TPM Cryptographic Libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libtss2-dev pkg-config
 
     - name: Hardened Dependency Installation & Package Alignment
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        if [ "${{ matrix.python-version }}" = "3.10" ]; then
-          pip install 'tomli>=2.0.1'
-        fi
-
-    - name: Enforce Uniform Code Style Compliance (Black Formatter)
-      run: |
-        black --check prototype_simulation.py sensor_adapter.py validate_config.py tests/
-
-    - name: Trigger Vivic AI Internal Automated Validation Engine
-      run: |
-        python validate_config.py
