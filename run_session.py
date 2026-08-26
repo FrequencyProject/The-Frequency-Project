@@ -24,7 +24,6 @@ class UnifiedVivicSession:
     def execute_live_cycle(self, steps: int = 10, cycle_delay_s: float = 0.1):
         """Launches the ingestion daemons and prints unified telemetry metrics live."""
         print("======================================================================")
-        # Convert absolute date presentation for scheduled relative tracking flags
         print(f"VIVIC AI: ACTIVE UNIFIED COGNITIVE MONITOR SESSION")
         print("======================================================================")
         print("[ORCHESTRATOR] Starting background hardware acquisition networks...")
@@ -39,6 +38,9 @@ class UnifiedVivicSession:
         try:
             completed_cycles = 0
             while completed_cycles < steps:
+                # Force the network explicit model state back into active training mode
+                self.engine.model.train()
+
                 # 1. Execute an unsupervised optimization backprop pass step
                 loss_val = self.engine.train_step()
 
@@ -50,12 +52,11 @@ class UnifiedVivicSession:
 
                 completed_cycles += 1
 
-                # 2. Extract the fresh latent vector slice under no-grad evaluation mode
+                # 2. Secure a synchronized snapshot of the latent vector directly from the forward pass
                 self.engine.model.eval()
-                features = self.engine.adapter.get_ai_features()
-                tensor_in = torch.from_numpy(features).unsqueeze(0)
-
                 with torch.no_grad():
+                    features = self.engine.adapter.get_ai_features()
+                    tensor_in = torch.from_numpy(features).unsqueeze(0)
                     latent_vector = self.engine.model(tensor_in)
 
                 # Convert the PyTorch output to a NumPy array for clean tracking processing

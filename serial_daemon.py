@@ -2,14 +2,15 @@
 """Unified Phase 2 Hardware Serial Ingestion Daemon.
 
 Implements non-blocking physical serial port polling loops, automated linear 
-reconnection backoff handling, and asynchronous callback telemetry dispatch.
+reconnection backoff handling, and cryptographic telemetry signature dispatch.
 """
-from typing import Optional, Callable
+from typing import Optional, Callable, Tuple
 import re
 import threading
 import time
 import numpy as np
 import serial  # Provided by the pinned pyserial dependency
+from crypto_signer import HardwareTelemetrySigner
 
 
 class HardwareSerialDaemon:
@@ -23,7 +24,9 @@ class HardwareSerialDaemon:
         self.is_running = False
         self._thread: Optional[threading.Thread] = None
         self._lock = threading.Lock()
-        self._callback: Optional[Callable[[np.ndarray], None]] = None
+
+        # Modified callback type hint to accept (payload_bytes, signature_bytes)
+        self._callback: Optional[Callable[[Tuple[bytes, bytes]], None]] = None
 
         self.frames_received = 0
         self.frames_dropped = 0
@@ -33,7 +36,10 @@ class HardwareSerialDaemon:
             r"^V1:([+-]?\d+\.?\d*),V2:([+-]?\d+\.?\d*),V3:([+-]?\d+\.?\d*),V4:([+-]?\d+\.?\d*)"
         )
 
-    def register_callback(self, callback: Callable[[np.ndarray], None]) -> None:
+        # Initialize the hardware-isolated cryptographic signer node
+        self.signer = HardwareTelemetrySigner()
+
+    def register_callback(self, callback: Callable[[Tuple[bytes, bytes]], None]) -> None:
         """Bridges the hardware thread to the sensor adapter matrix deque processor."""
         with self._lock:
             self._callback = callback
@@ -68,12 +74,28 @@ class HardwareSerialDaemon:
         while self.is_running:
             ser = None
             try:
+                # Bypass physical port acquisition entirely if running in an explicit mock/simulation environment
+                if self.port.upper() in ["MOCK", "MOCK_TEST", "SIMULATION"]:
+                    print(
+                        f"[HW_DAEMON] Running in simulation sandbox loop. Simulating continuous hardware stream."
+                    )
+                    while self.is_running:
+                        # Emulate an incoming hardware sensor packet clock pulse
+                        mock_vector = np.random.normal(0.0, 1.0, 4).astype(np.float32)
+
+                        # Cryptographically lock the telemetry array at the boundary using the TPM core
+                        payload, signature = self.signer.sign_vector(mock_vector)
+
+                        with self._lock:
+                            if self._callback is not None:
+                                self._callback((payload, signature))
+                        time.sleep(0.1)
+                    break
+
                 # Attempt to claim the physical OS handle of the target copper bus port
                 ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
                 print(f"[HW_DAEMON] Successfully claimed copper line handle at {self.port}.")
-                backoff = 1.0  # Reset linear retry backoff parameters on stable connection
-
-                # Clear standard internal UART receiver buffers to wipe out legacy boot noise
+                backoff = 1.0
                 ser.reset_input_buffer()
 
                 while self.is_running:
@@ -82,19 +104,22 @@ class HardwareSerialDaemon:
 
                     raw_bytes = ser.readline()
                     if not raw_bytes:
-                        continue  # Read line timeout encountered, poll loop continues
+                        continue
 
                     try:
                         line_str = raw_bytes.decode("utf-8", errors="ignore")
                     except Exception:
-                        continue  # Malformed string decoding error caught, ignore frame noise
+                        continue
 
                     vector = self.parse_raw_line(line_str)
                     if vector is not None:
-                        # Dispatch parsed telemetry arrays directly to the linked sensor adapter
+                        # Cryptographically lock the parsed float array via the TPM chip interface
+                        payload, signature = self.signer.sign_vector(vector)
+
+                        # Dispatch the verified payload tuple downstream to the adapter queues
                         with self._lock:
                             if self._callback is not None:
-                                self._callback(vector)
+                                self._callback((payload, signature))
 
             except (serial.SerialException, OSError) as err:
                 print(f"[HW_DAEMON WARNING] Physical connection lost or unavailable: {repr(err)}")
@@ -102,7 +127,7 @@ class HardwareSerialDaemon:
                     f"[HW_DAEMON] Initiating recovery tracking sequence. Retrying in {backoff}s..."
                 )
                 time.sleep(backoff)
-                backoff = min(backoff + 2.0, 10.0)  # Cap linear delay envelope search spacing
+                backoff = min(backoff + 2.0, 10.0)
             finally:
                 if ser is not None and ser.is_open:
                     ser.close()
@@ -130,11 +155,14 @@ class HardwareSerialDaemon:
 
 
 if __name__ == "__main__":
-    # Test harness to verify thread safety and parsing state integrity locally
     print("[INIT] Launching daemon sanity test pass...")
     daemon = HardwareSerialDaemon(port="MOCK_TEST")
     mock_line = "V1:1.23,V2:-4.56,V3:0.0,V4:7.89\n"
     parsed_vector = daemon.parse_raw_line(mock_line)
     print(f" -> Sanity Check Parsing Test Output: {parsed_vector}")
     assert parsed_vector is not None and len(parsed_vector) == 4
+
+    # Verify signing operations output cleanly
+    p, s = daemon.signer.sign_vector(parsed_vector)
+    print(f" -> Sanity Check TPM Signature Output: {s.hex()[:16]}...")
     print("[SUCCESS] Core serial interface structures are optimized and verified.")

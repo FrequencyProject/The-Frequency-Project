@@ -12,7 +12,7 @@ import torch.nn.functional as F
 class ResonanceCoherenceLoss(nn.Module):
     """Computes non-semantic information divergence relative to natural geometry scales."""
 
-    def __init__(self, epsilon: float = 1e-8):
+    def __init__(self, epsilon: float = 1e-6):
         super().__init__()
         self.epsilon = epsilon
         # Define the immutable Golden Ratio constant (Phi) natively
@@ -30,7 +30,7 @@ class ResonanceCoherenceLoss(nn.Module):
         midpoint = latent_dim // 2
 
         # 1. Deconstruct the latent vector space into dual asymmetric energy sub-spaces
-        # Sub-space A tracks high-frequency profiles; Sub-space B tracks slow temporal trends
+        # Space A tracks high-frequency profiles; Space B tracks slow temporal trends
         space_a = latent_vectors[:, :midpoint]
         space_b = latent_vectors[:, midpoint:]
 
@@ -43,17 +43,22 @@ class ResonanceCoherenceLoss(nn.Module):
         kl_ba = torch.sum(prob_b * (torch.log(prob_b) - torch.log(prob_a)), dim=1)
         information_distance = (kl_ab + kl_ba) / 2.0
 
-        # 4. Extract the variance ratios of the information shifts across the batch
+        # 4. Extract the variance ratios across the vector space dimensions
+        # Utilizing spatial dimension metrics ensures stability even when batch_size == 1
         mean_divergence = torch.mean(information_distance)
-        std_divergence = (
-            torch.std(information_distance)
-            if batch_size > 1
-            else torch.tensor(0.0, device=latent_vectors.device)
-        )
+
+        # Calculate standard deviation across the batch elements if possible, otherwise use latent array variation
+        if batch_size > 1:
+            std_divergence = torch.std(information_distance)
+        else:
+            # Fallback path for Batch Size of 1: use latent variance components to maintain ratio tracking
+            std_divergence = torch.std(latent_vectors) + self.epsilon
 
         # 5. Evaluate scaling configurations against the target Phi geometric constant
-        # The penalty scales quadratically based on how far variance drifts from the Golden Ratio
+        # Clamp the empirical ratio calculation to prevent zero-variance explosive divisions
         empirical_ratio = (mean_divergence + self.epsilon) / (std_divergence + self.epsilon)
+        empirical_ratio = torch.clamp(empirical_ratio, min=0.0, max=10.0)
+
         geometric_penalty = torch.pow(empirical_ratio - self.phi, 2)
 
         # Total Resonance Loss = Mean Information Divergence + Golden Penalty Constraint
