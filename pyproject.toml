@@ -7,9 +7,10 @@ name = "bio-potential-ai-ingestion"
 version = "1.0.0"
 description = "A 4-channel multi-modal biological frequency ingestion pipeline for AI model training."
 readme = "README.md"
-authors = [
-    { name = "Engineering Core", email = "core@hardware.local" }
-]
+[[project.authors]]
+name = "Engineering Core"
+email = "core@frequency.local"
+
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -22,7 +23,8 @@ requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24.0",
     "scipy>=1.12.0",
-    "pyserial>=3.5"
+    "pyserial>=3.5",
+    "tpm2-pytss>=3.0.0"
 ]
 
 [project.optional-dependencies]
