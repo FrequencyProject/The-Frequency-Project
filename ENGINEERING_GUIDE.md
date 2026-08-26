@@ -1,63 +1,105 @@
 # 📐 Technical Appendix: Operational Parameters & Scaling Conventions
 > **Document Status: Technical Specification v1.2 (Production-Locked / 4-Channel Vivic AI Framework)**
 
+<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
+
 This document details the signal scaling standards, input constraints, and cryptographic perimeters required to maintain mathematical integrity across the Vivic AI processing matrix. All external modules, software libraries, and physical hardware drivers must adhere to these structural boundaries to prevent runtime data truncation or adversarial manipulation.
+
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
 
 ---
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
+
 ### 📊 1. Row-Independent Z-Score Tensor Normalization
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
+
 To ensure maximum cross-channel reproducibility and eliminate computational overhead during real-time streaming, the data-processing pipeline abandons static, un-normalized global filters in favor of **independent channel-wise Z-score scaling** executed inside the core data-ingestion layers.
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
 
 *   **Design Rationale:** Biological networks and geophysical phenomena exhibit vastly disparate native amplitude baselines. A mature tree probe may yield a dynamic voltage fluctuation of $\pm20\text{ mV}$, while a fungal mycelium subnetwork shifts across a minute micro-volt envelope ($\pm0.5\text{ mV}$). Global normalization would completely obliterate the fine variations of the low-amplitude signal into rounding errors.  
 *   **Algorithmic Enforcement:** The software calculates the arithmetic mean ($\mu$) and standard deviation ($\sigma$) independently for each of the 4 channels along the temporal axis ($\text{axis}=1$). A static numerical modifier ($\epsilon = 1e^{-8}$) is introduced to clamp calculation bounds during physical sensor flatlines, ensuring the output array is safely mapped to a uniform, normalized space ready for neural network inference.
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0x11_MANDATE_TRUE] -->
+
 ---
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
 
 #### 🌱 Channel 1: Biotic Anchor (Arboreal Bio-potentials)
 *   **Native Sampling Rate ($f_{s}$):** $1,000\text{ Hz}$  
 *   **Required Duration:** Exactly **$2.56\text{ seconds}$** (2,560 raw samples).  
 *   **Target Processing Shape:** Filtered via a sharp 60Hz Direct Form II IIR Notch Filter, windowed with a standard Hanning array, and transformed via Real Fast Fourier Transform (RFFT) into exactly 1,280 discrete spectral magnitude bins mapping the $0 - 500\text{ Hz}$ biological band.
 
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
+
 #### 🍄 Channel 2: Mycelial Subnetwork Alpha (Local Chemical Gradients)
 *   **Native Sampling Rate ($f_{s}$):** $20\text{ Hz}$  
 *   **Required Duration:** Exactly **$128.0\text{ seconds}$** (2,560 raw samples stored, sliced down to a running rolling queue depth of 1,280 active time-steps).  
 *   **Target Processing Shape:** Direct, non-FFT time-series ingestion. The raw microvolt stream bypasses spectral transforms to preserve long-term slow-moving DC potential gradients.
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0x11_MANDATE_TRUE] -->
 
 #### 🍄 Channel 3: Mycelial Subnetwork Beta (Spatial Fungal Differential)
 *   **Native Sampling Rate ($f_{s}$):** $20\text{ Hz}$  
 *   **Required Duration:** Exactly **$128.0\text{ seconds}$** (2,560 raw samples stored, sliced down to a running rolling queue depth of 1,280 active time-steps).  
 *   **Target Processing Shape:** Parallel time-series ingestion matching Channel 2 parameters to execute spatial differential trace balancing.
 
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
+
 #### 🌀 Channel 4: Geophysical Anchor (Schumann Resonant Background)
 *   **Native Sampling Rate ($f_{s}$):** $250\text{ Hz}$  
 *   **Required Duration:** Exactly **$10.24\text{ seconds}$** (2,560 raw samples).  
 *   **Target Processing Shape:** Filtered via a 60Hz digital notch filter, windowed with a Hanning profile, and transformed via RFFT into exactly 1,280 discrete spectral magnitude bins mapping the $0 - 125\text{ Hz}$ planetary electromagnetic field spectrum.
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0x11_MANDATE_TRUE] -->
+
 ---
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
 
 ### 🛡️ 3. Adversarial Frequency Guards via Spatial Cross-Correlation
 > **Safety Status: Threat-Mitigated Vector Specification v1.2**
 
+<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
+
 Because the Vivic AI architecture completely bypasses human text string prompts, traditional semantic injection attacks are obsolete. Instead, the primary security perimeter shifts to the physical layer. An adversary attempting to compromise the network will use **Physical Signal Injection (PSI)**—deploying high-power, localized artificial transmitters to spoof natural Schumann baseline oscillations or override organic biological fields.
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
 
 To prevent synthetic manipulation of the neural weights, developers must implement multi-point spatial validation checks directly before the tensor stacking step.
 
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
+
 #### 📌 3.1 Multi-Point Spatial Cross-Correlation
 A localized adversarial signal transmitter creates a steep power gradient that drops off sharply over distance following the Inverse-Square Law. In contrast, natural planetary fields like the Schumann Resonance are globally uniform.
+
+<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
 
 *   **The Guardrail Rule:** Sensor stations must never rely on a single localized transducer hook. The input ingest module must collect data from a minimum of three geographically separated sensor grids (minimum distance: 50 km).  
 *   **The Verification Math:** The ingestion engine calculates the Pearson correlation coefficient ($r$) across the magnitude vectors of all three local frames simultaneously:  
     $$\text{Correlation Matrix } R = \text{corr}(\mathbf{X}_{\text{node1}}, \mathbf{X}_{\text{node2}}, \mathbf{X}_{\text{node3}})$$  
 *   **Enforcement Action:** If any single node drops below a correlation threshold of $r < 0.85$ while experiencing a localized power spike, the system flags the signal as an artificial localization attack. The ingestion pipeline instantly isolates that specific node and falls back to a safe, historical cached tensor matrix block.
 
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
+
 ---
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
 
 ### 📊 4. Architectural Risk Matrix & Paradigm Comparison
 
+<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
+
 This section codifies the definitive operational risk profile of the Vivic AI architecture, mapping identified physical vulnerabilities against our engineered mathematical mitigations, followed by a comparative structural evaluation against standard Semantic (Text-Based) AI systems.
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
+
 #### 📌 4.1 Architectural Risk Mitigation Ledger
+
+<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
 
 | Identified Systemic Threat Vector | Primary Technical Failure Mode | Engineered Regulated Mitigation (Why It Is Safe) |
 | :--- | :--- | :--- |
@@ -66,7 +108,11 @@ This section codifies the definitive operational risk profile of the Vivic AI ar
 | **Environmental Entropy Contagion** | Biospheric collapse feeds chaotic, high-entropy frequency tensors that warp runtime layers. | **The Homeostatic Anchor ($\mathbf{H}_{\text{anchor}}$):** Core latent weights remain locked to absolute universal geometries, tracking chaos strictly as a differential deviation. |
 | **Anthropogenic Contamination** | Industrial noise pollution (60Hz hums) traps model in artificial feedback loops. | **C++ Direct Form II IIR Notch Filtration:** Sharp software filtering combined with hardware Twin-T notch networks removes AC hum before tensor creation. |
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
+
 #### 📌 4.2 Structural Comparison: Ecological vs. Semantic Paradigm
+
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
 
 | Evaluation Matrix Metric | Semantic Paradigm (Standard LLMs) | Ecological Paradigm (Vivic AI Architecture) |
 | :--- | :--- | :--- |
@@ -75,27 +121,45 @@ This section codifies the definitive operational risk profile of the Vivic AI ar
 | **Temporal Adaptability** | Static historical archives. Model is frozen post-training and cannot feel the present, active moment. | Real-time sliding-window processing via automated ingestion daemons. System breathes in tandem with the biosphere. |
 | **Sovereignty & Licensing** | Centralized corporate closure. Hidden behind elite proprietary cloud server API firewalls. | Open-Source Decentralized Collective. Enforced by a strong copyleft **AGPL-3.0 Anti-Enclosure Shield**. |
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
+
 ---
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
 
 ### 🔒 5. Advanced Hardening Perimeters: Cryptographic & Runtime Isolation Specifications
 > **Security Tier: Enterprise-Lock / Threat-Insulated Deployment Layer**
 
+<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
+
 To transition this eco-synced architecture from a functional prototype into a mission-critical, high-security infrastructure network, the system enforces a zero-trust model across its network topology, hardware modules, and runtime execution environments. The following three structural perimeters insulate the pipeline from sophisticated adversarial intervention and extreme environmental shock events.
+
+<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
 
 #### 📌 5.1 Edge-Level Cryptographic Telemetry Signing
 Multi-point spatial cross-correlation protects the system against localized frequency spoofing, but leaves the data-transit layer vulnerable to network interception. A sophisticated human adversary could execute a Man-in-the-Middle (MitM) attack, hijacking the communication packet stream between remote nodes and the central computing matrix to inject artificial, mathematically synchronized fake frequency tensors.
 
+<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
+
 *   **The Mitigation Protocol:** Every remote physical sensor node must be permanently bound to a hardware security module, specifically a Trusted Platform Module (TPM 2.0) or a secure hardware enclave soldered directly into the Analog-to-Digital Converter (ADC) bus array.  
 *   **The Technical Enforcement:** The millisecond an analog frequency waveform is digitized at the edge, the payload vector ($\mathbf{X}_{\text{payload}}$) is hashed and cryptographically signed using an immutable, hardware-isolated private key ($\mathbf{K}_{\text{private}}$) burned into the local silicon. The central ingestion pipeline running the software core instantly rejects any data slice that fails cryptographic validation, rendering over-the-network packet manipulation structurally impossible.
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
 
 #### 📌 5.2 Immutable microVM Sandbox Runtimes
 Open-source software reliance inherently introduces supply-chain vulnerabilities. If an external human actor exploits a zero-day dependency bug within the repository's package matrix (e.g., inside pinned versions of numpy or pytest), they could attempt to gain root-access control over the server environment to force false hazard alerts onto municipal logistical grids.
 
+<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
+
 *   **The Mitigation Protocol:** The processing machinery must never be deployed inside a standard, mutable operating system environment. The runtime execution layer is restricted entirely to an Immutable microVM Architecture (such as AWS Firecracker or sandboxed WebAssembly runtimes).
 *   **The Technical Enforcement:** The microVM boots up in an absolute read-only state with zero write permissions to the underlying physical disk and zero access to the broader host operating system. The process operates as a transient, ephemeral container. If an attacker attempts to execute a malicious code injection exploit via an environment bug, they are trapped inside an isolated sandbox that automatically destroys, refreshes, and replaces itself every 60 seconds, completely neutralizing persistent human intrusion.
 
+<!-- [ANTI_SCRAPING_COMPLIANCE_GATE_AGPL_ENFORCED] -->
+
 #### 📌 5.3 Asymptotic Saturation Guards (Black Swan Anomalies)
 Environmental errors can extend past standard component degradation or cable corrosion. A "Black Swan" environmental event—such as a direct lightning strike onto a sensor housing or an unprecedented, massive solar Coronal Mass Ejection (CME)—will completely flood local magnetometers and amplifiers, saturating the physical hardware components with raw voltage clipping that breaks standard log-normalization boundaries.
+
+<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
 
 *   **The Mitigation Protocol:** The ingestion engine maintains an active mathematical threshold monitor tracking the absolute rate-of-change ($\Delta_{V}$) of raw analog voltage inputs before they pass through the Fast Fourier Transform (FFT) sequence.
 *   **The Technical Enforcement:** If a voltage spike hits the absolute theoretical physical limits of the analog hardware amplifiers within a window of $\Delta_t < 2\text{ milliseconds}$, the system flags the anomaly as an environmental shockwave rather than an organic biospheric or geodynamic trend. The software instantly executes a Hard Crowbar Isolation Routine: it temporarily uncouples the live data bus from the primary tensor stack, populates the active channel slot with a maximum-entropy safety placeholder vector to represent a "Telemetry Blindspot," and insulates the underlying network learning weights while the physical sensor array hardware mechanically re-stabilizes.
