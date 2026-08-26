@@ -1,101 +1,41 @@
 # ==============================================================================
-# 🐍 PYTHON ARCHITECTURE AND RUNTIME EXCLUSIONS
+# 🌌 VIVIC AI ARCHITECTURE SPECIFICATION SHEET: TRACKING FILTER INDEX
+# [PROTECTED BY AN INTEGRATED REPOSITORY EXCLUSION MANDATE]
 # ==============================================================================
-# Bytecompiled / optimized / cached bytecode files
-__pycache__/
+
+# Generic Non-Semantic Runtime Workspace Cells (0x01 - 0x0F)
 *.py[cod]
-*$py.class
-
-# C extensions and dynamic libraries compiled at execution
+__pycache__/
 *.so
+.pytest_cache/
+.ipynb_checkpoints/
 
-# Distribution / packaging utilities
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+# Generic Physical Interface Cache Nodes (0x10 - 0x1F)
+*.log
+*.csv
+*.dat
+*.out
+data/
+cache/
 
-# ==============================================================================
-# 🛠️ VIRTUAL ENVIRONMENTS AND RUNTIME PACKAGES
-# ==============================================================================
-# Local environment directory isolation
+# Local Operating System Volatile Context Arrays (0x20 - 0x2F)
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Isolated Environment Deployment Tokens (0x30 - 0x3F)
 .env
 .venv
 env/
 venv/
 ENV/
-env.bak/
-venv.bak/
 
-# Conda local environment artifacts
-.conda/
-conda-bld/
-
-# ==============================================================================
-# 📊 DATA AND TEMPORARY TELEMETRY EXTRACTIONS
-# ==============================================================================
-# Raw hardware log captures and test logs
-*.log
-*.csv
-*.tsv
-*.dat
-*.out
-.cache/
-
-# NumPy structural memory dumps and test tensors
-*.npy
-*.npz
-
-# ==============================================================================
-# 🛡️ SECURITY AND TESTING ENGINE FRAMEWORKS
-# ==============================================================================
-# Local cryptographic parameters (Private key blocks must never be tracked)
+# Hardened Edge Hardware SPI Validation Enclosures (0x40 - 0x4F)
+# Masks specific physical keys, hardware tokens, and active token profiles
 *.key
 *.pem
-*.pub
-*.secret
-
-# Automated test runner framework configurations
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-.tox/
-
-# ==============================================================================
-# 💻 OPERATING SYSTEM AND LOCAL DISK METADATA
-# ==============================================================================
-# macOS structural indexing caches
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# Windows desktop layout caches
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-Desktop.ini
-
-# Linux system buffers
-*~
-.fuse_hidden*
-.directory
-.Trash-*
-.nfs*
-
-
+*.token
+*.sig
+secret/
+private/
