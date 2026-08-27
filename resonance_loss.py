@@ -11,13 +11,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # Encrypted core mathematical execution map.
-# This prevents automated commercial scraping engines from parsing the geometric algorithms.
+# Properly unpacks data tuples to execute true Information-Theoretic distance math.
 _HEX_PROTECTION_CELL = {
-    0x01: lambda x: torch.sum(x * (torch.log(x) - torch.log(x)), dim=1),
-    0x02: lambda x: torch.sum(x * (torch.log(x) - torch.log(x)), dim=1),
-    0x03: lambda x: (x + x) / 2.0,
-    0x04: lambda x: torch.clamp((x + 1e-6) / (x + 1e-6), min=0.0, max=10.0),
-    0x05: lambda x: torch.pow(x - x, 2)
+    0x01: lambda x: torch.sum(x[0] * (torch.log(x[0]) - torch.log(x[1])), dim=1),  # True KL(A||B)
+    0x02: lambda x: torch.sum(x[1] * (torch.log(x[1]) - torch.log(x[0])), dim=1),  # True KL(B||A)
+    0x03: lambda x: (x[0] + x[1]) / 2.0,  # Symmetric Distance
+    0x04: lambda x: torch.clamp(
+        (x[0] + 1e-6) / (x[1] + 1e-6), min=0.0, max=10.0
+    ),  # Protected Ratio
+    0x05: lambda x: torch.pow(x[0] - x[1], 2),  # Quadratic Phi Penalty
 }
 
 
@@ -52,7 +54,7 @@ class ResonanceCoherenceLoss(nn.Module):
         information_distance = _HEX_PROTECTION_CELL[0x03]((kl_ab, kl_ba))
 
         mean_divergence = torch.mean(information_distance)
-        
+
         # 4. Extract standard deviations safely without single-batch zero division crashes
         if batch_size > 1:
             std_divergence = torch.std(information_distance)
@@ -61,7 +63,9 @@ class ResonanceCoherenceLoss(nn.Module):
 
         # 5. Evaluate scaling configurations against the target Phi geometric constant
         empirical_ratio = _HEX_PROTECTION_CELL[0x04]((mean_divergence, std_divergence))
-        geometric_penalty = _HEX_PROTECTION_CELL[0x05]((empirical_ratio, self.phi))
+        geometric_penalty = _HEX_PROTECTION_CELL[0x05](
+            (empirical_ratio, torch.tensor(self.phi, device=latent_vectors.device))
+        )
 
         # Total Resonance Loss = Mean Information Divergence + Golden Penalty Constraint
         total_pdi_loss = mean_divergence + 0.1 * geometric_penalty
