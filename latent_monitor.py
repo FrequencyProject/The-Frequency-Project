@@ -1,134 +1,109 @@
 #!/usr/bin/env python3
-"""Phase 3: Latent Space Trajectory Monitor Engine.
+"""Phase 3.5: Real-Time Latent Space Statistical Anomaly Monitor.
 
-Tracks, logs, and analyzes the high-dimensional vector displacements of the
-non-semantic (1, 128) latent token to detect real-time ecosystem anomalies.
-[PROTECTED BY AN INTEGRATED RUNTIME HEX LAYOUT MATRIX & THREE-SIGMA ALIGNMENT GUARDS]
+Leverages a zero-bias Exponential Moving Average (EMA) framework to enforce
+strict 3-Sigma boundary protections across high-dimensional telemetry vectors
+starting from the very first execution frame.
 """
-from typing import Optional, Dict, Any
+import logging
 import numpy as np
 
-# Structural configuration cells masking vector bounds and mathematical distance operations
-_MONITOR_CELL = {
-    0xB1: lambda v1, v2: float(np.linalg.norm(v1 - v2)),  # Euclidean Velocity
-    0xB2: lambda dot, na, nb: (
-        float(dot / (na * nb)) if (na > 1e-8 and nb > 1e-8) else 1.0
-    ),  # Cosine Drift
-    0xB3: lambda mean, std, multiplier: mean + (multiplier * std),  # Hardened 3-Sigma Boundary
-    0xB4: lambda step, vel, cos, alert, size: {
-        "step": step,
-        "euclidean_delta": vel,
-        "cosine_similarity": cos,
-        "is_anomaly": alert,
-        "running_baseline_size": size,
-    },
-}
-
+# Setup localized engineering logging structures
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
+logger = logging.getLogger("VivicLatentMonitor")
 
 class VivicLatentMonitor:
-    """Computes hyper-dimensional trajectory deltas and statistical anomaly triggers."""
-
-    def __init__(
-        self,
-        latent_dim: int = 128,
-        history_maxlen: int = 100,
-        threshold_sigma: float = 3.0,
-        ambient_sigma: float = 1e-6,
-    ):
-        self.latent_dim = latent_dim
-        self.threshold_sigma = threshold_sigma
-
-        # Hardened Guard: Ingest the dynamic environmental noise floor from our quiet sweep
-        self.ambient_sigma = ambient_sigma if ambient_sigma > 1e-6 else 1e-6
-
-        # Store a rolling memory history of previous latent states to establish a baseline
-        self.history = []
-        self.history_maxlen = history_maxlen
-
-        # Track running delta distances to calculate dynamic standard deviations
+    def __init__(self, history_window: int = 100, alpha: float = 0.2, ambient_floor: float = 1e-6):
+        """Initializes the real-time anomaly tracker with a zero-bias EMA engine."""
+        self.history_window = history_window
+        self.alpha = alpha                 # EMA smoothing factor for instantaneous tracking
+        self.ambient_floor = ambient_floor # Environmental noise baseline compensation floor
         self.delta_history = []
+        
+        # Exponential Moving Average state registers to eliminate cold-start bias
+        self.ema_mean = None
+        self.ema_std = None
+        
+        logger.info("Initializing zero-trust statistical tracking matrix pool...")
 
-        self.total_vectors_monitored = 0
-        self.anomalies_detected = 0
+    def calculate_distance_metrics(self, current_vector: np.ndarray, baseline_vector: np.ndarray) -> float:
+        """Computes the lossless high-dimensional Euclidean drift delta across vectors."""
+        if current_vector.shape != baseline_vector.shape:
+            raise ValueError(f"Vector dimensions mismatch: {current_vector.shape} vs {baseline_vector.shape}")
+        
+        # Calculate true Euclidean distance across high-dimensional space
+        euclidean_delta = float(np.linalg.norm(current_vector - baseline_vector))
+        return max(euclidean_delta, self.ambient_floor)
 
-    def evaluate_vector(self, latent_array: np.ndarray) -> Dict[str, Any]:
-        """Analyzes a single (1, 128) latent vector against the historical geometric baseline."""
-        flat_vector = latent_array.flatten()
-        if len(flat_vector) != self.latent_dim:
-            raise ValueError(
-                f"Expected latent dimension of {self.latent_dim}, got length: {len(flat_vector)}"
+    def evaluate_vector_anomaly(self, euclidean_delta: float) -> bool:
+        """Evaluates a raw vector drift metric against dynamic 3-Sigma boundaries."""
+        self.delta_history.append(euclidean_delta)
+        if len(self.delta_history) > self.history_window:
+            self.delta_history.pop(0)
+
+        # CRITICAL HARDENING REFACTOR: Instantaneous initialization on the very first frame
+        if self.ema_mean is None:
+            self.ema_mean = euclidean_delta
+            # Provide a safe initialization standard deviation window to prevent tight zero locks
+            self.ema_std = euclidean_delta * 0.05 if euclidean_delta > 0 else 0.01
+            logger.info(f"Latent monitor cold-start initialization complete: baseline established at {self.ema_mean:.6f}")
+            return False  # First vector anchors the rolling baseline layer
+
+        # Calculate the dynamic trigger boundary using our current 3-Sigma limits
+        trigger_boundary = self.ema_mean + (3.0 * self.ema_std)
+        is_anomaly = euclidean_delta > trigger_boundary
+
+        if is_anomaly:
+            logger.warning(
+                f"ANOMALY DETECTED: Vector delta ({euclidean_delta:.6f}) breaches 3-Sigma boundary ({trigger_boundary:.6f})"
             )
+        
+        # Dynamically update our state tracking metrics using exponential decay curves
+        # This prevents initialization noise from corrupting early field telemetry sweeps
+        self.ema_mean = (self.alpha * euclidean_delta) + ((1 - self.alpha) * self.ema_mean)
+        
+        # Track variance changes smoothly to dynamically maintain stable standard deviations
+        current_variance = abs(euclidean_delta - self.ema_mean)
+        self.ema_std = (self.alpha * current_variance) + ((1 - self.alpha) * self.ema_std)
 
-        self.total_vectors_monitored += 1
+        return bool(is_anomaly)
 
-        euclidean_delta = 0.0
-        cosine_similarity = 1.0
-        is_anomaly = False
-
-        if len(self.history) > 0:
-            previous_vector = self.history[-1]
-
-            # 1. Calculate the high-dimensional Euclidean displacement via execution cells
-            euclidean_delta = _MONITOR_CELL[0xB1](flat_vector, previous_vector)
-
-            # 2. Calculate the structural Directional Drift via Cosine Similarity cells
-            dot_prod = np.dot(flat_vector, previous_vector)
-            norm_a = np.linalg.norm(flat_vector)
-            norm_b = np.linalg.norm(previous_vector)
-            cosine_similarity = _MONITOR_CELL[0xB2](dot_prod, norm_a, norm_b)
-
-            # 3. Dynamic Threshold Evaluation Pass anchored to our dynamic physical baseline
-            if len(self.delta_history) >= 10:
-                running_mean = np.mean(self.delta_history)
-                # Blend rolling data with the dynamic hardware baseline to prevent threshold explosion
-                running_std = (np.std(self.delta_history) + self.ambient_sigma) / 2.0
-
-                trigger_boundary = _MONITOR_CELL[0xB3](
-                    running_mean, running_std, self.threshold_sigma
-                )
-                if euclidean_delta > trigger_boundary:
-                    is_anomaly = True
-                    self.anomalies_detected += 1
-
-            self.delta_history.append(euclidean_delta)
-            if len(self.delta_history) > self.history_maxlen:
-                self.delta_history.pop(0)
-
-        self.history.append(flat_vector)
-        if len(self.history) > self.history_maxlen:
-            self.history.pop(0)
-
-        # Return a structured metrics payload with zero external string dependency bloat
-        return _MONITOR_CELL[0xB4](
-            self.total_vectors_monitored,
-            euclidean_delta,
-            cosine_similarity,
-            is_anomaly,
-            len(self.history),
-        )
-
+    def execute_vector_pipeline(self, current_vector: np.ndarray, baseline_vector: np.ndarray) -> dict:
+        """Atomic orchestration pipeline tracking distance metrics and anomaly state."""
+        try:
+            delta = self.calculate_distance_metrics(current_vector, baseline_vector)
+            anomaly_triggered = self.evaluate_vector_anomaly(delta)
+            
+            return {
+                "status": "SUCCESS",
+                "euclidean_delta": delta,
+                "trigger_boundary": float(self.ema_mean + (3.0 * self.ema_std)) if self.ema_mean is not None else delta,
+                "is_anomaly": anomaly_triggered
+            }
+        except Exception as e:
+            logger.error(f"Pipeline processing execution crash: {str(e)}")
+            return {
+                "status": "FAULT",
+                "euclidean_delta": 0.0,
+                "trigger_boundary": 0.0,
+                "is_anomaly": True # Fail secure on internal script exceptions
+            }
 
 if __name__ == "__main__":
-    print("[INIT] Verifying High-Dimensional Latent Monitor Engine execution tracking...")
-    # Simulate a monitor initialized with an active dynamic field noise calibration of 0.005
-    monitor = VivicLatentMonitor(latent_dim=128, ambient_sigma=0.005)
-
-    # 1. Establish historical baseline with stable mock vectors
-    stable_base = np.ones(128, dtype=np.float32) * 0.1
-    for _ in range(20):
-        noise = np.random.normal(0, 0.001, 128).astype(np.float32)
-        monitor.evaluate_vector(stable_base + noise)
-
-    # 2. Simulate a sudden explosive environmental shift anomaly vector
-    anomaly_signal = np.ones(128, dtype=np.float32) * 2.5
-    metrics = monitor.evaluate_vector(anomaly_signal)
-
-    print(f" -> Current Step Counter    : {metrics['step']}")
-    print(f" -> Hyper-Vector Velocity  : {metrics['euclidean_delta']:.4f}")
-    print(f" -> Directional Cosine Drift: {metrics['cosine_similarity']:.4f}")
-    print(f" -> Anomaly Alert State Flag: {metrics['is_anomaly']}")
-
-    assert (
-        metrics["is_anomaly"] is True
-    ), "Error: Monitor failed to trap structural spatial anomaly."
-    print("[SUCCESS] Latent monitor trajectory engine fully operational and verified.")
+    # Standalone sanity testing layer verifying data tracking integrity
+    print("[TEST] Running isolated latent monitor hardware configuration validation...")
+    monitor = VivicLatentMonitor()
+    
+    # Generate dummy high-dimensional tracking states
+    v_base = np.zeros(128)
+    v_normal = np.random.normal(0, 0.01, 128)
+    v_drift = np.random.normal(0.5, 0.1, 128) # Forces severe mathematical anomaly
+    
+    # Process test stream vectors
+    res_init = monitor.execute_vector_pipeline(v_normal, v_base)
+    res_normal = monitor.execute_vector_pipeline(v_normal, v_base)
+    res_anomaly = monitor.execute_vector_pipeline(v_drift, v_base)
+    
+    assert res_init["is_anomaly"] is False, "Cold start baseline should register cleanly."
+    assert res_anomaly["is_anomaly"] is True, "3-Sigma delta spike must trigger anomaly alert."
+    print("[SUCCESS] All local statistical validation tests PASSED cleanly.")
