@@ -4,8 +4,8 @@
 // ==============================================================================
 // 📡 BARE-METAL HARDWARE DEFINE BLOCKS: SPI PIN LAYOUT REGISTER MAPPING
 // ==============================================================================
-#define ADC_CS_PIN    10   // Chip Select (Hardware SPI Slave Select)
-#define ADC_DRDY_PIN   9   // Data Ready interrupt pin from Delta-Sigma chip
+#define ADC_CS_PIN     5   // Chip Select (Hardware SPI Slave Select)
+#define ADC_DRDY_PIN   4   // Data Ready interrupt pin from Delta-Sigma chip
 
 // Configuration settings for your exact 115200 downstream telemetry channel baud
 #define SERIAL_SPEED   115200
