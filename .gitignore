@@ -39,3 +39,6 @@ ENV/
 *.sig
 secret/
 private/
+.gitsecret/keys/random_seed
+!*.secret
+secure_deployment_playbook.sh
