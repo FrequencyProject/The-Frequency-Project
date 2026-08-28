@@ -50,6 +50,14 @@ int32_t read_adc_channel_raw(uint8_t channel_mux_command) {
         delayMicroseconds(1);
     }
     
+    // CRITICAL HARDENING GUARD: If the hardware pins fault or timeout, exit immediately
+    // Returns the lowest possible negative 32-bit integer as a strict error sentinel value
+    if (timeout_counter >= 5000) {
+        digitalWrite(ADC_CS_PIN, HIGH);
+        SPI.endTransaction();
+        return -2147483648; 
+    }
+    
     // Read the resulting 24 bits of lossless data down the MISO line (packed as 3 sequential bytes)
     uint8_t byte_high  = SPI.transfer(0x00);
     uint8_t byte_mid   = SPI.transfer(0x00);
@@ -90,11 +98,17 @@ void setup() {
 
 void loop() {
     // Collect concurrent readings across all four bio-electric potential input vectors
-    // Map commands directly to your Delta-Sigma input register addresses (Ch1, Ch2, Ch3, Ch4)
     int32_t raw_v1 = read_adc_channel_raw(0x01); // Tree sapwood potential sensor
     int32_t raw_v2 = read_adc_channel_raw(0x02); // Mycelium network grid line A
     int32_t raw_v3 = read_adc_channel_raw(0x03); // Mycelium network grid line B
     int32_t raw_v4 = read_adc_channel_raw(0x04); // Local Schumann resonance fluctuation probe
+    
+    // HARDWARE FAULT FILTER: If any single channel hits the timeout sentinel, transmit an alert frame
+    if (raw_v1 == -2147483648 || raw_v2 == -2147483648 || raw_v3 == -2147483648 || raw_v4 == -2147483648) {
+        Serial.println("V1:FAULT,V2:FAULT,V3:FAULT,V4:FAULT");
+        delay(SAMPLE_DELAY);
+        return; // Terminate this loop execution pass immediately to prevent processing garbage data
+    }
     
     // Translate structural integers into standard floating-point metrics
     float v1 = convert_to_voltage(raw_v1);
@@ -103,7 +117,6 @@ void loop() {
     float v4 = convert_to_voltage(raw_v4);
     
     // Format and pipe the telemetry payloads downstream via USB-UART strings
-    // Emits the exact expected pattern: "V1:x.xx,V2:x.xx,V3:x.xx,V4:x.xx\n"
     Serial.print("V1:"); Serial.print(v1, 4); Serial.print(",");
     Serial.print("V2:"); Serial.print(v2, 4); Serial.print(",");
     Serial.print("V3:"); Serial.print(v3, 4); Serial.print(",");
