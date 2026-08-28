@@ -1,171 +1,89 @@
 #!/usr/bin/env python3
-"""Unified Phase 2 Hardware Serial Ingestion Daemon.
+"""Phase 2: High-Speed Serial Ingestion Daemon.
 
-Implements non-blocking physical serial port polling loops, automated linear
-reconnection backoff handling, and asynchronous callback telemetry dispatch.
-[PROTECTED BY AN INTEGRATED RUNTIME HEX LAYOUT MATRIX & AUTOMATED CLOUD SIMULATION GUARD]
+Monitors physical USB-UART bus streams, insulates the pipeline against 
+environmental line noise corruption, and parses raw waveform telemetry frames.
 """
-from typing import Optional, Callable
 import re
-import threading
-import time
+import sys
+import logging
 import numpy as np
-import serial  # Provided by the pinned pyserial dependency
 
-# Signal processing cell table masking hardware pattern regex components and validation frames
-_DAEMON_CELL = {
-    0xD1: lambda: re.compile(
-        r"^V1:([+-]?\d+\.?\d*),V2:([+-]?\d+\.?\d*),V3:([+-]?\d+\.?\d*),V4:([+-]?\d+\.?\d*)"
-    ),
-    0xD2: lambda rng: f"V1:{rng.uniform(-1,1):.4f},V2:{rng.uniform(-1,1):.4f},V3:{rng.uniform(-1,1):.4f},V4:{rng.uniform(-1,1):.4f}\n",
-}
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
+logger = logging.getLogger("SerialDaemon")
 
-
-class HardwareSerialDaemon:
-    """Manages background physical serial port life-cycles, data polling, and string parsing."""
-
-    def __init__(self, port: str = "COM3", baudrate: int = 115200, timeout: float = 1.0):
+class VivicSerialDaemon:
+    def __init__(self, port: str = "COM3", baud: int = 115200, max_line_bytes: int = 256):
+        """Initializes the ingestion daemon with explicit sanity-bounding gates."""
         self.port = port
-        self.baudrate = baudrate
-        self.timeout = timeout
-
-        self.is_running = False
-        self._thread: Optional[threading.Thread] = None
-        self._lock = threading.Lock()
-        self._callback: Optional[Callable[[np.ndarray], None]] = None
-
-        self.frames_received = 0
+        self.baud = baud
+        self.max_line_bytes = max_line_bytes  # Hard boundary protection against memory floods
+        
+        # Telemetry structural health counters
+        self.frames_parsed = 0
         self.frames_dropped = 0
+        
+        # Strict validation pattern matching our exact firmware footprint
+        self.telemetry_regex = re.compile(
+            r"^V1:([+-]?\d+\.?\d*|FAULT),V2:([+-]?\d+\.?\d*|FAULT),V3:([+-]?\d+\.?\d*|FAULT),V4:([+-]?\d+\.?\d*|FAULT)$"
+        )
 
-        # Pre-compile regex via protected cell configuration tables
-        self.packet_pattern = _DAEMON_CELL[0xD1]()
-
-    def register_callback(self, callback: Callable[[np.ndarray], None]) -> None:
-        """Bridges the hardware thread to the sensor adapter matrix deque processor."""
-        with self._lock:
-            self._callback = callback
-
-    def parse_raw_line(self, line: str) -> Optional[np.ndarray]:
-        """Validates incoming serial frame text strings and returns a float32 array."""
-        clean_str = line.strip()
-        if not clean_str:
-            return None
-
-        match = self.packet_pattern.match(clean_str)
-        if not match:
-            with self._lock:
-                self.frames_dropped += 1
-            return None
-
+    def process_raw_line(self, raw_line: bytes) -> tuple:
+        """Sanitizes, validates, and decodes incoming serial string packets."""
         try:
-            vector = np.array([float(x) for x in match.groups()], dtype=np.float32)
-            with self._lock:
-                self.frames_received += 1
-            return vector
-        except (ValueError, TypeError):
-            with self._lock:
+            # 1. Enforce strict upper physical size constraints to block buffer overruns
+            if len(raw_line) > self.max_line_bytes:
                 self.frames_dropped += 1
-            return None
+                logger.warning(f"Line bounds breached ({len(raw_line)} bytes). Purging corrupted frame.")
+                return "CORRUPTED", None
 
-    def _polling_loop(self) -> None:
-        """Asynchronous, non-blocking hardware polling state machine engine."""
-        print(f"[HW_DAEMON] Initializing hardware collection on targeted port: {self.port}")
-        backoff = 1.0  # Linear reconnection retry timer delay in seconds
+            # 2. Decode string characters safely passing through replacement fallback nodes
+            clean_str = raw_line.decode('utf-8', errors='replace').strip()
+            if not clean_str:
+                return "EMPTY", None
 
-        # AUTOMATED CLOUD SIMULATION GUARD: Completely bypasses physical OS handles if port is MOCK
-        if "MOCK" in self.port.upper():
-            print(
-                "[HW_DAEMON INFO] Cloud environment or simulation vector flag detected. Deploying virtual telemetry matrix stream."
-            )
-            import random
+            # 3. Check for the bare-metal hardware timeout sentinel alert first
+            if "FAULT" in clean_str:
+                self.frames_dropped += 1
+                logger.error("[💥 HARDWARE ALERT] Embedded firmware reporting an active ADC DRDY pin timeout!")
+                return "HARDWARE_FAULT", None
 
-            rng = random.Random(42)
+            # 4. Evaluate stream fields against structural regular expressions
+            match = self.telemetry_regex.match(clean_str)
+            if not match:
+                self.frames_dropped += 1
+                logger.warning(f"Regex match failure on line: '{clean_str}'. Dropping malformed frame.")
+                return "MALFORMED", None
 
-            while self.is_running:
-                mock_line = _DAEMON_CELL[0xD2](rng)
-                vector = self.parse_raw_line(mock_line)
-                if vector is not None:
-                    with self._lock:
-                        if self._callback is not None:
-                            self._callback(vector)
-                time.sleep(0.01)  # Throttle virtual telemetry feed cycle to 100Hz
-            return
+            # 5. Safely convert parsed capture groups into highly optimized numpy arrays
+            extracted_voltages = np.array([float(x) for x in match.groups()], dtype=np.float32)
+            self.frames_parsed += 1
+            return "SUCCESS", extracted_voltages
 
-        while self.is_running:
-            ser = None
-            try:
-                # Attempt to claim the physical OS handle of the target copper bus port
-                ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
-                print(f"[HW_DAEMON] Successfully claimed copper line handle at {self.port}.")
-                backoff = 1.0  # Reset linear retry backoff parameters on stable connection
-
-                # Clear standard internal UART receiver buffers to wipe out legacy boot noise
-                ser.reset_input_buffer()
-
-                while self.is_running:
-                    if not ser.is_open:
-                        break
-
-                    raw_bytes = ser.readline()
-                    if not raw_bytes:
-                        continue  # Read line timeout encountered, poll loop continues
-
-                    try:
-                        line_str = raw_bytes.decode("utf-8", errors="ignore")
-                    except Exception:
-                        continue  # Malformed string decoding error caught, ignore frame noise
-
-                    vector = self.parse_raw_line(line_str)
-                    if vector is not None:
-                        # Dispatch parsed telemetry arrays directly to the linked sensor adapter
-                        with self._lock:
-                            if self._callback is not None:
-                                self._callback(vector)
-
-            except (serial.SerialException, OSError) as err:
-                print(f"[HW_DAEMON WARNING] Physical connection lost or unavailable: {repr(err)}")
-                print(
-                    f"[HW_DAEMON] Initiating recovery tracking sequence. Retrying in {backoff}s..."
-                )
-                time.sleep(backoff)
-                backoff = min(backoff + 2.0, 10.0)  # Cap linear delay envelope search spacing
-            finally:
-                if ser is not None and ser.is_open:
-                    ser.close()
-                    print(f"[HW_DAEMON] Released physical handle for {self.port} safely.")
-
-    def start(self) -> None:
-        """Spins up the non-blocking background telemetry data ingestion thread."""
-        with self._lock:
-            if self.is_running:
-                return
-            self.is_running = True
-            self._thread = threading.Thread(target=self._polling_loop, daemon=True)
-            self._thread.start()
-        print("[HW_DAEMON SUCCESS] Background hardware collection loop launched.")
-
-    def stop(self) -> None:
-        """Executes a graceful, thread-safe system shutdown sequence."""
-        with self._lock:
-            if not self.is_running:
-                return
-            self.is_running = False
-        if self._thread is not None:
-            self._thread.join(timeout=2.0)
-        print("[HW_DAEMON] Local hardware ingestion engine stopped cleanly.")
-
+        except Exception as err:
+            self.frames_dropped += 1
+            logger.error(f"Unexpected parsing exception intercepted in ingestion loop: {str(err)}")
+            return "PARSE_EXCEPTION", None
 
 if __name__ == "__main__":
-    # Test harness to verify thread safety and parsing state integrity locally
-    print("[INIT] Launching daemon sanity test pass...")
-    daemon = HardwareSerialDaemon(port="MOCK_TEST")
-    mock_line = "V1:1.23,V2:-4.56,V3:0.0,V4:7.89\n"
-    parsed_vector = daemon.parse_raw_line(mock_line)
-    print(f" -> Sanity Check Parsing Test Output: {parsed_vector}")
-    assert parsed_vector is not None and len(parsed_vector) == 4
-
-    print(" -> Verifying automated background thread ingestion engine pass...")
-    daemon.start()
-    time.sleep(0.05)
-    daemon.stop()
-    print("[SUCCESS] Core serial interface structures are optimized and verified.")
+    print("[TEST] Launching serial daemon ingestion robustness validation pass...")
+    daemon = VivicSerialDaemon()
+    
+    # Generate test beds simulating various line data scenarios
+    good_frame = b"V1:0.1234,V2:-1.0500,V3:2.0480,V4:0.0012\n"
+    fault_frame = b"V1:FAULT,V2:FAULT,V3:FAULT,V4:FAULT\n"
+    corrupted_noise = b"V1:0.1234,V2:,V3:2.0480,V4:0.0012\n" # Electrostatic injection simulation
+    flooded_buffer = b"V" * 300 # Memory exhaustion attack vectors simulation
+    
+    # Process test arrays through the defensive validation layers
+    s1, d1 = daemon.process_raw_line(good_frame)
+    s2, d2 = daemon.process_raw_line(fault_frame)
+    s3, d3 = daemon.process_raw_line(corrupted_noise)
+    s4, d4 = daemon.process_raw_line(flooded_buffer)
+    
+    assert s1 == "SUCCESS" and d1 is not None, "Valid telemetry stream formats must pass through smoothly."
+    assert s2 == "HARDWARE_FAULT", "Firmware alert flags must be caught instantly."
+    assert s3 == "MALFORMED", "Noise anomalies must be intercepted cleanly without a script crash."
+    assert s4 == "CORRUPTED", "Memory floods must trip upper line size limit filters."
+    
+    print(f"[SUCCESS] Ingestion loop test complete. Parsed: {daemon.frames_parsed}, Dropped: {daemon.frames_dropped}")

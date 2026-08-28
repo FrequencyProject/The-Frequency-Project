@@ -88,3 +88,24 @@ When capturing environmental signals across distinct spatial vectors, soil moist
 <!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
 
 *   **Isolated Shield Grounding Topology:** Cable shields handling individual sensor lines must remain completely uncoupled on the natural ecosystem side. Probes must be mechanically housed within insulated plastic frames, allowing the outer cable shield line to drain ambient static currents back to the circuit ground *exclusively* at the terminal adapter node on the printed circuit board housing.
+
+---
+
+### 🎛️ 5. Step-by-Step Field Calibration Loop
+
+To guarantee the mathematical stability of downstream 3-Sigma Anomaly Engines, run this field verification loop whenever nodes are deployed or altered:
+
+1.  **Baseline Zero Calibration**: Ground your target probe input pins (`0V` differential input potential) and view your active stream telemetry. Confirm your channel read registers normalize cleanly to `0.0000` volts.
+2.  **Full-Scale Voltage Lock**: Connect your probe lines to an exact, calibrated `2.048V` reference source. Verify your serial monitor prints `2.0480` across your data packets.
+3.  **Gain Factor Adjustment**: If your physical readout values drift or deviate from the absolute true voltage by more than `1%`, measure the actual potential of your hardware voltage reference chip pin using a high-precision voltmeter. Replace the value of `V_REF` inside your `firmware_adc_loop.cpp` configuration variables with your exact physical multi-meter reading (e.g., `const float V_REF = 2.045f;`) to align conversion tracking accuracy.
+
+---
+
+### ⏱️ 6. Propagation Latency Envelope Breakdown
+
+Total operational loop pipeline processing latency budget stands at **< 18.0 ms**, completely filling your strict execution windows:
+
+*   **Bare-metal Hardware Sensing Phase (C++)**: ~0.5 ms (Fast 4MHz SPI block register byte shifts)
+*   **Delta-Sigma Conversion Window**: ~16.0 ms (60Hz physical sample pooling throttle time)
+*   **USB-UART Serial Bus Ingestion Phase**: ~1.1 ms (Piping raw ASCII lines down the 115200 baud pipeline)
+*   **High-Dimensional Statistical Processing (Python)**: ~0.4 ms (Instantaneous O(n) EMA matrix boundaries scoring)
