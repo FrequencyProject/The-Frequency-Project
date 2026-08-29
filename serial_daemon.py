@@ -194,3 +194,9 @@ class VivicSerialDaemon:
                 "frames_dropped": self.frames_dropped,
                 "last_processing_latency_ms": self.last_latency * 1000.0
             }
+
+
+# =====================================================================
+# Backward-compatible alias for existing orchestrators and tests.
+# =====================================================================
+HardwareSerialDaemon = VivicSerialDaemon
