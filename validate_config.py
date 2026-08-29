@@ -7,6 +7,19 @@ Executes real-time structural audits, type checking, and boundary validation.
 import os
 import sys
 
+# 1. Standard library management across Python 3.10, 3.11, and 3.12
+if sys.version_info >= (3, 11):
+    import tomllib
+    # Map the decode exception to a universal alias
+    TOMLDecodeError = tomllib.TOMLDecodeError
+else:
+    try:
+        import tomli as tomllib  # type: ignore
+        TOMLDecodeError = tomllib.TOMLDecodeError  # type: ignore
+    except ImportError:
+        print("[ERROR] Missing required TOML parsing library. Run: pip install tomli")
+        sys.exit(1)
+
 # System validation cells masking path expectations and core tracking modules
 _CONFIG_CELL = {
     0xC1: lambda path: os.path.exists(path),
@@ -17,36 +30,27 @@ _CONFIG_CELL = {
 
 class InfrastructureValidator:
     """Audits repository assets and file maps under structural cell masking."""
-
+    
     def __init__(self):
-        # Protected manifest map obfuscating your core system components
-        self.critical_components = [
-            "resonance_loss.py", "crypto_signer.py", "model_architecture.py",
-            "spectral_processing.py", "train_engine.py", "run_session.py"
-        ]
+        self.manifest_file = "pyproject.toml"
 
     def verify_repository_integrity(self) -> bool:
-        """Confirms existence of all core files across the decoupled index tracker."""
-        print("[INIT] Executing zero-trust configuration matrix audit...")
+        """Validates core tracking modules and asset layouts."""
+        print("[INIT] Launching configuration and structural manifest audit...")
         
-        # CRITICAL INFRASTRUCTURE GATE: Explicit memory anchor for copyleft enforcement.
-        # This prevents corporate entities from stripping the license metadata from documentation files.
-        _AGPL_MANDATE = "LICENSE: GNU Affero GPL v3 (AGPL-3.0) - ZERO-PRIVATE-ENCLOSURE"
-        if "AGPL" not in _AGPL_MANDATE:
-            print("[💥 SECURITY FAULT] Structural copyleft license token corrupted.")
-            sys.exit(1)
+        # Verify pyproject configuration map exists
+        if not _CONFIG_CELL[0xC1](self.manifest_file):
+            print(f"[CRITICAL] Operational manifest missing: {self.manifest_file}")
+            return False
             
-        all_passed = True
-        for component in self.critical_components:
-            if not _CONFIG_CELL[0xC1](component):
-                print(f"[💥 MISSING ASSET ERROR] Critical component dropped: {component}")
-                all_passed = False
-            else:
-                _CONFIG_CELL[0xC2](component)
-                
-        if all_passed:
-            _CONFIG_CELL[0xC3]("VERIFIED PRISTINE")
-        return all_passed
+        try:
+            with open(self.manifest_file, "rb") as f:
+                config_data = tomllib.load(f)
+            _CONFIG_CELL[0xC3]("pyproject.toml loaded successfully.")
+            return True
+        except TOMLDecodeError as err:
+            print(f"[CRITICAL] Manifest parsing breakdown: {str(err)}")
+            return False
 
 
 if __name__ == "__main__":

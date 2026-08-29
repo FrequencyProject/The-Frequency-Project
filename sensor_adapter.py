@@ -55,6 +55,7 @@ class MultiChannelSensorAdapter:
 
         # Initialize the production pipeline compiler and bare-metal serial daemon
         self.pipeline = AsymmetricTensorPipeline()
+
         self.daemon = HardwareSerialDaemon(port=port, baudrate=baudrate)
 
         # Register the thread-safe callback handler to capture incoming vector frames
