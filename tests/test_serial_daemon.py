@@ -1,7 +1,6 @@
-import time
 import struct
 import numpy as np
-from serial_daemon import VivicSerialDaemon
+from serial_daemon import VivicSerialDaemon, HardwareSerialDaemon
 
 def test_parser():
     d = VivicSerialDaemon()
@@ -27,24 +26,22 @@ def test_hardware_fault_handling():
 def test_asynchronous_simulation_lifecycle():
     frames_captured = []
     
-    # Define a custom frame capture callback handler
     def mock_session_callback(tensor):
         frames_captured.append(tensor)
 
-    # Instantiate daemon targeting a dummy port to trigger automated software simulation fallback
     daemon = VivicSerialDaemon(port="/dev/null", callback=mock_session_callback, use_mock_fallback=True)
-    
-    # Start background execution thread loop
     daemon.start()
-    
-    # Allow loop to cycle frames over 100ms interval duration window
+    import time
     time.sleep(0.1)
-    
     daemon.stop()
     metrics = daemon.get_metrics()
     
-    # Structural functional assertions
-    assert len(frames_captured) > 0, "The simulation carrier bridge must continuously dispatch telemetry updates asynchronously."
+    assert len(frames_captured) > 0
     assert metrics["frames_processed"] == len(frames_captured)
     assert metrics["frames_dropped"] == 0
-    assert metrics["last_processing_latency_ms"] < 18.0, "Real-time frame parsing must compute well within the 18ms constraint."
+    assert metrics["last_processing_latency_ms"] < 18.0
+
+def test_backward_compatibility_alias():
+    # Verify that old-style callers still initialize perfectly through the wrapper alias
+    d = HardwareSerialDaemon()
+    assert isinstance(d, VivicSerialDaemon)
