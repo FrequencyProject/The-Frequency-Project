@@ -1,128 +1,116 @@
 #include <Arduino.h>
 #include <SPI.h>
 
-// ==============================================================================
-// 📡 BARE-METAL HARDWARE DEFINE BLOCKS: SPI PIN LAYOUT REGISTER MAPPING
-// ==============================================================================
-#define ADC_CS_PIN     5   // Chip Select (Hardware SPI Slave Select)
-#define ADC_DRDY_PIN   4   // Data Ready interrupt pin from Delta-Sigma chip
+// --- PIN DEFINITIONS (Synchronized to Hardware Blueprint) ---
+const int ADC_CS_PIN = 5;
+const int ADC_DRDY_PIN = 4;
 
-// Configuration settings for your exact 115200 downstream telemetry channel baud
-#define SERIAL_SPEED   115200
-#define SAMPLE_DELAY   16  // ~60Hz native polling execution loop match window (16.6ms)
+// --- SENTINEL VALUE ---
+const int32_t FAULT_SENTINEL = -2147483648; // INT32_MIN
 
-// Hardware SPI constants matching your specific Delta-Sigma ADC register layout
-#define SPI_SPEED_HZ   4000000 // SPI Clock speed clamped to stable 4MHz instrumentation floor
-#define SPI_BIT_ORDER  MSBFIRST
-#define SPI_DATA_MODE  SPI_MODE1
+// --- CONFIGURATION ---
+const uint32_t TIMEOUT_LIMIT = 5000;
 
-// ==============================================================================
-// 🧠 STATE REGISTERS: 24-BIT ENCODE BITMASK BUFFER LAYOUTS
-// ==============================================================================
-SPISettings adc_spi_settings(SPI_SPEED_HZ, SPI_BIT_ORDER, SPI_DATA_MODE);
-
-void init_external_adc() {
-    pinMode(ADC_CS_PIN, OUTPUT);
-    pinMode(ADC_DRDY_PIN, INPUT_PULLUP);
-    digitalWrite(ADC_CS_PIN, HIGH); // Pull Chip Select high to isolate the SPI bus initializations
-    
-    SPI.begin();
-    
-    // Low-level hardware registration command setup sequence would fire here
-    // e.g., configuring gain multipliers, reference voltages, and internal mux pools
-    delay(50); // Explicit hardware hydration window for external voltage rails to stabilize
+// Compute CRC-8 over a raw byte buffer (Dallas/Maxim 0x31: x^8 + x^5 + x^4 + 1)
+uint8_t compute_binary_crc8(const uint8_t *data, size_t len) {
+    uint8_t crc = 0x00;
+    for (size_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (uint8_t j = 0; j < 8; j++) {
+            if (crc & 0x80) {
+                crc = (crc << 1) ^ 0x31;
+            } else {
+                crc <<= 1;
+            }
+        }
+    }
+    return crc;
 }
 
-int32_t read_adc_channel_raw(uint8_t channel_mux_command) {
-    int32_t raw_voltage_reading = 0;
+// Low-level raw read of a specified ADC channel via SPI
+int32_t read_adc_channel_raw(uint8_t channel_cmd) {
+    uint32_t timeout_counter = 0;
     
-    // Command the ADC multiplexer register to step into the designated channel input path
-    SPI.beginTransaction(adc_spi_settings);
+    // Wait for data ready signal with high-impedance pull-up monitoring
+    while (digitalRead(ADC_DRDY_PIN) == HIGH && timeout_counter < TIMEOUT_LIMIT) {
+        timeout_counter++;
+    }
+    
+    // Intercept hardware timeout faults early
+    if (timeout_counter >= TIMEOUT_LIMIT) {
+        digitalWrite(ADC_CS_PIN, HIGH);
+        return FAULT_SENTINEL;
+    }
+    
+    SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE1));
     digitalWrite(ADC_CS_PIN, LOW);
     
-    // Send mux selection parameters down the SPI bus MOSI lane
-    SPI.transfer(channel_mux_command); 
-    
-    // Wait for the physical Delta-Sigma chip logic lines to declare a completed conversion cycle
-    uint32_t timeout_counter = 0;
-    while (digitalRead(ADC_DRDY_PIN) == HIGH && timeout_counter < 5000) {
-        timeout_counter++;
-        delayMicroseconds(1);
-    }
-    
-    // CRITICAL HARDENING GUARD: If the hardware pins fault or timeout, exit immediately
-    // Returns the lowest possible negative 32-bit integer as a strict error sentinel value
-    if (timeout_counter >= 5000) {
-        digitalWrite(ADC_CS_PIN, HIGH);
-        SPI.endTransaction();
-        return -2147483648; 
-    }
-    
-    // Read the resulting 24 bits of lossless data down the MISO line (packed as 3 sequential bytes)
-    uint8_t byte_high  = SPI.transfer(0x00);
-    uint8_t byte_mid   = SPI.transfer(0x00);
-    uint8_t byte_low   = SPI.transfer(0x00);
+    // Send command byte and read 24-bit output payload
+    SPI.transfer(channel_cmd);
+    uint8_t b1 = SPI.transfer(0x00);
+    uint8_t b2 = SPI.transfer(0x00);
+    uint8_t b3 = SPI.transfer(0x00);
     
     digitalWrite(ADC_CS_PIN, HIGH);
     SPI.endTransaction();
     
-    // Reconstruct the sign-extended 24-bit integer values natively into a standard 32-bit register frame
-    raw_voltage_reading = ((int32_t)byte_high << 16) | ((int32_t)byte_mid << 8) | byte_low;
-    
-    // Sign-extend bit 23 to handle negative microvolt potential shifts flawlessly
-    if (raw_voltage_reading & 0x00800000) {
-        raw_voltage_reading |= 0xFF000000;
+    // Assemble sign-extended 24-bit data to 32-bit integer
+    int32_t raw_value = ((int32_t)b1 << 16) | ((int32_t)b2 << 8) | b3;
+    if (raw_value & 0x800000) {
+        raw_value |= 0xFF000000;
     }
     
-    return raw_voltage_reading;
+    return raw_value;
 }
 
-// Convert signed raw binary integers into un-aliased physical floating point voltages
-float convert_to_voltage(int32_t raw_value) {
-    const float V_REF = 2.048f; // Precision internal voltage reference base
-    const float TWO_POW_23 = 8388608.0f; // 2^23 scale limit for 24-bit resolution indexing
-    return ((float)raw_value / TWO_POW_23) * V_REF;
+// Convert signed 24-bit raw counts to true analog voltage (-2.048V to +2.048V range)
+float convert_to_voltage(int32_t raw_counts) {
+    return (float)raw_counts * (2.048f / 8388607.0f);
 }
 
-// ==============================================================================
-// 📋 TELEMETRY ORCHESTRATION LAYER: SERIAL STREAM MATRIX PIPELINES
-// ==============================================================================
 void setup() {
-    Serial.begin(SERIAL_SPEED);
-    while (!Serial) {
-        ; // Wait for downstream host connection hooks over physical USB architecture
-    }
-    
-    init_external_adc();
+    Serial.begin(115200);
+    pinMode(ADC_CS_PIN, OUTPUT);
+    pinMode(ADC_DRDY_PIN, INPUT_PULLUP);
+    digitalWrite(ADC_CS_PIN, HIGH);
+    SPI.begin();
 }
 
 void loop() {
-    // Collect concurrent readings across all four bio-electric potential input vectors
-    int32_t raw_v1 = read_adc_channel_raw(0x01); // Tree sapwood potential sensor
-    int32_t raw_v2 = read_adc_channel_raw(0x02); // Mycelium network grid line A
-    int32_t raw_v3 = read_adc_channel_raw(0x03); // Mycelium network grid line B
-    int32_t raw_v4 = read_adc_channel_raw(0x04); // Local Schumann resonance fluctuation probe
+    // Read all 4 operational channels sequentially
+    int32_t raw_ch1 = read_adc_channel_raw(0x01);
+    int32_t raw_ch2 = read_adc_channel_raw(0x02);
+    int32_t raw_ch3 = read_adc_channel_raw(0x03);
+    int32_t raw_ch4 = read_adc_channel_raw(0x04);
     
-    // HARDWARE FAULT FILTER: If any single channel hits the timeout sentinel, transmit an alert frame
-    if (raw_v1 == -2147483648 || raw_v2 == -2147483648 || raw_v3 == -2147483648 || raw_v4 == -2147483648) {
+    // Atomic fault interception before committing to downstream string translation
+    if (raw_ch1 == FAULT_SENTINEL || raw_ch2 == FAULT_SENTINEL || 
+        raw_ch3 == FAULT_SENTINEL || raw_ch4 == FAULT_SENTINEL) {
         Serial.println("V1:FAULT,V2:FAULT,V3:FAULT,V4:FAULT");
-        delay(SAMPLE_DELAY);
-        return; // Terminate this loop execution pass immediately to prevent processing garbage data
+        delay(10);
+        return;
     }
     
-    // Translate structural integers into standard floating-point metrics
-    float v1 = convert_to_voltage(raw_v1);
-    float v2 = convert_to_voltage(raw_v2);
-    float v3 = convert_to_voltage(raw_v3);
-    float v4 = convert_to_voltage(raw_v4);
+    // Safe conversion to floating-point metrics
+    float v1 = convert_to_voltage(raw_ch1);
+    float v2 = convert_to_voltage(raw_ch2);
+    float v3 = convert_to_voltage(raw_ch3);
+    float v4 = convert_to_voltage(raw_ch4);
     
-    // Format and pipe the telemetry payloads downstream via USB-UART strings
-    Serial.print("V1:"); Serial.print(v1, 4); Serial.print(",");
-    Serial.print("V2:"); Serial.print(v2, 4); Serial.print(",");
-    Serial.print("V3:"); Serial.print(v3, 4); Serial.print(",");
-    Serial.print("V4:"); Serial.print(v4, 4);
-    Serial.println(); // Stream the trailing line-terminator byte
+    float values[4] = {v1, v2, v3, v4};
     
-    // Standard non-blocking clock throttle alignment to match raw ingestion daemon configurations
-    delay(SAMPLE_DELAY);
+    // Calculate CRC-8 directly over the raw 16-byte memory footprint
+    uint8_t *byte_ptr = reinterpret_cast<uint8_t*>(values);
+    uint8_t final_crc = compute_binary_crc8(byte_ptr, sizeof(values));
+    
+    // Broadcast fixed-precision human-readable string matched with binary checksum
+    Serial.print("V1:"); Serial.print(v1, 4);
+    Serial.print(",V2:"); Serial.print(v2, 4);
+    Serial.print(",V3:"); Serial.print(v3, 4);
+    Serial.print(",V4:"); Serial.print(v4, 4);
+    Serial.print(",CRC:0x");
+    if (final_crc < 0x10) Serial.print("0");
+    Serial.println(final_crc, HEX);
+    
+    delay(16); // Match with ~60Hz ingestion cycle target
 }
