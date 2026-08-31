@@ -1,37 +1,37 @@
-name: Continuous Integration Validation Matrix
+name: Phase 8 Continuous Integration Pipeline
 
 on:
   push:
-    branches: [ "clean-production-run" ]
+    branches: [ clean-production-run ]
   pull_request:
-    branches: [ "clean-production-run" ]
-
-permissions:
-  contents: read
+    branches: [ clean-production-run ]
 
 jobs:
-  validate-and-test:
+  build-and-test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-
+    
     steps:
-    - name: Checkout Code Repository Base
+    - name: Check out repository source tree files
       uses: actions/checkout@v4
 
-    - name: Mount Python Execution Matrix Environs
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Provision Host Native TPM Cryptographic Libraries
+    - name: Provision system dependencies and TPM headers
       run: |
         sudo apt-get update
-        sudo apt-get install -y libtss2-dev pkg-config
+        sudo apt-get install -y libtss2-dev build-essential tpm2-tools
 
-    - name: Hardened Dependency Installation & Package Alignment
+    - name: Configure Python 3.12 Runtime
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Verify pinned third-party dependencies wheel compilation
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip setuptools cffi
         pip install -r requirements.txt
+
+    - name: Execute validation configuration checks
+      run: python validate_config.py
+
+    - name: Run Core PyTest Matrix Suite
+      run: python -m pytest
