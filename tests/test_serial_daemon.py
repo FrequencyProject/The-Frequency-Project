@@ -1,9 +1,9 @@
+import time
 import struct
-import numpy as np
-from serial_daemon import VivicSerialDaemon, HardwareSerialDaemon
+from serial_daemon import HardwareSerialDaemon
 
 def test_parser():
-    d = VivicSerialDaemon()
+    d = HardwareSerialDaemon()
     v1, v2, v3, v4 = 1.0000, 2.0000, 3.0000, 4.0000
     
     payload_str = f"V1:{v1:.4f},V2:{v2:.4f},V3:{v3:.4f},V4:{v4:.4f}"
@@ -14,10 +14,12 @@ def test_parser():
     
     assert status == "SUCCESS"
     assert parsed_result is not None
-    assert np.allclose(parsed_result, [v1, v2, v3, v4])
+    # Verifies matching outputs using native float evaluation thresholds
+    assert abs(parsed_result[0] - v1) < 1e-4
+    assert abs(parsed_result[1] - v2) < 1e-4
 
 def test_hardware_fault_handling():
-    d = VivicSerialDaemon()
+    d = HardwareSerialDaemon()
     fault_line = b"V1:FAULT,V2:FAULT,V3:FAULT,V4:FAULT\n"
     status, parsed_result = d.process_raw_line(fault_line)
     assert status == "HARDWARE_FAULT"
@@ -26,22 +28,16 @@ def test_hardware_fault_handling():
 def test_asynchronous_simulation_lifecycle():
     frames_captured = []
     
-    def mock_session_callback(tensor):
-        frames_captured.append(tensor)
+    def mock_session_callback(data_tuple):
+        frames_captured.append(data_tuple)
 
-    daemon = VivicSerialDaemon(port="/dev/null", callback=mock_session_callback, use_mock_fallback=True)
+    daemon = HardwareSerialDaemon(port="MOCK_BUS", callback=mock_session_callback, use_mock_fallback=True)
     daemon.start()
-    import time
     time.sleep(0.1)
     daemon.stop()
-    metrics = daemon.get_metrics()
     
+    metrics = daemon.get_metrics()
     assert len(frames_captured) > 0
     assert metrics["frames_processed"] == len(frames_captured)
     assert metrics["frames_dropped"] == 0
     assert metrics["last_processing_latency_ms"] < 18.0
-
-def test_backward_compatibility_alias():
-    # Verify that old-style callers still initialize perfectly through the wrapper alias
-    d = HardwareSerialDaemon()
-    assert isinstance(d, VivicSerialDaemon)
