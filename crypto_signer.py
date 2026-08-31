@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(
 logger = logging.getLogger("CryptoSigner")
 
 try:
-    from tpm2_pytss import ESAPI, TPM2B_PUBLIC, TPM2B_SENSITIVE
+    from tpm2_pytss import ESAPI, TPM2B_PUBLIC, TPM2B_SENSITIVE, TPMI_ALG_HASH
     HAS_TPM_HARDWARE = True
 except ImportError:
     HAS_TPM_HARDWARE = False
@@ -44,12 +44,12 @@ class HardwareTelemetrySigner:
             logger.info(f"Secure cryptographic interface handle bound to TCTI path: {self.tcti_string}")
         except Exception as err:
             logger.critical(f"FATAL SECURE INITIALIZATION FAILURE: Unable to bind TPM bus context: {repr(err)}")
-            # Fail-Secure: Immediately kill process to prevent unauthenticated data collection states
-            sys.exit(1)
+            # HARDENING REMEDIATION: Raise explicit exception instead of invoking destructive sys.exit(1)
+            # to let the parent orchestrator capture the fault and perform a clean teardown sequence.
+            raise RuntimeError(f"Cryptographic Initialization Aborted: TPM bus un-bindable: {str(err)}") from err
 
     def sign_vector(self, vector: Union[np.ndarray, tuple, list]) -> Tuple[bytes, bytes]:
         """Generates an asymmetric cryptographic signature over a telemetry payload. Enforces fail-secure limits."""
-        # P0 INTEGRATION ALIGNMENT: Dynamically handle native tuples, lists, and arrays seamlessly
         if isinstance(vector, (tuple, list)):
             if len(vector) != 4:
                 raise ValueError("Cryptographic signer requires a verified 4-element telemetry structure.")
@@ -70,15 +70,24 @@ class HardwareTelemetrySigner:
         # Real Hardware Silicon Execution Path
         try:
             import hashlib
+            from tpm2_pytss import TPMT_SIG_SCHEME, constants
+            
+            # Form clean SHA-256 cryptographic digest of raw telemetry data
             digest = hashlib.sha256(raw_payload_bytes).digest()
 
+            # Configure strict signature verification schemes matching low-level ECDSA contracts
+            in_scheme = TPMT_SIG_SCHEME(scheme=constants.TPM2_ALG_ECDSA)
+            in_scheme.details.ecdsa.hashAlg = constants.TPM2_ALG_SHA256
+            validation = constants.TPMT_TK_HASHCHECK(tag=constants.TPM2_ST_HASHCHECK, hierarchy=constants.TPM2_RH_OWNER)
+
             # Execute low-level SPI cryptographic signing pass inside isolated hardware registers
-            signature_token, _ = self._esapi.sign(self._key_handle, digest, None, None)
-            return raw_payload_bytes, signature_token.to_bytes()
+            signature_token, _ = self._esapi.sign(self._key_handle, digest, in_scheme, validation)
+            
+            # HARDENING REMEDIATION: Safely serialize structured TPMT_SIGNATURE tokens to flat binary vectors
+            raw_sig_bytes = signature_token.marshal()
+            return raw_payload_bytes, raw_sig_bytes
             
         except Exception as err:
-            # HARDENING REMEDIATION: Eliminated insecure os.urandom noise leaks. 
-            # If the hardware crypto engine errors out, we abort transit to protect unencrypted boundary data.
             logger.critical(f"HARDWARE SECURE COMPLIANCE BREACH: SPI bus loop or session context failed: {repr(err)}")
             raise RuntimeError("Cryptographic Ingestion Aborted: Hardware security subsystem is offline or uncalibrated.") from err
 
@@ -92,8 +101,12 @@ class HardwareTelemetrySigner:
 
         try:
             import hashlib
+            from tpm2_pytss import TPMT_SIGNATURE
             digest = hashlib.sha256(payload).digest()
-            self._esapi.verify_signature(self._key_handle, digest, signature)
+            
+            # Unmarshal flat binary byte streams back into low-level structured tokens for hardware audit loops
+            tpm_signature_obj = TPMT_SIGNATURE.unmarshal(signature)
+            self._esapi.verify_signature(self._key_handle, digest, tpm_signature_obj)
             return True
         except Exception:
             return False
@@ -112,7 +125,6 @@ if __name__ == "__main__":
     logger.info("Verifying Cryptographic Telemetry Signing module constructs...")
     signer = HardwareTelemetrySigner(use_simulation=True)
 
-    # Test complete data compatibility across both arrays and native ingestion tuples
     mock_tuple_frame = (1.23, -4.56, 0.01, 7.89)
     payload_bytes, sig_bytes = signer.sign_vector(mock_tuple_frame)
 

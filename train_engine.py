@@ -49,9 +49,9 @@ class VivicTrainingEngine:
         # Reset gradient tracking tensors inside optimization pools to clear calculation memory footprints
         self.optimizer.zero_grad()
 
-        # Convert the NumPy matrix payload into a PyTorch batch tracking tensor and map to the active device
-        # Input Shape: (1, 4, 1280) -> Batch Size of 1
-        tensor_in = torch.from_numpy(features).unsqueeze(0).to(self.device)
+        # HARDENING OPTIMIZATION: Force explicit floating-point casting (.float()) to ensure
+        # cross-platform tensor shape and precision compliance before device allocation.
+        tensor_in = torch.from_numpy(features).unsqueeze(0).float().to(self.device)
 
         # Forward Pass: Extract the non-semantic latent vector
         latent_vector = self.model(tensor_in)
@@ -68,7 +68,6 @@ class VivicTrainingEngine:
     def run_active_session(self, steps: int = 5, step_delay_s: float = 0.1):
         """Launches background acquisition threads and steps through an interruptible optimization run."""
         logger.info("Activating hardware background telemetry ingestion...")
-        # INTEGRATION REALIGNMENT: Correct public method method endpoints called on the adapter
         self.adapter.start_acquisition()
         time.sleep(0.5)  # Allow underlying serial daemon ports thread settling window
 
@@ -92,7 +91,6 @@ class VivicTrainingEngine:
 
         finally:
             logger.info("Halting background physical interface processes safely...")
-            # INTEGRATION REALIGNMENT: Correct public endpoint teardown handler
             self.adapter.stop_acquisition()
 
 
