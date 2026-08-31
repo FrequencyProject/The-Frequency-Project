@@ -6,3 +6,4 @@ tpm2-pytss>=2.3.0
 black==24.2.0
 pytest==8.0.2
 pyserial
+cryptography<=42.0.8
