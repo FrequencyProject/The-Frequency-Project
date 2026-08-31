@@ -19,9 +19,8 @@ _SIG_CELL = {
 class HardenedSignalConditioner:
     """Executes high-performance numerical filtering and spectral extraction transformations."""
 
-    def apply_notch_filter(self, raw_signal: np.ndarray, sample_rate: float) -> np.ndarray:
+    def apply_notch_filter(self, raw_signal: np.ndarray, sample_rate: float, *args, **kwargs) -> np.ndarray:
         """Suppresses local grid hum contamination via protected IIR cell filters."""
-        # Hardened Guard: Only apply 60Hz notch if Nyquist frequency is safely above target bounds
         if (sample_rate / 2.0) <= 60.0:
             return raw_signal
         b, a = _SIG_CELL[0xF1](raw_signal, sample_rate)
