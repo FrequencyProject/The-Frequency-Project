@@ -1,134 +1,118 @@
 #!/usr/bin/env python3
-"""Phase 6: Hardware-Bound Passphrase Escrow Engine."""
+"""Phase 6: Hardware-Bound Passphrase Provisioning Utility.
+
+Leverages a memory-managed ESAPI session to seal high-entropy storage 
+master keys under a PCR policy and provisions them into persistent slot 0x81000003.
+"""
+import os
 import sys
-import secrets
+import logging
 import tpm2_pytss
-from tpm2_pytss import constants
+from tpm2_pytss import constants, TPM2B_SENSITIVE_DATA, TPM2B_PUBLIC
 
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
+logger = logging.getLogger("HardwareVault")
 
-def _safe_flush(ctx, handle):
-    if handle is None:
-        return
-    try:
-        ctx.flush_context(handle)
-    except Exception:
-        pass
+def seal_to_persistent(secret_data: bytes, target_port: int = 2321, persistent_handle: int = 0x81000003, pcr_index: int = 7) -> int:
+    """Seals a high-entropy secret under a PCR configuration policy and persists it into the TPM."""
+    if not secret_data:
+        logger.error("No secret data provided for sealing operation.")
+        return 1
 
+    # 1. REMEDIATION: Strict boundary check to prevent out-of-bounds PCR registry errors
+    if not (0 <= pcr_index < 24):
+        logger.error(f"Invalid PCR index configuration: {pcr_index}. Range must stay within [0-23].")
+        return 1
 
-def execute_hardware_escrow(target_port: int = 2321, target_pcr: int = 7) -> bool:
-    print(f"[INIT] Opening isolated hardware transport session on port {target_port}...")
+    logger.info(f"Opening isolated hardware provisioning session on port {target_port}...")
     tcti_string = f"swtpm:port={target_port}"
-
-    parent_handle = None
-    loaded_handle = None
+    
+    policy_session = None
+    transient_handle = None
+    tpm_context = None
 
     try:
-        secret_passphrase = secrets.token_bytes(32)
+        tpm_context = tpm2_pytss.ESAPI(tcti_string)
+        
+        logger.info("Reading primary storage hierarchy handles...")
+        primary_handle = tpm_context.get_primary_handle(constants.TPM2_RH_OWNER)
+        
+        logger.info(f"Calculating authorization policy metrics for PCR-{pcr_index}...")
+        policy_session = tpm_context.start_auth_session(
+            tpm2_pytss.TPM_SE.POLICY,
+            constants.TPM2_ALG_SHA256
+        )
+        
+        pcr_selection = tpm2_pytss.TPML_PCR_SELECTION.parse(f"sha256:{pcr_index}")
+        tpm_context.policy_pcr(policy_session, pcr_selection)
+        policy_digest = tpm_context.policy_get_digest(policy_session)
 
-        with tpm2_pytss.ESAPI(tcti_string) as tpm_context:
-            print(f" -> Successfully hooked cryptoprocessor. Reading PCR-{target_pcr} state...")
-            pcr_selection = tpm2_pytss.TPML_PCR_SELECTION.parse(f"sha256:{target_pcr}")
+        logger.info("Configuring public structures with strict hardware authorization rules...")
+        public_template = TPM2B_PUBLIC()
+        public_template.publicArea.type = constants.TPM2_ALG_KEYEDHASH
+        public_template.publicArea.nameAlg = constants.TPM2_ALG_SHA256
+        
+        # 2. REMEDIATION: Fixed conflicting authorization flags to prevent physical TPM rejection
+        public_template.publicArea.objectAttributes = (
+            constants.TPMA_OBJECT_FIXEDTPM |
+            constants.TPMA_OBJECT_FIXEDPARENT |
+            constants.TPMA_OBJECT_ADMINWITHPOLICY
+        )
+        public_template.publicArea.authPolicy = policy_digest
+        public_template.publicArea.parameters.keyedHashDetail.scheme.scheme = constants.TPM2_ALG_NULL
 
-            # Parent primary template
-            parent_area = tpm2_pytss.TPMT_PUBLIC()
-            parent_area.type = constants.TPM2_ALG.RSA
-            parent_area.nameAlg = constants.TPM2_ALG.SHA256
-            parent_area.objectAttributes = (
-                constants.TPMA_OBJECT.FIXEDTPM
-                | constants.TPMA_OBJECT.FIXEDPARENT
-                | constants.TPMA_OBJECT.SENSITIVEDATAORIGIN
-                | constants.TPMA_OBJECT.USERWITHAUTH
-                | constants.TPMA_OBJECT.RESTRICTED
-                | constants.TPMA_OBJECT.DECRYPT
-            )
-            parent_area.parameters.rsaDetail.symmetric.algorithm = constants.TPM2_ALG.AES
-            parent_area.parameters.rsaDetail.symmetric.keyBits.aes = 128
-            parent_area.parameters.rsaDetail.symmetric.mode.aes = constants.TPM2_ALG.CFB
-            parent_area.parameters.rsaDetail.scheme.scheme = constants.TPM2_ALG.NULL
-            parent_area.parameters.rsaDetail.keyBits = 2048
-            parent_area.parameters.rsaDetail.exponent = 0
+        sensitive_input = TPM2B_SENSITIVE_DATA(secret_data)
 
-            in_public = tpm2_pytss.TPM2B_PUBLIC(publicArea=parent_area)
-            in_sensitive = tpm2_pytss.TPM2B_SENSITIVE_CREATE()
-            outside_info = tpm2_pytss.TPM2B_DATA()
+        logger.info("Generating ephemeral object within primary hierarchy node...")
+        private_blob, public_blob, _, _, _ = tpm_context.create(
+            primary_handle,
+            in_sensitive=sensitive_input,
+            in_public=public_template
+        )
 
-            print(" -> Instantiating parent storage keys...")
-            parent_handle, _, _, _, _ = tpm_context.create_primary(
-                primary_handle=constants.ESYS_TR.OWNER,
-                in_sensitive=in_sensitive,
-                in_public=in_public,
-                outside_info=outside_info,
-                creation_pcr=pcr_selection,
-            )
+        transient_handle = tpm_context.load(primary_handle, private_blob, public_blob)
 
-            # Explicit sealed-data child template
-            child_sensitive = tpm2_pytss.TPM2B_SENSITIVE_CREATE()
-            child_sensitive.sensitive.data = secret_passphrase
+        logger.info(f"Checking for persistent handle slot collisions on index 0x{persistent_handle:08X}...")
+        try:
+            stale_ref = tpm_context.tr_from_tpmpublic(persistent_handle)
+            tpm_context.evict_control(constants.TPM2_RH_OWNER, stale_ref, persistent_handle)
+            logger.info("Successfully evicted existing stale persistent handle slot collision.")
+        except tpm2_pytss.TSS2_Exception as tss_err:
+            # 3. REMEDIATION: Narrow exception handling block to safely filter unallocated slots vs errors
+            if "handle does not exist" in str(tss_err) or tss_err.rc == 0x018F:
+                logger.info("Persistent handle target slot is currently unallocated and free.")
+            else:
+                logger.warning(f"Eviction sequence passed with non-critical warning exception: {repr(tss_err)}")
+        except Exception as generic_err:
+            logger.warning(f"Generic internal eviction exception logged: {repr(generic_err)}")
 
-            child_area = tpm2_pytss.TPMT_PUBLIC()
-            child_area.type = constants.TPM2_ALG.KEYEDHASH
-            child_area.nameAlg = constants.TPM2_ALG.SHA256
-            child_area.objectAttributes = (
-                constants.TPMA_OBJECT.FIXEDTPM
-                | constants.TPMA_OBJECT.FIXEDPARENT
-                | constants.TPMA_OBJECT.USERWITHAUTH
-                | constants.TPMA_OBJECT.NODA
-            )
-            child_area.parameters.keyedHashDetail.scheme.scheme = constants.TPM2_ALG.NULL
-            child_area.unique.keyedHash = b""
-            child_public = tpm2_pytss.TPM2B_PUBLIC(publicArea=child_area)
-
-            print(f" -> Sealing 32-byte escrow token against PCR-{target_pcr} validation matrices...")
-            out_private, out_public, _, _, _ = tpm_context.create(
-                parent_handle=parent_handle,
-                in_sensitive=child_sensitive,
-                in_public=child_public,
-                outside_info=outside_info,
-                creation_pcr=pcr_selection,
-            )
-
-            print(" -> Loading signed objects into volatile memory handles...")
-            loaded_handle = tpm_context.load(
-                parent_handle=parent_handle,
-                in_private=out_private,
-                in_public=out_public,
-            )
-
-            print(" -> Evicting context to permanent hardware slot 0x81000003...")
-            persistent = 0x81000003
-            try:
-                old_handle = tpm_context.tr_from_tpmpublic(persistent)
-                tpm_context.evict_control(constants.ESYS_TR.OWNER, old_handle, persistent)
-            except Exception:
-                pass
-
-            tpm_context.evict_control(constants.ESYS_TR.OWNER, loaded_handle, persistent)
-
-            # After persisting, transient loaded object no longer needed
-            _safe_flush(tpm_context, loaded_handle)
-            loaded_handle = None
-
-            # Parent also no longer needed
-            _safe_flush(tpm_context, parent_handle)
-            parent_handle = None
-
-            print("[SUCCESS] Passphrase escrow established. Master key bound to silicon handle 0x81000003.")
-            return True
+        tpm_context.evict_control(constants.TPM2_RH_OWNER, transient_handle, persistent_handle)
+        logger.info(f"Provisioning complete. Secret permanently written to TPM NV slot 0x{persistent_handle:08X}.")
+        return 0
 
     except Exception as err:
-        print(f"[💥 HARDWARE FAULT] Execution loop failed: {repr(err)}")
-        return False
-
+        logger.error(f"Cryptographic provisioning session aborted due to hardware fault: {repr(err)}")
+        return 1
+        
     finally:
-        # Best-effort cleanup in case of partial failure
-        try:
-            with tpm2_pytss.ESAPI(tcti_string) as cleanup_ctx:
-                _safe_flush(cleanup_ctx, loaded_handle)
-                _safe_flush(cleanup_ctx, parent_handle)
-        except Exception:
-            pass
-
+        if tpm_context is not None:
+            try:
+                if policy_session is not None:
+                    tpm_context.flush_context(policy_session)
+                if transient_handle is not None:
+                    tpm_context.flush_context(transient_handle)
+            except Exception:
+                pass
+            finally:
+                try:
+                    tpm_context.close()
+                except Exception:
+                    pass
 
 if __name__ == "__main__":
-    if not execute_hardware_escrow():
-        sys.exit(1)
+    TARGET_PORT = int(os.getenv("TPM_PORT", "2321"))
+    TARGET_SLOT = int(os.getenv("TPM_SLOT", "0x81000003"), 16)
+    TARGET_PCR = int(os.getenv("TPM_PCR_INDEX", "7"))
+
+    sample_production_token = b"PROD_ENC_KEY_VIVIC_MATRIX_9944A"
+    sys.exit(seal_to_persistent(sample_production_token, target_port=TARGET_PORT, persistent_handle=TARGET_SLOT, pcr_index=TARGET_PCR))

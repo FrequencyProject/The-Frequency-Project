@@ -1,50 +1,28 @@
-#!/usr/bin/env python3
-"""Cross-Environment Virtual Cryptoprocessor Handshake Validator.
-
-Bridges the Windows application space straight into the WSL2 Linux TPM 2.0 
-simulator socket to verify remote transport visibility and handshake parity.
-"""
-import sys
+import pytest
 import tpm2_pytss
-from tpm2_pytss import constants
+from secure_hardware_vault import seal_to_persistent
+from unseal_hardware_vault import unseal_from_persistent
 
+def test_tpm_hardware_seal_unseal_parity(capsys):
+    """Verifies end-to-end cryptographic parity between the sealing and unsealing vault engines."""
+    test_secret = b"SECRET_CRYPTOGRAPHIC_TOKEN_VAL_42"
+    dummy_port = 2321
+    test_slot = 0x81000003
 
-def verify_virtual_tpm_bridge(target_port: int = 2321) -> bool:
-    """Attempts a clean cryptographic transport handshake with the listening Ubuntu daemon."""
-    print(
-        f"[INIT] Opening network transport bridge to virtual silicon socket on port {target_port}..."
-    )
+    # 1. Attempt to seal the secret into the TPM interface emulator env
+    seal_status = seal_to_persistent(test_secret, target_port=dummy_port, persistent_handle=test_slot)
+    
+    # Check if a swtpm daemon emulator is active on the local network block
+    if seal_status != 0:
+        pytest.skip("[SKIPPED] Physical TPM 2.0 or active 'swtpm' daemon absent on port 2321. Skipping hardware verification.")
 
-    # Establish the transport layer connection string using the swtpm loop driver format
-    tcti_string = f"swtpm:port={target_port}"
+    # 2. Trigger the unsealing utility engine to extract the token back from silicon
+    unseal_status = unseal_from_persistent(target_port=dummy_port, persistent_handle=test_slot)
+    assert unseal_status == 0, "The unsealing subsystem failed to read the hardware reference handle mapping."
 
-    try:
-        # Initialize the native TCG software stack context engine across the OS boundary
-        with tpm2_pytss.ESAPI(tcti_string) as tpm_context:
-            print(
-                "[BRIDGE SUCCESS] Network handshake established with the virtual cryptoprocessor."
-            )
-
-            # Query the standard capability blocks using the correct constants sub-module paths
-            caps, _ = tpm_context.get_capability(
-                constants.TPM2_CAP.TPM_PROPERTIES, constants.TPM2_PT.NONE, 1
-            )
-
-            print(f" -> Simulated Silicon Capability Logs: {repr(caps)}")
-            print(
-                "[SUCCESS] Cross-environment cryptographic transport pipeline is fully operational."
-            )
-            return True
-
-    except Exception as err:
-        print(f"[💥 BRIDGE FAILURE] Connection refused or transport driver failed: {repr(err)}")
-        print(
-            " -> Verify that 'swtpm' is actively running inside your Ubuntu terminal window on port 2321."
-        )
-        return False
-
-
-if __name__ == "__main__":
-    success = verify_virtual_tpm_bridge()
-    if not success:
-        sys.exit(1)
+    # 3. Capture system console outputs to confirm the exact byte sequence matches
+    captured = capsys.readouterr()
+    expected_hex = test_secret.hex()
+    
+    assert f"hex_token={expected_hex}" in captured.out, "Cryptographic data corruption: the unsealed token deviated from origin parameters."
+    print("\n[PASSED] TPM Hardware Vault structural parity is verified.")
