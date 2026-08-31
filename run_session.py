@@ -102,13 +102,16 @@ class UnifiedVivicSession:
             if not self.is_active:
                 break
 
-            # P2 REMEDIATION: Eliminated dead torch_tensor variable allocations to optimize memory footprints.
             # Ingestion Hot Path: Route the active backpropagation update natively inside the engine
             _ = self.engine.train_step()
 
             # Execute the 3-Sigma vector divergence metric monitoring tracking
             features = self.adapter.get_ai_features()
-            latent_vector = self.engine.model(torch.from_numpy(features).unsqueeze(0).to(self.engine.device))
+            
+            # HARDENING OPTIMIZATION: Enforce clear precision casting (.float()) onto our extraction 
+            # path before hardware pushing to eliminate system-level double-to-float crashes.
+            torch_tensor = torch.from_numpy(features).unsqueeze(0).float().to(self.engine.device)
+            latent_vector = self.engine.model(torch_tensor)
             _ = self.monitor.evaluate_vector(latent_vector.detach().cpu().numpy())
 
             _SESSION_CELL[0xE2](step, steps)
