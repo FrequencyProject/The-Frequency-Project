@@ -89,7 +89,7 @@ class HardwareSerialDaemon:
                 logger.warning("String-level CRC verification mismatch. Dropping frame.")
                 return "CRC_MISMATCH", None
 
-            # REMOVED NUMPY: Return a native, lightweight tuple of standard Python floats
+            # Return lightweight native python tuple
             extracted_voltages = (float(parts['v1']), float(parts['v2']), float(parts['v3']), float(parts['v4']))
             
             with self.lock:
@@ -184,5 +184,4 @@ class HardwareSerialDaemon:
             }
 
 # BACKWARD COMPATIBILITY ALIAS ASSIGNMENT
-# Ensures any legacy module calling VivicSerialDaemon will map cleanly to the corrected module.
 VivicSerialDaemon = HardwareSerialDaemon
