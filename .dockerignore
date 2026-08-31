@@ -1,0 +1,23 @@
+# Block local python runtime caches and bytecode artifacts
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Block testing infrastructure caches and metrics logs
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Block heavy local virtual environments and configuration overrides
+venv/
+.venv/
+env/
+.env
+
+# Block version control metadata and sensitive staging trees
+.git/
+.gitignore
+.gitsecret/
+.github/
