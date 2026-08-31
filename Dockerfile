@@ -1,7 +1,10 @@
+# Global ARG declared before Stage 1 applies globally to all downstream stages
+ARG BASE_IMAGE=python:3.12-slim
+
 # ==============================================================================
 # 🌌 STAGE 1: THE INFRASTRUCTURE COMPILATION CONTAINER (BUILDENV)
 # ==============================================================================
-FROM python:3.12-slim-noble AS builder
+FROM ${BASE_IMAGE} AS builder
 
 # Prevent Python from writing buffering streams or raw bytecode to the disk partition
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -19,14 +22,15 @@ WORKDIR /build
 # Copy the hardened python dependency and supply chain configuration manifests
 COPY requirements.txt pyproject.toml ./
 
-# Compile your third-party wheels natively directly into a local wheel cache directory
-RUN python -m pip install --upgrade pip && \
+# HARDENING: Upgrade setuptools and cffi to ensure compatibility with modern C-macro formats
+RUN python -m pip install --upgrade pip setuptools cffi && \
     python -m pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt
 
 # ==============================================================================
 # 🌌 STAGE 2: THE HARDENED ZERO-TRUST RUNTIME EDGE CONTAINER
 # ==============================================================================
-FROM python:3.12-slim-noble
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
