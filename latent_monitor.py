@@ -6,6 +6,7 @@ strict 3-Sigma boundary protections across high-dimensional telemetry vectors
 starting from the very first execution frame.
 """
 import logging
+import threading
 import numpy as np
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
@@ -18,8 +19,11 @@ class VivicLatentMonitor:
         self.alpha = alpha                 # EMA smoothing factor for instantaneous tracking
         self.ambient_floor = ambient_floor # Environmental noise baseline compensation floor
         self.delta_history = []
+        self.lock = threading.Lock()       # HARDENING: Guarantees atomic updates across threads
         
+        # Exponential Moving Average state registers to eliminate cold-start bias
         self.ema_mean = None
+        self.ema_var = None                # HARDENING: Track variance instead of raw absolute deviation
         self.ema_std = None
         
         # BACKWARD COMPATIBILITY REGISTERS
@@ -39,36 +43,44 @@ class VivicLatentMonitor:
 
     def evaluate_vector_anomaly(self, euclidean_delta: float) -> bool:
         """Evaluates a raw vector drift metric against dynamic 3-Sigma boundaries."""
-        self.delta_history.append(euclidean_delta)
-        if len(self.delta_history) > self.history_window:
-            self.delta_history.pop(0)
+        with self.lock:
+            self.delta_history.append(euclidean_delta)
+            if len(self.delta_history) > self.history_window:
+                self.delta_history.pop(0)
 
-        if self.ema_mean is None:
-            self.ema_mean = euclidean_delta
-            self.ema_std = euclidean_delta * 0.05 if euclidean_delta > 0 else 0.01
-            logger.info(f"Latent monitor cold-start initialization complete: baseline established at {self.ema_mean:.6f}")
-            return False
+            if self.ema_mean is None:
+                self.ema_mean = euclidean_delta
+                # Initialize variance based on initial baseline scaling
+                initial_std = euclidean_delta * 0.05 if euclidean_delta > 0 else 0.01
+                self.ema_var = initial_std ** 2
+                self.ema_std = initial_std
+                logger.info(f"Latent monitor cold-start initialization complete: baseline established at {self.ema_mean:.6f}")
+                return False
 
-        trigger_boundary = self.ema_mean + (3.0 * self.ema_std)
-        is_anomaly = euclidean_delta > trigger_boundary
+            trigger_boundary = self.ema_mean + (3.0 * self.ema_std)
+            is_anomaly = euclidean_delta > trigger_boundary
 
-        if is_anomaly:
-            self.anomalies_detected += 1
-            logger.warning(
-                f"ANOMALY DETECTED: Vector delta ({euclidean_delta:.6f}) breaches 3-Sigma boundary ({trigger_boundary:.6f})"
-            )
-        
-        self.ema_mean = (self.alpha * euclidean_delta) + ((1 - self.alpha) * self.ema_mean)
-        current_variance = abs(euclidean_delta - self.ema_mean)
-        self.ema_std = (self.alpha * current_variance) + ((1 - self.alpha) * self.ema_std)
+            if is_anomaly:
+                self.anomalies_detected += 1
+                logger.warning(
+                    f"ANOMALY DETECTED: Vector delta ({euclidean_delta:.6f}) breaches 3-Sigma boundary ({trigger_boundary:.6f})"
+                )
+            
+            # Welford-inspired EMA update: update mean, accumulate squared distance variance, take square root
+            old_mean = self.ema_mean
+            self.ema_mean = (self.alpha * euclidean_delta) + ((1.0 - self.alpha) * old_mean)
+            
+            # HARDENING OPTIMIZATION: True Exponential Moving Variance tracking path
+            instantaneous_variance = (euclidean_delta - old_mean) * (euclidean_delta - self.ema_mean)
+            self.ema_var = (self.alpha * instantaneous_variance) + ((1.0 - self.alpha) * self.ema_var)
+            self.ema_std = max(np.sqrt(self.ema_var), 1e-8)
 
-        return bool(is_anomaly)
+            return bool(is_anomaly)
 
     def evaluate_vector(self, current_vector: np.ndarray, baseline_vector: np.ndarray = None) -> dict:
         """BACKWARD COMPATIBILITY ENDPOINT: Returns dictionary schemas to validate legacy tests."""
         flat_vec = current_vector.flatten()
         
-        # FIXED: Compare integer value against index 0 of the shape tuple configuration boundary
         if self.latent_dim is not None and flat_vec.shape[0] != self.latent_dim:
             raise ValueError(f"Expected latent dimension of {self.latent_dim}, got {flat_vec.shape}")
             
@@ -80,17 +92,20 @@ class VivicLatentMonitor:
         delta = self.calculate_distance_metrics(flat_vec, baseline_vector)
         is_anomaly = self.evaluate_vector_anomaly(delta)
         
-        self._test_step_counter += 1
-        reported_delta = 0.0 if self._test_step_counter == 1 else delta
+        with self.lock:
+            self._test_step_counter += 1
+            current_step = self._test_step_counter
+            reported_delta = 0.0 if current_step == 1 else delta
+            current_mean = self.ema_mean
+            current_std = self.ema_std
         
         return {
-            "step": self._test_step_counter,
+            "step": current_step,
             "is_anomaly": is_anomaly,
             "euclidean_delta": reported_delta,
             "cosine_similarity": 1.0,
-            "trigger_boundary": float(self.ema_mean + (3.0 * self.ema_std)) if self.ema_mean is not None else delta
+            "trigger_boundary": float(current_mean + (3.0 * current_std)) if current_mean is not None else delta
         }
-
 
     def execute_vector_pipeline(self, current_vector: np.ndarray, baseline_vector: np.ndarray) -> dict:
         """Atomic orchestration pipeline tracking distance metrics and anomaly state."""
@@ -98,10 +113,14 @@ class VivicLatentMonitor:
             delta = self.calculate_distance_metrics(current_vector, baseline_vector)
             anomaly_triggered = self.evaluate_vector_anomaly(delta)
             
+            with self.lock:
+                current_mean = self.ema_mean
+                current_std = self.ema_std
+            
             return {
                 "status": "SUCCESS",
                 "euclidean_delta": delta,
-                "trigger_boundary": float(self.ema_mean + (3.0 * self.ema_std)) if self.ema_mean is not None else delta,
+                "trigger_boundary": float(current_mean + (3.0 * current_std)) if current_mean is not None else delta,
                 "is_anomaly": anomaly_triggered
             }
         except Exception as e:

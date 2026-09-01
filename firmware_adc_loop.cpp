@@ -51,6 +51,10 @@ int32_t read_adc_channel_raw(uint8_t channel_cmd) {
     digitalWrite(ADC_CS_PIN, HIGH);
     SPI.endTransaction();
 
+    // HARDENING REMEDIATION: Implement physical pin settling delay to prevent 
+    // bus line ringing or channel cross-talk on multi-rate hardware multiplexers.
+    delayMicroseconds(2);
+
     // Assemble sign-extended 24-bit data to 32-bit integer
     int32_t raw_value = ((int32_t)b1 << 16) | ((int32_t)b2 << 8) | b3;
     if (raw_value & 0x800000) {
@@ -94,9 +98,9 @@ void loop() {
     float v3 = convert_to_voltage(raw_ch3);
     float v4 = convert_to_voltage(raw_ch4);
 
-    // HARDENING REMEDIATION: Assemble text data into an isolated string character frame buffer 
-    // to match the exact string-level Dallas CRC-8 validation rules expected by your Python daemon.
-    char text_frame_buffer[80];
+    // HARDENING REMEDIATION: Scale buffer allocation safely to 128 bytes to completely 
+    // insulate against float formatting overflows under extreme analog input swings.
+    char text_frame_buffer[128];
     int chars_written = snprintf(text_frame_buffer, sizeof(text_frame_buffer),
                                 "V1:%.4f,V2:%.4f,V3:%.4f,V4:%.4f", 
                                 v1, v2, v3, v4);
