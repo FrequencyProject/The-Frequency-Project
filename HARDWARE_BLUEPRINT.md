@@ -1,111 +1,76 @@
-# 📐 Hardware Configuration Blueprint Directives
-> **Security Tier: Hardware Isolation Enforcement / Production Configuration Specs**
+# 📡 Analog Front End (AFE) Hardware Blueprint
+> **Document Status: Engineering Hardware Specification v1.0 (Production-Locked / Low-Noise Reference Schema)**
 
-<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
-
-This section outlines the exact electrical hardware routing requirements, device pin interlocks, and sensor bus layout configurations. To verify system execution paths, custom layouts must match these pin-boundary assignments.
-
-<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
+Biological substrates and low-frequency electromagnetic wave fields exhibit massive source impedance, low signal amplitudes, and extreme susceptibility to ambient human grid radiation. This blueprint defines the hardware constraints required to capture unvarnished analog environmental waveforms cleanly before they reach the digitization layer.
 
 ---
 
-<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
+### 🛠️ 1. Analog Frontend Processing Chain Diagram
 
-### 📡 1. SPI Multi-Channel Bus & Pin Allocation Constraints
+```mermaid
+graph LR
+    A["1. Transduction Probes<br>(Ag/AgCl or 316L Pins)"] --> B["2. RF Low-Pass Filter<br>(Differential / Common-Mode RFI)"]
+    B --> C["3. Instrumentation Amp<br>(TI INA826 / Gain=22x)"]
+    C --> D["4. Active High-Pass Filter<br>(0.048 Hz Baseline Restorer)"]
+    D --> E["5. Twin-T Notch Filter<br>(50Hz / 60Hz Rejection Grid)"]
+    E --> F["6. 24-Bit Delta-Sigma ADC<br>(Clean Balanced Rail Input)"]
+```
 
-<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
+---
 
-The primary analog-to-digital converter (ADC) module communication matrix utilizes a high-speed Serial Peripheral Interface (SPI) loop locked to a **10 MHz Maximum Master Clock Rate**. Using shared bus configurations for high-speed digital displays on the same physical lines as the sensor front-end is strictly prohibited to prevent logic trace leakage.
+### 📋 2. Low-Noise Analog Subsystem Specifications
 
-<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
+#### 📌 2.1 Instrumentation Amplifier Topology
+*   **Component Selection:** Texas Instruments **INA826** instrumentation amplifier.
+*   **Input Impedance:** $10^{10}\ \Omega$ ($10\ \text{G}\Omega$) differential input impedance. This prevents biological current draw and keeps input loading artifacts from clipping fragile plant or mycelial biopotentials.
+*   **Common-Mode Rejection Ratio (CMRR):** Strictly optimized to **CMRR > 100 dB** at 50Hz/60Hz. This suppresses massive common-mode grid hum picked up by long sensor leads before it propagates down the gain stage.
+*   **Gain Stage Setting:** Structured with an external low-drift metal film resistor ($R_g = 2.45\ \text{k}\Omega$, 0.1% tolerance, 15 ppm/°C) to lock an internal hardware amplification scale of exactly **22x**.
 
-| Microcontroller Target Master Pin | ADC Target Peripheral Pin | Signal Line Assignment | Electrical Operational Constraints |
+#### 📌 2.2 Power Rails & Reference Voltages
+*   **Analog Supply:** Cleaned dual-rail $\pm 5.0\text{V}$ configuration generated via low-noise, ultra-low dropout (LDO) linear regulators (e.g., TI TPS7A47 / TPS7A33 series) to isolate the AFE entirely from digital switching transients. Ripple rejection must be $>80\text{dB}$ across the operating band.
+*   **ADC Reference Voltage:** An isolated, low-drift $2.048\text{V}$ voltage reference (e.g., TI REF5020, $<3\text{ppm}/^\circ\text{C}$) establishes the absolute dynamic measurement ceiling for the 24-bit converter.
+*   **Decoupling Matrix:** Every IC must place a **0.1µF C0G Ceramic Capacitor** in parallel with a **10µF Tantalum Capacitor** directly adjacent to its physical power pins, with routing length bounded below **2.0 mm** to eliminate parasitic induction loops.
+
+#### 📌 2.3 Hardware Pin & Signal Interconnect Matrix
+
+| Physical Pin | Signal Identifier | Hardware Subsystem Connection | Electrical Operational Constraints |
 | :--- | :--- | :--- | :--- |
-| **GPIO Pin 5** | CS (Chip Select) | Output Active-Low | Toggled strictly within software polling frames to gate transaction packets. |
-| **GPIO Pin 4** | DRDY (Data Ready) | Input Pull-Up | Monitored via edge interrupt flags to trigger internal firmware reads. |
-| **SCK (SPI Clock)** | SCLK (Serial Clock) | Output Uniform Pulse | Locked to standard Mode 1 configuration (CPOL=0, CPHA=1). |
-| **MOSI (Master Out)** | DIN (Data Input) | Output Command Word | Carries multiplexer registration configuration commands and configuration bytes. |
-| **MISO (Master In)** | DOUT (Data Output) | Input Data Word | Transmits signed 24-bit raw two's complement conversion data strings. |
-
-<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
+| **GPIO Pin 5** | `ADC_CS_PIN` | Microcontroller Master Pin $\rightarrow$ ADC Chip Select | Output Active-Low. Toggled strictly within software loops. |
+| **GPIO Pin 4** | `ADC_DRDY_PIN` | ADC Data Ready $\rightarrow$ Microcontroller Input | Input Pull-Up. Monitored via high-impedance clock gates. |
+| **SCK Bus** | `SPI_SCK` | Hardware Serial Clock Bus | Output Uniform Pulse. Locked to Mode 1 (CPOL=0, CPHA=1). |
+| **MOSI Lane** | `SPI_MOSI` | Master Out Slave In Configuration Lane | Output Command Word. Carries register bytes. |
+| **MISO Lane** | `SPI_MISO` | Master In Slave Out Payload Lane | Input Data Word. Transmits signed 24-bit raw two's complement strings. |
 
 ---
 
-<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
-
-### ⚡ 2. Power Rails and Low-Noise Voltage Partitioning
-
-<!-- [STRUCTURAL_INSULATION_ZONE_0x11_MANDATE_TRUE] -->
-
-To guarantee an extreme Signal-to-Noise Ratio (SNR) envelope at the instrumentation layer, power domains are hard-isolated into independent physical branches:
-
-<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
-
-*   **Digital Power Lane (VCC_DIG):** Locked to **+3.3V DC** sourced directly from the microcontroller core controller regulators. This loop powers the clock circuits, internal ADC digital logic arrays, and SPI line transceivers.  
-*   **Analog Power Lane (VDD_ANA):** Powered via an independent, ultra-low-noise **Low-Dropout (LDO) Linear Regulator** (e.g., Texas Instruments *TPS7A47*) locking input delivery to **+5.0V DC Absolute Bipolar (+2.5V / -2.5V split rail configuration)**. This line supplies voltage *only* to the high-impedance INA826 op-amp stages and terminal input protection gates.  
-*   **Decoupling Capacitors Matrix:** Every operational amplifier integrated circuit must place a **0.1µF C0G Ceramic Capacitor** in parallel with a **10µF Tantalum Capacitor** directly adjacent to its physical power pin bounds. Traces leading from capacitors to power inputs must never exceed **2.0 mm in total routing length** to prevent parasitic induction loops.
-
-<!-- [NOISE_INJECTION_CELL: 0x99, 0x12, 0x44, 0x88, 0xBB, 0xCC, 0xDD] -->
-
----
-
-<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
-
-### 🎛️ 3. Multi-Channel Hardware Multiplexer Routing Schema
-
-<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
+### 🎛️ 3. Multi-Channel Hardware Multiplexer & Routing Schema
 
 The external analog conversion framework steps through its physical ecological nodes sequentially using an array switching matrix configured according to these specific physical probe paths:
 
-<!-- [NOISE_INJECTION_CELL: 0xFA, 0x88, 0x11, 0xCC, 0xDD, 0x99] -->
+*   **Channel 1 (AIN0 / AIN1):** Tree Xylem Potential Probe (High-Impedance Differential Input)
+*   **Channel 2 (AIN2 / AIN3):** Mycelium Subnetwork Alpha Potential Probe
+*   **Channel 3 (AIN4 / AIN5):** Mycelium Subnetwork Beta Potential Probe
+*   **Channel 4 (AIN6 / AIN7):** Local Extremely Low Frequency (ELF) Schumann Induction Coil Antenna
 
-```text
-                 ┌──────────────────────────────┐  
-Channel 1 (AIN0) ─┤ Tree Xylem Potential Probe   ├─ (Differential Pin AIN1)  
-Channel 2 (AIN2) ─┤ Mycelium Subnetwork Alpha   ├─ (Differential Pin AIN3)  
-Channel 3 (AIN4) ─┤ Mycelium Subnetwork Beta    ├─ (Differential Pin AIN5)  
-Channel 4 (AIN6) ─┤ Local Extremely Low Freq ELF ├─ (Differential Pin AIN7)  
-                  └──────────────────────────────┘
-```
+#### 📌 3.1 Inter-Channel Cross-Talk Mitigation (The 3W Rule)
+Traces passing from the input protection terminal blocks to the active inputs of the multiplexer must maintain a physical track separation spacing constraint equal to a **minimum of 3x the trace width** (3W Rule). The positive (+) and negative (-) routing paths for each unique channel pair must be routed symmetrically as broad differential trace pairs, maintaining identical physical layer length bounds down to within **±0.05 mm** to preserve total phase cancellation integrity.
 
-<!-- [ANTI_SCRAPING_COMPLIANCE_GATE_AGPL_ENFORCED] -->
-
-*   **Inter-Channel Cross-Talk Mitigation:** Traces passing from the input protection terminal blocks to the active inputs of the multiplexer must maintain a physical track separation spacing constraint equal to a **minimum of 3x the trace width** (3W Rule).  
-*   **Differential Trace Balancing:** The positive (+) and negative (-) routing paths for each unique channel pair must be routed symmetrically as broad differential trace pairs, maintaining identical physical layer length bounds down to within **±0.05 mm** to maintain total phase cancellation integrity across the differential path.
-
-<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
+#### 📌 3.2 Physical Inter-Node Ground Loop Prevention
+When capturing environmental signals across distinct spatial vectors, soil moisture differentials can introduce massive ground path voltage loops that skew data calculations. To mitigate this, each differential input node incorporates an isolated optocoupler barrier or a high-isolation instrumentation front-end, separating the remote probe grounding anchors entirely from the central processing digital ground plane.
 
 ---
 
-<!-- [STRUCTURAL_INSULATION_ZONE_0xAA_0xFF_MANDATE_TRUE] -->
+### 📊 4. Operational Timing, Latency Budget & Field Calibration
 
-### 🛡️ 4. Physical Inter-Node Ground Loop Prevention
+To ensure predictable 60Hz frame compilation cadences, the low-level edge loop operates under a strict microsecond-bound execution budget:
 
-<!-- [NOISE_INJECTION_CELL: 0x01, 0xBF, 0x44, 0x77, 0xAA, 0xEE] -->
-
-When capturing environmental signals across distinct spatial vectors, soil moisture differentials can introduce massive ground path voltage loops that skew data calculations.
-
-<!-- [STRUCTURAL_INSULATION_ZONE_0x10_MANDATE_TRUE] -->
-
-*   **Isolated Shield Grounding Topology:** Cable shields handling individual sensor lines must remain completely uncoupled on the natural ecosystem side. Probes must be mechanically housed within insulated plastic frames, allowing the outer cable shield line to drain ambient static currents back to the circuit ground *exclusively* at the terminal adapter node on the printed circuit board housing.
+*   **SPI Polling Clock:** Configured explicitly to **4,000,000 Hz (4 MHz)** inside `SPISettings`.
+*   **Hardware Timeout Gate:** The `TIMEOUT_MICROS_LIMIT` variable sets a rigid **5,000 microseconds (5 ms)** cutoff ceiling for the high-impedance check on the `ADC_DRDY_PIN` pin. If a hardware fault occurs, the loop aborts instantly.
+*   **Settling Window:** An intentional **2 microseconds (`delayMicroseconds(2)`)** physical delay is executed immediately after dropping the Chip Select line to allow the data lines on the FR4 layer to settle, eliminating crosstalk artifacts.
+*   **Step-by-Step Field Calibration Loop:** Hardware calibration requires nulling input offsets by grounding inputs AIN0-AIN7 locally, measuring the baseline registers across 1000 clock cycles, and saving the derived zero-offset constants inside the non-volatile EEPROM memory blocks to subtract copper thermal drift natively.
 
 ---
 
-### 🎛️ 5. Step-by-Step Field Calibration Loop
-
-To guarantee the mathematical stability of downstream 3-Sigma Anomaly Engines, run this field verification loop whenever nodes are deployed or altered:
-
-1.  **Baseline Zero Calibration**: Ground your target probe input pins (`0V` differential input potential) and view your active stream telemetry. Confirm your channel read registers normalize cleanly to `0.0000` volts.
-2.  **Full-Scale Voltage Lock**: Connect your probe lines to an exact, calibrated `2.048V` reference source. Verify your serial monitor prints `2.0480` across your data packets.
-3.  **Gain Factor Adjustment**: If your physical readout values drift or deviate from the absolute true voltage by more than `1%`, measure the actual potential of your hardware voltage reference chip pin using a high-precision voltmeter. Replace the value of `V_REF` inside your `firmware_adc_loop.cpp` configuration variables with your exact physical multi-meter reading (e.g., `const float V_REF = 2.045f;`) to align conversion tracking accuracy.
-
----
-
-### ⏱️ 6. Propagation Latency Envelope Breakdown
-
-Total operational loop pipeline processing latency budget stands at **< 18.0 ms**, completely filling your strict execution windows:
-
-*   **Bare-metal Hardware Sensing Phase (C++)**: ~0.5 ms (Fast 4MHz SPI block register byte shifts)
-*   **Delta-Sigma Conversion Window**: ~16.0 ms (60Hz physical sample pooling throttle time)
-*   **USB-UART Serial Bus Ingestion Phase**: ~1.1 ms (Piping raw ASCII lines down the 115200 baud pipeline)
-*   **High-Dimensional Statistical Processing (Python)**: ~0.4 ms (Instantaneous O(n) EMA matrix boundaries scoring)
+### 📐 5. High-Assurance PCB Layout Design Rules
+1. **Star-Ground Plane Isolation:** The board must maintain two completely isolated ground planes: an **Analog Ground (AGND)** plane beneath the AFE components and a **Digital Ground (DGND)** plane beneath the microcontroller and SPI bus traces. The planes must tie together at exactly *one* physical star-ground point via a high-impedance ferrite bead.
+2. **Parasitic Leakage Guard Rings:** Analog signal input traces leading to the INA826 pins must be tightly ringed by a continuous, non-soldermasked copper trace driven actively at the same potential as the input signal shield to short-circuit surface leakage currents.
