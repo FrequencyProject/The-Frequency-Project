@@ -33,7 +33,8 @@ dependencies = [
     "torch==2.2.1",
     "tpm2-pytss>=2.3.0",
     "pyserial>=3.5",
-    "pytest-env>=1.1.0"
+    "pytest-env>=1.1.0",
+    "pytest-env"
 ]
 
 [tool.setuptools]
