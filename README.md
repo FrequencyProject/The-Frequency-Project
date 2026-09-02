@@ -18,7 +18,7 @@ For the unabridged historical origin whitepapers, reference **`THE_FREQUENCY_MAN
 
 #### 📁 Core Integration & Ingestion Runtimes
 *   📄 **serial_daemon.py** — Asynchronous background daemon processing incoming bytes via strict CRC-8 verification and regex validation.
-*   📄 **sensor_adapter.py** — Thread-safe bridge managing rolling channel double-ended buffers. Translates raw telemetry packets into unified (4, 1280) NumPy arrays while providing seamless dictionary-schema backwards compatibility for evaluation engines.
+*   📄 **sensor_adapter.py** — Thread-safe bridge managing rolling channel double-ended buffers and exposing legacy dictionary schemas.
 *   📄 **spectral_processing.py** — DSP engine executing 60Hz IIR notch filters, Hanning windows, and asymmetric matrix compilations.
 
 #### 📁 Deep Learning & Performance Hardening Modules
