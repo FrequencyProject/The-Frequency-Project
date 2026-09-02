@@ -1,110 +1,89 @@
 #!/usr/bin/env python3
-"""Phase 4: Deep Learning Training Engine.
+"""Phase 4: Integrated Neural Network Optimization and Backpropagation Engine.
 
-Bridges the SensorAdapter ingestion pipeline to the PyTorch neural network 
-architecture and optimizes weights using ResonanceCoherenceLoss with device agility.
+Coordinates raw tensor mappings, optimization updates, and forward-backward training steps.
+[PROTECTED BY AN INTEGRATED INFRASTRUCTURE ENCLOSURE MANDATE]
 """
-import time
-import logging
 import torch
+import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from sensor_adapter import SensorAdapter
 from model_architecture import AsymmetricSpatialEncoder
 from resonance_loss import ResonanceCoherenceLoss
-
-logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
-logger = logging.getLogger("TrainingEngine")
-
+from sensor_adapter import MultiChannelSensorAdapter
 
 class VivicTrainingEngine:
-    """Manages real-time data streaming execution and model parameter updates with hardware acceleration."""
+    """Manages weights, gradient tracking states, and micro-batch training steps."""
 
-    def __init__(self, port: str = "MOCK", latent_dim: int = 128, lr: float = 0.001):
-        # PRODUCTION HARDENING: Automatically locate and exploit accelerated hardware nodes if present
+    def __init__(self, port: str = "MOCK"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.info(f"Initializing optimization target tracking engine on device: {self.device}")
-
-        # Integration Realignment: Instantiate standard SensorAdapter passing parameter wildcards smoothly
-        self.adapter = SensorAdapter(port=port, window_size=1280)
+        self.model = AsymmetricSpatialEncoder().to(self.device)
+        self.criterion = ResonanceCoherenceLoss()
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-3, weight_decay=1e-4)
         
-        # Load model architecture and push parameter parameters straight to the active hardware block
-        self.model = AsymmetricSpatialEncoder(latent_dim=latent_dim).to(self.device)
-        self.loss_fn = ResonanceCoherenceLoss()
+        # Internal reference adapter tracking input ingestion
+        self.adapter = MultiChannelSensorAdapter(port=port)
+        self.warmed_up = False
 
-        # Optimize neural weights to match environmental geometry constraints
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=lr, weight_decay=1e-4)
-
-    def train_step(self) -> float:
-        """Executes a single optimization step from the running telemetry queues with device safety."""
+    def train_step(self, ambient_means: np.ndarray = None, ambient_stds: np.ndarray = None) -> tuple:
+        """Executes a single high-performance forward-backward parameter adjustment optimization pass.
+        
+        Args:
+            ambient_means (np.ndarray, optional): Dynamic baseline noise calibration means. Defaults to None.
+            ambient_stds (np.ndarray, optional): Dynamic baseline noise calibration standard deviations. Defaults to None.
+            
+        Returns:
+            tuple: (loss_scalar, latent_vector_tensor) or (-1.0, None) on buffer starvation.
+        """
         self.model.train()
-
-        # Pull the clean, row-normalized (4, 1280) float32 matrix from memory deques
+        
+        # 1. Fetch raw multi-channel feature frames from the ingestion layer
         features = self.adapter.get_ai_features()
-
-        # Verify the rolling window has saturated completely before updating parameters
+        
+        # Verify buffer warm-up behavior safely
         if np.all(features == 0.0):
-            return -1.0  # Buffer warm-up state active, skip step
+            return -1.0, None
+            
+        self.warmed_up = True
+        
+        # 2. BACKWARDS-COMPATIBILITY GUARD: Fallback to neutral arrays if arguments are omitted in tests
+        if ambient_means is None:
+            ambient_means = np.zeros(4, dtype=np.float32)
+        if ambient_stds is None:
+            ambient_stds = np.ones(4, dtype=np.float32)
+        
+        # 3. Apply environmental baseline noise calibration adjustments natively on the input matrix
+        for ch in range(4):
+            if ambient_stds[ch] > 1e-6:
+                features[ch] = (features[ch] - ambient_means[ch]) / ambient_stds[ch]
 
-        # Reset gradient tracking tensors inside optimization pools to clear calculation memory footprints
+        # 4. P1 FINITE-VALUE FIREWALL: Instant check for NaNs or non-finite elements
+        if not np.all(np.isfinite(features)):
+            print("[SECURITY QUARANTINE] Non-finite values detected in ingestion matrix. Squashing frame.")
+            return -1.0, None
+
+        # 5. Pack normalized footprint array cleanly into single-precision execution tensors
+        torch_tensor = torch.from_numpy(features).unsqueeze(0).float().to(self.device)
+        
+        if not torch.all(torch.isfinite(torch_tensor)):
+            return -1.0, None
+
+        # 6. Clear accumulated gradient registers
         self.optimizer.zero_grad()
 
-        # HARDENING OPTIMIZATION: Force explicit floating-point casting (.float()) to ensure
-        # cross-platform tensor shape and precision compliance before device allocation.
-        tensor_in = torch.from_numpy(features).unsqueeze(0).float().to(self.device)
+        # 7. Execute forward pass—generating the latent vector representation
+        latent_vector = self.model(torch_tensor)
 
-        # Forward Pass: Extract the non-semantic latent vector
-        latent_vector = self.model(tensor_in)
+        # 8. Evaluate mathematical loss using resonance coherence channels
+        loss = self.criterion(latent_vector)
 
-        # Loss Optimization: Calculate continuous Planetary Divergence Index (PDI)
-        loss = self.loss_fn(latent_vector)
-
-        # Backward Pass: Backpropagate the gradient vectors and step weights securely
+        # 9. Trigger backpropagation pass and update model parameter layers
         loss.backward()
+        
+        # Apply strict gradient clipping to insulate weights against gradient explosions
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+        
         self.optimizer.step()
 
-        return loss.item()
-
-    def run_active_session(self, steps: int = 5, step_delay_s: float = 0.1):
-        """Launches background acquisition threads and steps through an interruptible optimization run."""
-        logger.info("Activating hardware background telemetry ingestion...")
-        self.adapter.start_acquisition()
-        time.sleep(0.5)  # Allow underlying serial daemon ports thread settling window
-
-        logger.info(f"Starting active training session ({steps} targeted cycles)...")
-        try:
-            completed_steps = 0
-            while completed_steps < steps:
-                t_start = time.perf_counter()
-                loss_val = self.train_step()
-                if loss_val < 0.0:
-                    logger.info("Telemetry queue saturating... warming memory buffers.")
-                    time.sleep(0.2)
-                    continue
-
-                completed_steps += 1
-                elapsed_ms = (time.perf_counter() - t_start) * 1000.0
-                logger.info(
-                    f" -> [CYCLE {completed_steps}/{steps}] PDI Loss: {loss_val:.6f} | Execution: {elapsed_ms:.2f}ms"
-                )
-                time.sleep(step_delay_s)
-
-        finally:
-            logger.info("Halting background physical interface processes safely...")
-            self.adapter.stop_acquisition()
-
-
-if __name__ == "__main__":
-    logger.info("Launching Training Engine runtime validation check...")
-    engine = VivicTrainingEngine(port="MOCK_TEST")
-
-    # Pre-saturate the adapter structures to bypass the buffer warm-up gate instantly
-    rng = np.random.default_rng(seed=42)
-    for _ in range(1280):
-        ch1, ch2, ch3, ch4 = rng.normal(0, 1), rng.normal(0, 1), rng.normal(0, 1), rng.normal(0, 1)
-        mock_packet = f"V1:{ch1},V2:{ch2},V3:{ch3},V4:{ch4}\n"
-        engine.adapter.process_incoming_packet(mock_packet)
-
-    # Execute a clean execution run block
-    engine.run_active_session(steps=3, step_delay_s=0.01)
-    logger.info("Deep learning execution training engine verified for integration.")
+        # P1 OPTIMIZATION: Return the loss along with the already calculated latent vector
+        return loss.item(), latent_vector
