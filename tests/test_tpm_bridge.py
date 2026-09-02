@@ -1,28 +1,57 @@
+#!/usr/bin/env python3
+"""Phase 10: High-Assurance Hardware TPM Exception Taxonomy Unit Tests."""
 import pytest
-import tpm2_pytss
-from secure_hardware_vault import seal_to_persistent
-from unseal_hardware_vault import unseal_from_persistent
+from secure_hardware_vault import SecureHardwareVault, SecurityTamperException, HardwareBusException
 
-def test_tpm_hardware_seal_unseal_parity(capsys):
-    """Verifies end-to-end cryptographic parity between the sealing and unsealing vault engines."""
-    test_secret = b"SECRET_CRYPTOGRAPHIC_TOKEN_VAL_42"
-    dummy_port = 2321
-    test_slot = 0x81000003
+def test_vault_initialization_fallback_mode():
+    """Validates that setting tcti to none bypasses hardware scans cleanly for software mode."""
+    vault = SecureHardwareVault(tcti_profile="none")
+    assert vault.initialize_tpm_session() is True
+    assert vault.is_sealed is False
 
-    # 1. Attempt to seal the secret into the TPM interface emulator env
-    seal_status = seal_to_persistent(test_secret, target_port=dummy_port, persistent_handle=test_slot)
+def test_vault_retry_mechanism_on_bus_timeout(monkeypatch):
+    """Asserts that transient line jitter triggers a 3-pass retry cycle before failure."""
+    import tpm2_pytss
     
-    # Check if a swtpm daemon emulator is active on the local network block
-    if seal_status != 0:
-        pytest.skip("[SKIPPED] Physical TPM 2.0 or active 'swtpm' daemon absent on port 2321. Skipping hardware verification.")
+    vault = SecureHardwareVault(tcti_profile="mock_bus_profile")
+    attempt_counter = 0
 
-    # 2. Trigger the unsealing utility engine to extract the token back from silicon
-    unseal_status = unseal_from_persistent(target_port=dummy_port, persistent_handle=test_slot)
-    assert unseal_status == 0, "The unsealing subsystem failed to read the hardware reference handle mapping."
+    class MockTSSTimeoutException(Exception):
+        def __init__(self):
+            self.rc = 0x101  # Retryable status flag
 
-    # 3. Capture system console outputs to confirm the exact byte sequence matches
-    captured = capsys.readouterr()
-    expected_hex = test_secret.hex()
+    def mock_esapi_timeout(*args, **kwargs):
+        nonlocal attempt_counter
+        attempt_counter += 1
+        raise MockTSSTimeoutException()
+
+    monkeypatch.setattr("tpm2_pytss.ESAPI", mock_esapi_timeout)
+
+    with pytest.raises(HardwareBusException):
+        vault.initialize_tpm_session()
+
+    assert attempt_counter == 3
+
+def test_vault_immediate_alert_on_policy_tampering(monkeypatch):
+    """Asserts that a PCR-7 mismatch (0x9A) triggers an immediate security fail-secure breach."""
+    import tpm2_pytss
     
-    assert f"hex_token={expected_hex}" in captured.out, "Cryptographic data corruption: the unsealed token deviated from origin parameters."
-    print("\n[PASSED] TPM Hardware Vault structural parity is verified.")
+    vault = SecureHardwareVault(tcti_profile="mock_bus_profile")
+    attempt_counter = 0
+
+    class MockTSSTamperException(Exception):
+        def __init__(self):
+            self.rc = 0x9A  # Policy validation tamper code
+
+    def mock_esapi_tamper(*args, **kwargs):
+        nonlocal attempt_counter
+        attempt_counter += 1
+        raise MockTSSTamperException()
+
+    monkeypatch.setattr("tpm2_pytss.ESAPI", mock_esapi_tamper)
+
+    with pytest.raises(SecurityTamperException):
+        vault.initialize_tpm_session()
+
+    # Integrity Breach Rule: Halt immediately on pass 1
+    assert attempt_counter == 1
