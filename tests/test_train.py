@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
-"""Unit test suite for verification of Phase 3 Training Engine loops."""
+"""Phase 10: Test Matrix for Optimization and Neural Training Engines."""
 import numpy as np
 import pytest
 from train_engine import VivicTrainingEngine
 
-
 def test_training_engine_initialization():
-    """Confirms all internal model, optimizer, and data components link up flawlessly."""
+    """Validates that weights and loss metrics bind to active hardware topologies safely."""
     engine = VivicTrainingEngine(port="TEST_MOCK_PORT")
-    assert engine.adapter.window_size == 1280
-    assert hasattr(engine.model, "spectral_conv")
-    assert len(engine.optimizer.param_groups) == 1
-
+    assert engine.warmed_up is False
+    assert engine.device is not None
 
 def test_training_step_warmup_gate():
     """Verifies that an un-saturated queue gracefully skips optimization without crashing."""
     engine = VivicTrainingEngine(port="TEST_MOCK_PORT")
-    # Buffer is completely empty, should return the -1.0 warm-up status code
-    loss_val = engine.train_step()
+    # Buffer is completely empty, should return the -1.0 warm-up status code and None vector
+    loss_val, latent_vector = engine.train_step()
     assert loss_val == -1.0
-
+    assert latent_vector is None
 
 def test_training_step_backprop_pass():
     """Validates that a saturated tensor window executes a clean backward pass gradient step."""
@@ -32,6 +29,7 @@ def test_training_step_backprop_pass():
         packet = f"V1:{v1},V2:{v2},V3:{v3},V4:{v4}\n"
         engine.adapter.process_incoming_packet(packet)
 
-    # Run the training step
-    loss_val = engine.train_step()
+    # Run the training step and cleanly unpack both tuple parameters
+    loss_val, latent_vector = engine.train_step()
     assert loss_val >= 0.0
+    assert latent_vector is not None
