@@ -14,7 +14,6 @@ description = "Non-Semantic, Threat-Insulated Ecological Frequency Ingestion Mat
 readme = "README.md"
 requires-python = ">=3.10"
 
-# HARDENING REMEDIATION: Modernize to flat SPDX string expression to comply with PEP 639 standards
 license = "AGPL-3.0"
 license-files = ["LICENSE"]
 
@@ -26,16 +25,17 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
 
+# HARDENING REMEDIATION: Lock the pytest-env plugin directly into the master package 
+# dependencies array to guarantee automated single-thread speed protections on remote GitHub CI nodes.
 dependencies = [
     "numpy==1.26.4",
     "scipy==1.12.0",
     "torch==2.2.1",
     "tpm2-pytss>=2.3.0",
-    "pyserial>=3.5"
+    "pyserial>=3.5",
+    "pytest-env>=1.1.0"
 ]
 
-# HARDENING REMEDIATION: Force explicit package module auto-discovery for flat-layout structures
-# to resolve the setuptools top-level module discovery compilation abort loop.
 [tool.setuptools]
 py-modules = [
     "crypto_signer",
@@ -52,6 +52,7 @@ py-modules = [
     "stress_harness",
     "train_engine",
     "unseal_hardware_vault",
+    "package_discovery_fix",
     "validate_config"
 ]
 
@@ -88,3 +89,13 @@ testpaths = [
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+
+# Force the testing engine to lock PyTorch and OpenMP linear algebra backends 
+# to a single thread, eliminating multi-core scheduling thrashing cleanly.
+env = [
+    "OMP_NUM_THREADS=1",
+    "MKL_NUM_THREADS=1",
+    "OPENBLAS_NUM_THREADS=1",
+    "VECLIB_MAXIMUM_THREADS=1",
+    "NUMEXPR_NUM_THREADS=1"
+]
