@@ -42,3 +42,6 @@ private/
 .gitsecret/keys/random_seed
 !*.secret
 secure_deployment_playbook.sh
+
+# Filter out local setuptools packaging build directories
+*.egg-info/
