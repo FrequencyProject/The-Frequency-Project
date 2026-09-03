@@ -13,7 +13,8 @@ graph LR
     B --> C["3. Instrumentation Amp<br>(TI INA826 / Gain=22x)"]
     C --> D["4. Active High-Pass Filter<br>(0.048 Hz Baseline Restorer)"]
     D --> E["5. Twin-T Notch Filter<br>(50Hz / 60Hz Rejection Grid)"]
-    E --> F["6. 24-Bit Delta-Sigma ADC<br>(Clean Balanced Rail Input)"]
+    E --> F["6. Anti-Aliasing Filter<br>(RC Low-Pass / Cutoff=30Hz)"]
+    F --> G["7. 24-Bit Delta-Sigma ADC<br>(Clean Balanced Rail Input)"]
 ```
 
 ---
@@ -29,9 +30,14 @@ graph LR
 #### 📌 2.2 Power Rails & Reference Voltages
 *   **Analog Supply:** Cleaned dual-rail $\pm 5.0\text{V}$ configuration generated via low-noise, ultra-low dropout (LDO) linear regulators (e.g., TI TPS7A47 / TPS7A33 series) to isolate the AFE entirely from digital switching transients. Ripple rejection must be $>80\text{dB}$ across the operating band.
 *   **ADC Reference Voltage:** An isolated, low-drift $2.048\text{V}$ voltage reference (e.g., TI REF5020, $<3\text{ppm}/^\circ\text{C}$) establishes the absolute dynamic measurement ceiling for the 24-bit converter.
-*   **Decoupling Matrix:** Every IC must place a **0.1µF C0G Ceramic Capacitor** in parallel with a **10µF Tantalum Capacitor** directly adjacent to its physical power pins, with routing length bounded below **2.0 mm** to eliminate parasitic induction loops.
+*   **HARDENING REMEDIATION: Fail-Safe Decoupling Matrix.** 
+    Every IC must place a **0.1µF C0G Ceramic Capacitor** in parallel with a **10µF X7R Multi-Layer Ceramic Capacitor (MLCC)** directly adjacent to its physical power pins, completely eliminating volatile tantalum components to isolate the system from thermal runaway or fire hazards during short-circuit anomalies. Routing lengths must be bounded below **2.0 mm** to eliminate parasitic induction loops.
 
-#### 📌 2.3 Hardware Pin & Signal Interconnect Matrix
+#### 📌 2.3 HARDENING REMEDIATION: Anti-Aliasing Input Filter Invariant
+*   To prevent high-frequency environmental noise from aliasing back into the baseband during the 60Hz sampling pass, a differential first-order RC anti-aliasing low-pass filter must be inserted immediately before the input channels of the 24-bit Delta-Sigma ADC.
+*   The filter uses matched **$10\ \text{k}\Omega$ (0.1%) series resistors** and a **$0.47\ \mu\text{F}$ C0G differential capacitor**, establishing a hard analog cutoff frequency of exactly **$33.8\ \text{Hz}$** (satisfying the Nyquist boundary for the 60Hz signal ingestion loop).
+
+#### 📌 2.4 Hardware Pin & Signal Interconnect Matrix
 
 | Physical Pin | Signal Identifier | Hardware Subsystem Connection | Electrical Operational Constraints |
 | :--- | :--- | :--- | :--- |
@@ -43,7 +49,7 @@ graph LR
 
 ---
 
-### 🎛️ 3. Multi-Channel Hardware Multiplexer & Routing Schema
+### 🎛 `3`. Multi-Channel Hardware Multiplexer & Routing Schema
 
 The external analog conversion framework steps through its physical ecological nodes sequentially using an array switching matrix configured according to these specific physical probe paths:
 
@@ -67,7 +73,8 @@ To ensure predictable 60Hz frame compilation cadences, the low-level edge loop o
 *   **SPI Polling Clock:** Configured explicitly to **4,000,000 Hz (4 MHz)** inside `SPISettings`.
 *   **Hardware Timeout Gate:** The `TIMEOUT_MICROS_LIMIT` variable sets a rigid **5,000 microseconds (5 ms)** cutoff ceiling for the high-impedance check on the `ADC_DRDY_PIN` pin. If a hardware fault occurs, the loop aborts instantly.
 *   **Settling Window:** An intentional **2 microseconds (`delayMicroseconds(2)`)** physical delay is executed immediately after dropping the Chip Select line to allow the data lines on the FR4 layer to settle, eliminating crosstalk artifacts.
-*   **Step-by-Step Field Calibration Loop:** Hardware calibration requires nulling input offsets by grounding inputs AIN0-AIN7 locally, measuring the baseline registers across 1000 clock cycles, and saving the derived zero-offset constants inside the non-volatile EEPROM memory blocks to subtract copper thermal drift natively.
+*   **HARDENING REMEDIATION: Dynamic Temperature-Compensated Field Calibration Loop.** 
+    To protect against non-linear copper thermal drift in variable outdoor climates, an onboard I2C digital temperature sensor (e.g., TI TMP117, $\pm 0.1^\circ\text{C}$ accuracy) must monitor the AFE board temperature. The system executes a zero-offset baseline calibration at startup by grounding inputs AIN0-AIN7 locally across 1000 clock cycles, mapping the calibration coefficients to a 1D look-up table across temp curves, and dynamically updating active calibration parameters in memory to subtract thermal drift in real-time.
 
 ---
 
