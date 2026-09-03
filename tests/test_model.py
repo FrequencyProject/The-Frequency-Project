@@ -5,7 +5,7 @@ import pytest
 from model_architecture import AsymmetricSpatialEncoder
 
 
-def test_encoder_output_dimensions():
+def test_encoder_output_dimensions_legacy_track():
     """Confirms network outputs perfectly scale to target latent sizing allocations."""
     model = AsymmetricSpatialEncoder(latent_dim=128)
     model.eval()
@@ -21,7 +21,7 @@ def test_encoder_output_dimensions():
         assert output.dtype == torch.float32
 
 
-def test_encoder_precision_casting():
+def test_encoder_precision_casting_legacy_track():
     """Ensures input matrices using alternative float shapes cast seamlessly to float32."""
     model = AsymmetricSpatialEncoder(latent_dim=64)
     model.eval()
