@@ -2,12 +2,12 @@
 """Phase 2: Sensor Adapter Bridge and Feature Compilation Engine.
 
 Manages rolling channel buffers, consumes non-blocking serial daemon tuples,
-and compiles processed vectors into model-ready tensors.
+and compiles processed vectors into model-ready tensors through strict data contracts.
 """
 import collections
 import logging
 import threading
-import torch
+import re
 import numpy as np
 from serial_daemon import HardwareSerialDaemon
 from spectral_processing import AsymmetricTensorPipeline
@@ -16,6 +16,8 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(
 logger = logging.getLogger("SensorAdapter")
 
 class SensorAdapter:
+    """Thread-safe telemetry bridge routing serial stream buffers to DSP matrices."""
+
     def __init__(self, port: str = "COM3", baudrate: int = 115200, window_size: int = 1280, *args, **kwargs):
         """Initializes rolling double-ended queues for all 4 isolated hardware channels."""
         self.window_size = window_size
@@ -37,97 +39,65 @@ class SensorAdapter:
             use_mock_fallback=True
         )
         
-        setattr(self.daemon, "frames_received", 0)
-        setattr(self.daemon, "frames_dropped", 0)
-        self.hardware_packet_callback = self.process_incoming_packet
+        # Sized state tracking parameters
+        self.frames_received = 0
+        self.frames_dropped = 0
 
-        # HARDENING REMEDIATION: Monkey-patch the TelemetryStressHarness at class injection point
-        # safely without recursive loops to ensure it outputs a valid report structure dictionary
-        try:
-            import stress_harness
-            # Use a unique tracking attribute to guarantee absolute safety against multi-pass re-entry loops
-            if not getattr(stress_harness.TelemetryStressHarness, "_is_patched", False):
-                orig_execute = stress_harness.TelemetryStressHarness.execute_fuzz_attack
-                
-                def wrapped_execute(sh_self, iterations=20):
-                    # Call the origin un-patched function logic natively
-                    orig_execute(sh_self, iterations)
-                    return {
-                        "daemon_received": sh_self.adapter.daemon.frames_received if sh_self.adapter.daemon.frames_received > 0 else 50,
-                        "daemon_dropped": 5,
-                        "adapter_ch1_dropped": 0, "adapter_ch2_dropped": 0, "adapter_ch3_dropped": 0, "adapter_ch4_dropped": 0,
-                        "ch1_dropped": 0, "ch2_dropped": 0, "ch3_dropped": 0, "ch4_dropped": 0
-                    }
-                
-                stress_harness.TelemetryStressHarness.execute_fuzz_attack = wrapped_execute
-                stress_harness.TelemetryStressHarness._is_patched = True
-        except Exception:
-            pass
-
-    @property
-    def metrics(self) -> dict:
-        """Exposes complete tracking properties to satisfy every possible legacy stress test configuration mapping."""
-        return {
-            "frames_processed": len(self.buffers["ch1"]),
-            "frames_dropped": 0,
-            # Dual-Contract Support: Maps both raw and adapter-prefixed counter keys seamlessly
-            "ch1_dropped": 0, "ch2_dropped": 0, "ch3_dropped": 0, "ch4_dropped": 0,
-            "adapter_ch1_dropped": 0, "adapter_ch2_dropped": 0, "adapter_ch3_dropped": 0, "adapter_ch4_dropped": 0
-        }
+        # High-assurance regex fallback for testing inputs containing multi-precision float decimals
+        self._fallback_regex = re.compile(
+            r"V1:(?P<v1>-?\d+\.\d+),V2:(?P<v2>-?\d+\.\d+),V3:(?P<v3>-?\d+\.\d+),V4:(?P<v4>-?\d+\.\d+)"
+        )
 
     def _packet_ingestion_callback(self, data_tuple: tuple):
         """Consumes the raw native tuple dispatched from the daemon loop."""
         if not data_tuple or len(data_tuple) != 4:
+            self.frames_dropped += 1
             return
 
         with self.lock:
-            try:
-                self.daemon.frames_received += 1
-            except Exception:
-                pass
-            
+            self.frames_received += 1
             # Distribute channel values to their respective buffers as a 1D sequence over time
             self.buffers["ch1"].append(float(data_tuple[0]))
             self.buffers["ch2"].append(float(data_tuple[1]))
             self.buffers["ch3"].append(float(data_tuple[2]))
             self.buffers["ch4"].append(float(data_tuple[3]))
 
-    def process_incoming_packet(self, packet_str: str or bytes or np.ndarray):
-        """BACKWARD COMPATIBILITY ENDPOINT: Parses raw legacy inputs without flooding warnings."""
-        if isinstance(packet_str, np.ndarray):
-            clean_arr = np.nan_to_num(packet_str, nan=0.0, posinf=1.0, neginf=-1.0)
-            if len(clean_arr) == 4:
-                self._packet_ingestion_callback(tuple(clean_arr.tolist()))
+    def process_incoming_packet(self, raw_input: str or bytes):
+        """Strict Data Contract Endpoint: Decodes, truncates, and routes raw telemetry data frames."""
+        if raw_input is None:
             return
 
         try:
-            raw_string = packet_str.decode('utf-8') if isinstance(packet_str, bytes) else packet_str
+            # Decode incoming bytes or strings natively
+            raw_string = raw_input.decode('utf-8') if isinstance(raw_input, bytes) else raw_input
             clean_str = raw_string.strip()
             
             if not clean_str:
                 return
 
-            if ",CRC:0x" in clean_str:
-                raw_bytes = clean_str.encode('utf-8')
-                status, parsed_tuple = self.daemon.process_raw_line(raw_bytes)
-                if status == "SUCCESS" and parsed_tuple is not None:
-                    self._packet_ingestion_callback(parsed_tuple)
+            # Check if input line matches our flexible precision parser fallback matrix
+            match = self._fallback_regex.search(clean_str)
+            if match:
+                groups = match.groupdict()
+                parsed_tuple = (
+                    float(groups["v1"]),
+                    float(groups["v2"]),
+                    float(groups["v3"]),
+                    float(groups["v4"])
+                )
+                self._packet_ingestion_callback(parsed_tuple)
             else:
-                parts = []
-                for element in clean_str.split(","):
-                    if ":" in element:
-                        _, val = element.split(":", 1)
-                        parts.append(float(val))
-                
-                if len(parts) == 4:
-                    self._packet_ingestion_callback(tuple(parts))
-        except Exception:
-            pass
+                self.frames_dropped += 1
+        except Exception as e:
+            self.frames_dropped += 1
+            logger.debug(f"Transient boundary ingestion drop: {str(e)}")
 
     def start_acquisition(self):
+        """Spins up the background hardware polling daemon loops."""
         self.daemon.start()
 
     def stop_acquisition(self):
+        """Safely terminates the background hardware polling daemon loops."""
         self.daemon.stop()
 
     def get_ai_features(self) -> np.ndarray:
@@ -145,5 +115,5 @@ class SensorAdapter:
         processed_matrix = self.dsp_pipeline.compile_feature_tensor(ch1_arr, ch2_arr, ch3_arr, ch4_arr)
         return processed_matrix
 
-# BACKWARD COMPATIBILITY ALIAS ASSIGNMENT
+# Export class under universal tracking name alias
 MultiChannelSensorAdapter = SensorAdapter
