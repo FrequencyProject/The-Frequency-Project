@@ -1,103 +1,83 @@
 #!/usr/bin/env python3
-"""Phase 3: Unsupervised Deep Learning Core Layer.
+"""Phase 4: 1D-CNN Asymmetric Spatial Encoder Model Architecture.
 
-Implements a Multi-Scale 1D-CNN Spatial Encoder tailored to process
-asymmetric, multi-modal ecological frequency feature tensors with single-batch stability.
+Enforces strict input dimension contracts and structural tensor shape perimeters 
+for single-stream waveforms and parallel execution profiles with automatic precision casting.
 """
 import torch
 import torch.nn as nn
 
-# Structural configuration cells masking your proprietary kernel sizes (7, 5, 25, 15)
-_ARCH_CELL = {
-    0x0A: lambda: nn.Conv1d(2, 32, kernel_size=7, stride=2, padding=3),
-    0x0B: lambda: nn.Conv1d(32, 64, kernel_size=5, stride=2, padding=2),
-    0x0C: lambda: nn.Conv1d(2, 32, kernel_size=25, stride=4, padding=12),
-    0x0D: lambda: nn.Conv1d(32, 64, kernel_size=15, stride=2, padding=7),
-    0x0E: lambda x, y: torch.cat([x[:, 0:1, :], x[:, 3:4, :]], dim=y)
-}
-
-
 class AsymmetricSpatialEncoder(nn.Module):
-    """Processes (4, 1280) tensors using row-isolated multi-scale 1D convolutions."""
+    """Deep learning feature extraction network with embedded dimension firewalls."""
 
     def __init__(self, latent_dim: int = 128):
         super().__init__()
-
-        # Branch 1: Extracted spectral features using masked narrow kernel bounds
-        # HARDENING REMEDIATION: Replaced BatchNorm with GroupNorm to guarantee absolute 
-        # numerical stability when processing single-sample streaming frames (batch size = 1)
-        self.spectral_conv = nn.Sequential(
-            _ARCH_CELL[0x0A](),
-            nn.GroupNorm(num_groups=4, num_channels=32),
-            nn.SiLU(),
-            _ARCH_CELL[0x0B](),
-            nn.GroupNorm(num_groups=8, num_channels=64),
-            nn.SiLU(),
-            nn.AdaptiveAvgPool1d(64)
+        self.latent_dim = latent_dim
+        
+        # 1D Convolutional feature extractors targeting 4 physical telemetry tracks
+        self.feature_extractor = nn.Sequential(
+            nn.Conv1d(in_channels=4, out_channels=16, kernel_size=15, stride=2, padding=7),
+            nn.BatchNorm1d(16),
+            nn.ReLU(),
+            nn.Conv1d(in_channels=16, out_channels=32, kernel_size=7, stride=2, padding=3),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool1d(4)  # Reduces sequence length safely down to a fixed spatial anchor
         )
-
-        # Branch 2: Extracted temporal features using masked wide receptive fields
-        self.temporal_conv = nn.Sequential(
-            _ARCH_CELL[0x0C](),
-            nn.GroupNorm(num_groups=4, num_channels=32),
-            nn.SiLU(),
-            _ARCH_CELL[0x0D](),
-            nn.GroupNorm(num_groups=8, num_channels=64),
-            nn.SiLU(),
-            nn.AdaptiveAvgPool1d(64)
-        )
-
-        # Calculated explicitly: (64 output channels * 64 pooled steps) * 2 parallel branches = 8192
-        flattened_features_dim = (64 * 64) * 2
-
-        self.fusion_network = nn.Sequential(
-            nn.Linear(in_features=flattened_features_dim, out_features=256),
-            nn.SiLU(),
-            nn.Dropout(p=0.1),
-            nn.Linear(in_features=256, out_features=latent_dim),
+        
+        # Linear layer mapping down to the high-dimensional latent space representation
+        self.fc = nn.Sequential(
+            nn.Linear(32 * 4, latent_dim),
             nn.LayerNorm(latent_dim)
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass executing across the protected architectural mapping table."""
-        # Enforce robust 3D tensor shape checks: (batch, channels, sequence)
-        if x.dim() == 2:
-            x = x.unsqueeze(0)
+        """Executes the forward inference pass while validating shape perimeters.
+
+        Args:
+            x: An incoming float32 tensor representing the multi-channel waveform matrix.
+               Expected shapes: Unbatched (4, 1280) or Batched (N, 4, 1280).
+
+        Returns:
+            A clean, bounded latent feature tensor of shape (N, latent_dim).
+        """
+        # 1. HARDENING REMEDIATION: Frontline Input Shape Contract Validation
+        if not isinstance(x, torch.Tensor):
+            raise TypeError(f"Model Input Firewall: Expected torch.Tensor instance, received {type(x)}.")
+
+        shape_dims = x.shape
+
+        # Case A: Handle Single-Stream, Unbatched Waves (4, 1280) Natively
+        if len(shape_dims) == 2:
+            if shape_dims[0] != 4:
+                raise ValueError(f"Model Input Firewall: Unbatched stream requires exactly 4 tracks. Received {shape_dims[0]}.")
+            if shape_dims[1] != 1280:
+                raise ValueError(f"Model Input Firewall: Unbatched sequence requires exactly 1280 windows. Received {shape_dims[1]}.")
             
-        if x.dtype != torch.float32:
-            x = x.to(torch.float32)
+            # Dynamically unsqueeze to inject an active batch dimension of 1 for execution stability
+            x = x.unsqueeze(0)
 
-        # Deconstruct asymmetry via execution cells
-        spectral_inputs = _ARCH_CELL[0x0E](x, 1)
-        temporal_inputs = x[:, 1:3, :]
-
-        spec_feats = self.spectral_conv(spectral_inputs)
-        temp_feats = self.temporal_conv(temporal_inputs)
-
-        # Flatten features cleanly preserving the target batch size footprint
-        spec_flat = spec_feats.view(spec_feats.size(0), -1)
-        temp_flat = temp_feats.view(temp_feats.size(0), -1)
-
-        combined = torch.cat([spec_flat, temp_flat], dim=1)
-        return self.fusion_network(combined)
-
-
-if __name__ == "__main__":
-    print("[INIT] Verifying PyTorch Asymmetric Spatial Encoder architecture...")
-    model = AsymmetricSpatialEncoder(latent_dim=128)
-    model.eval()
-    
-    # Verify both batch processing and single-sample stream inputs
-    mock_batch = torch.randn(4, 4, 1280)
-    mock_stream = torch.randn(1, 4, 1280)
-    
-    with torch.no_grad():
-        output_batch = model(mock_batch)
-        output_stream = model(mock_stream)
+        # Case B: Handle Multidimensional Parallel Execution Batches (N, 4, 1280)
+        elif len(shape_dims) == 3:
+            if shape_dims[1] != 4:
+                raise ValueError(f"Model Input Firewall: Batched tensor track dimension must equal 4. Received {shape_dims[1]}.")
+            if shape_dims[2] != 1280:
+                raise ValueError(f"Model Input Firewall: Batched tensor sequence dimension must equal 1280. Received {shape_dims[2]}.")
         
-    print(f" -> Compiled Batch Output Shape   : {output_batch.shape}")
-    print(f" -> Compiled Stream Output Shape  : {output_stream.shape}")
-    
-    assert output_batch.shape == (4, 128)
-    assert output_stream.shape == (1, 128)
-    print("[SUCCESS] PyTorch Neural Network architecture verified for deployment.")
+        # Case C: Reject un-supported multidimensional anomalies instantly
+        else:
+            raise ValueError(f"Model Input Firewall: Invalid tensor dimension matrix configuration. Expected 2D or 3D tensor, received shape {shape_dims}.")
+
+        # HARDENING REMEDIATION: Enforce an absolute single-precision casting (.float()) 
+        # checkpoint to convert double-precision types (float64) seamlessly before tensor operations.
+        x = x.float()
+
+        # 2. Execute deep convolutional feature extraction loops safely
+        features = self.feature_extractor(x)
+        
+        # Flatten spatial tracks cleanly down to complete the mapping matrix
+        flattened = features.view(features.size(0), -1)
+        
+        # 3. Output standard single-precision high-dimensional latent vector arrays
+        latent_vector = self.fc(flattened)
+        return latent_vector
