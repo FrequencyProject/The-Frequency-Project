@@ -64,9 +64,32 @@ int32_t read_adc_channel_raw(uint8_t channel_cmd) {
     return raw_value;
 }
 
-// Convert signed 24-bit raw counts to true analog voltage (-2.048V to +2.048V range)
-float convert_to_voltage(int32_t raw_counts) {
-    return (float)raw_counts * (2.048f / 8388607.0f);
+// HARDENING REMEDIATION: Fast Fixed-Point String Serialization Layer.
+// Safely formats fixed-point telemetry parameters straight into integers,
+// bypassing the slow embedded float libraries and eliminating loop jitter.
+void format_fixed_point_voltage(char *out_str, size_t max_len, int32_t raw_counts) {
+    // Determine sign of raw counts
+    bool is_negative = false;
+    if (raw_counts < 0) {
+        is_negative = true;
+        raw_counts = -raw_counts;
+    }
+
+    // Scale counts directly into millivolts using fixed-point integer precision math.
+    // 2.048V / 8388607 counts maps exactly via scale factor (20480000 / 8388607)
+    int64_t scaled_microvolts = ((int64_t)raw_counts * 20480000) / 8388607;
+    
+    int32_t whole_volts = scaled_microvolts / 10000000;
+    int32_t fraction = scaled_microvolts % 10000000;
+    
+    // Scale fraction down to our 4-decimal target precision window (.0001 precision step)
+    int32_t decimal_part = fraction / 1000;
+
+    if (is_negative) {
+        snprintf(out_str, max_len, "-%ld.%04ld", (long)whole_volts, (long)decimal_part);
+    } else {
+        snprintf(out_str, max_len, "%ld.%04ld", (long)whole_volts, (long)decimal_part);
+    }
 }
 
 void setup() {
@@ -92,18 +115,18 @@ void loop() {
         return;
     }
 
-    // Safe conversion to floating-point metrics
-    float v1 = convert_to_voltage(raw_ch1);
-    float v2 = convert_to_voltage(raw_ch2);
-    float v3 = convert_to_voltage(raw_ch3);
-    float v4 = convert_to_voltage(raw_ch4);
+    // Allocate temporary string buffers for each channel's fixed-point text segment
+    char s1[24], s2[24], s3[24], s4[24];
+    format_fixed_point_voltage(s1, sizeof(s1), raw_ch1);
+    format_fixed_point_voltage(s2, sizeof(s2), raw_ch2);
+    format_fixed_point_voltage(s3, sizeof(s3), raw_ch3);
+    format_fixed_point_voltage(s4, sizeof(s4), raw_ch4);
 
-    // HARDENING REMEDIATION: Scale buffer allocation safely to 128 bytes to completely 
-    // insulate against float formatting overflows under extreme analog input swings.
+    // Compile variables cleanly into the unified master text frame buffer
     char text_frame_buffer[128];
     int chars_written = snprintf(text_frame_buffer, sizeof(text_frame_buffer),
-                                "V1:%.4f,V2:%.4f,V3:%.4f,V4:%.4f", 
-                                v1, v2, v3, v4);
+                                "V1:%s,V2:%s,V3:%s,V4:%s", 
+                                s1, s2, s3, s4);
 
     if (chars_written > 0 && chars_written < (int)sizeof(text_frame_buffer)) {
         // Calculate the CRC directly over the ASCII characters of the string
