@@ -10,38 +10,60 @@ This repository is governed strictly by the **GNU Affero General Public License 
 
 The Frequency Project reclaims the core purpose of artificial networks. By moving away from semantic human text strings and anchoring the machine’s entry nodes directly into the absolute, unyielding mathematics of the biospheric ecosystem, we build an intelligence that does not mirror human bias, but maps the homeostatic states of the living world.
 
-For the unabridged historical origin whitepapers, reference **`THE_FREQUENCY_MANIFESTO.md`**. For deep signal processing transformations, reference **`SYSTEM_FLOW.md`**. For raw schematics, reference **`HARDWARE_BLUEPRINT.md`**.
+---
+
+## 🗺️ System Architecture & File Layout
+
+The repository infrastructure is strictly organized into decoupled functional layers, separating bare-metal collection loops and deep learning hot-paths from validation harnesses and theoretical documentation assets:
+
+### ⚙️ Core Ingestion & Machine Learning Hot-Paths
+*   `firmware_adc_loop.cpp` — Bare-metal C++ microcontroller script utilizing fixed-point bitwise arithmetic to eliminate clock sampling jitter over SPI interfaces.
+*   `serial_daemon.py` — Asynchronous background daemon processing incoming bytes via strict CRC-8 verification, regex validation, and raw fault captures.
+*   `sensor_adapter.py` — Thread-safe bridge managing rolling channel double-ended buffers, independent Z-score normalization, and epsilon flatline protection guards.
+*   `spectral_processing.py` — DSP engine executing 60Hz IIR notch filters, Hanning windows, and asymmetric matrix compilations.
+*   `model_architecture.py` — PyTorch neural network housing the 1D-CNN Asymmetric Spatial Encoder with embedded shape firewalls and precision casting.
+*   `resonance_loss.py` — Custom objective function calculating information distance boundaries via symmetric, bidirectional KL divergence and Golden Ratio (φ) penalty paths.
+*   `train_engine.py` — Accelerated deep learning manager coordinating training steps with complete CPU/CUDA device agility and single-pass latent vector reuse.
+*   `run_session.py` — Core system orchestrator directing ambient noise calibration sweeps and multi-threaded live cycles.
+*   `latent_monitor.py` — Real-time tracking supervisor implementing an Exponential Moving Variance equation to enforce zero-bias 3-Sigma alert perimeters over vector drift.
+
+### 🔒 Hardware Security & Vault Perimeter
+*   `secure_hardware_vault.py` — Cryptographic abstraction layer providing a 3-pass automatic retry loop to handle transient SPI bus drops alongside precise exception taxonomies.
+*   `unseal_hardware_vault.py` — Automated bootstrap script validating hardware security parameters during vault decryption sequences.
+*   `protect_vault.py` — Frontline boundary defense isolating local storage memory planes.
+*   `crypto_signer.py` — High-assurance signature validation matrix managing asymmetric token authentication keys.
+*   `secure_deployment_playbook.sh.secret` — Encrypted shell routine orchestrating zero-trust production handshakes.
+*   `tpm_testing.md` — Technical documentation recipe detailing local `swtpm` software emulator socket setup steps and expected policy states.
+
+### 🧪 Verification, Fuzzing & Configuration Audits
+*   `validate_config.py` — Structural repository asset validator enforcing required version-locked package dependencies and thread-parallelization constraints.
+*   `prototype_simulation.py` — End-to-end signal ingestion simulation pass running synthetic waveforms across epsilon guards to evaluate boundary behaviors.
+*   `stress_harness.py` — Adversarial signal bombardment and fuzzing harness hammering ingestion bounds with signed NaN/Inf variants to audit lock stability.
 
 ---
 
-### 📂 1. Comprehensive Repository File Directory Breakdown
+## 📚 White Papers, Manifestos & Case Studies
 
-#### 📁 Core Integration & Ingestion Runtimes
-*   📄 **serial_daemon.py** — Asynchronous background daemon processing incoming bytes via strict CRC-8 verification and regex validation.
-*   📄 **sensor_adapter.py** — Thread-safe bridge managing rolling channel double-ended buffers and exposing legacy dictionary schemas.
-*   📄 **spectral_processing.py** — DSP engine executing 60Hz IIR notch filters, Hanning windows, and asymmetric matrix compilations.
+The underlying theoretical frameworks, cryptographic profiles, ecosystem goals, and deployment case studies for this matrix are fully detailed across the following localized publications:
 
-#### 📁 Deep Learning & Performance Hardening Modules
-*   📄 **model_architecture.py** — PyTorch neural network housing the 1D-CNN Asymmetric Spatial Encoder.
-*   📄 **resonance_loss.py** — Custom objective function calculating information distance boundaries via symmetric, bidirectional KL divergence and Golden Ratio (φ) penalty paths.
-*   📄 **train_engine.py** — Accelerated deep learning manager coordinating training steps with complete CPU/CUDA device agility.
-*   📄 **run_session.py** — Core system orchestrator directing ambient noise calibration sweeps and multi-threaded live cycles.
-*   📄 **latent_monitor.py** — Real-time tracking supervisor implementing an Exponential Moving Variance equation to enforce zero-bias 3-Sigma alert perimeters over vector drift.
-
-#### 📁 Dependency Configurations & DevOps Automation
-*   📁 **tests/** — Environment directory executing modular assertion validations (`test_tpm_bridge.py`, `test_loss.py`, `test_serial_daemon.py`).
-*   📄 **Dockerfile** — Parameterized multi-stage BuildKit container configuration executing unprivileged deployment isolation under UID 10001.
-*   📄 **.dockerignore** — Compilation firewall blocking local virtual environments (`venv/`) and development tracking logs (`.pytest_cache/`).
+*   **[The Frequency Manifesto](THE_FREQUENCY_MANIFESTO.md)** — Core foundational overview, baseline systemic philosophy, and strategic ecological alignment mandates of the project.
+*   **[Paper 1: Ingestion Dialogue](PAPER_1_DIALOGUE.md)** — Architectural design transcript evaluating structural signal decoupling, flat-layout module paradigms, and asynchronous thread boundary management.
+*   **[Paper 2: Technical Proposal](PAPER_2_TECHNICAL_PROPOSAL.md)** — Comprehensive specification detailing high-assurance edge computing, convolutional spatial mappings, and real-time loss constraints.
+*   **[Mobile Development Case Study](MOBILE_DEVELOPMENT_CASE_STUDY.md)** — Production evaluation report documenting field deployments, low-power telemetry collection constraints, and cross-platform synchronization bounds.
+*   **[Engineering Guide](ENGINEERING_GUIDE.md)** — In-depth developer handbook laying out code conventions, reentrant locking models, and multi-version library integration rules.
+*   **[System Flow Specification](SYSTEM_FLOW.md)** — Granular structural matrix documenting byte routing tracks, raw ASCII packet parsing, and tensor expansion channels.
+*   **[Hardware Blueprint](HARDWARE_BLUEPRINT.md)** — Electrical schematics, pin maps, and microsecond timing criteria for physical multi-channel ADC multiplexers.
 
 ---
 
-### 🚀 2. Quick Start & Software Simulation
-To initialize your local isolated virtual environment and run the full 25-item master verification test matrix:
+## 🚀 2. Quick Start & Software Simulation
+
+To initialize your local isolated virtual environment and run the full 38-item master verification test matrix under the environment-wide single-thread optimization overrides:
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip setuptools cffi
-pip install -r requirements.txt
+pip install -e .
 python3 -m pytest
 ```
 
@@ -72,5 +94,28 @@ MATHEMATICAL INTEGRITY MATRIX RESULTS:
 
 ---
 
-### 📜 3. Licensing Core
+## 🧪 3. Automated Test Matrix Index
+
+Backed by single-core thread-parallelization overrides inside `pyproject.toml`, the complete **38-unit test suite executes in under 38 seconds**:
+
+*   `test_ci_workflow.py` — Validates cloud installation patterns and unquoted version range protections.
+*   `test_crypto.py` — Confirms asymmetric signer array compatibility and malformed token rejection.
+*   `test_ingest.py` — Audits tensor dimensions and row-independent scaling boundaries.
+*   `test_loss.py` — Verifies loss scalar outputs and single-batch numerical stability under degenerate elements.
+*   `test_model.py` — Validates convolutional feature dimension allocations.
+*   `test_model_architecture.py` — Enforces input shape firewalls for single-stream unbatched and batched data.
+*   `test_model_layers.py` — Asserts single-sample shape expansions.
+*   `test_monitor.py` — Confirms 3-Sigma initialization bounds and anomaly detection trajectories.
+*   `test_prototype_simulation.py` — Validates simulation life cycles and epsilon flatline tracking.
+*   `test_serial_daemon.py` — Checks strict token parsing, oversized lines, and raw hardware fault captures.
+*   `test_session.py` — Verifies baseline quiet state environmental calibration and orchestration paths.
+*   `test_spectral.py` — Validates 60Hz IIR notch filter suppression and RFFT compilation.
+*   `test_stress.py` — Bombards boundaries with signed fuzz variants to verify thread-lock resilience.
+*   `test_tpm_bridge.py` — Audits 3-pass retry mechanics and immediate alerts on policy tampering.
+*   `test_train.py` — Asserts engine initialization and active backpropagation tracking.
+*   `test_validate_config.py` — Confirms validator logic against true project dependencies.
+
+---
+
+### 📜 4. Licensing Core
 Released under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
