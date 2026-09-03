@@ -3,7 +3,7 @@
 
 Leverages a zero-bias Exponential Moving Average (EMA) framework to enforce
 strict 3-Sigma boundary protections across high-dimensional telemetry vectors
-starting from the very first execution frame.
+with conditional anomaly isolation to completely insulate against baseline drift.
 """
 import logging
 import threading
@@ -14,7 +14,7 @@ logger = logging.getLogger("VivicLatentMonitor")
 
 class VivicLatentMonitor:
     def __init__(self, history_window: int = 100, alpha: float = 0.2, ambient_floor: float = 1e-6, *args, **kwargs):
-        """Initializes the real-time anomaly tracker with a zero-bias EMA engine."""
+        """Initializes the real-time anomaly tracker with a zero-trust EMA engine."""
         self.history_window = history_window
         self.alpha = alpha                 # EMA smoothing factor for instantaneous tracking
         self.ambient_floor = ambient_floor # Environmental noise baseline compensation floor
@@ -35,6 +35,10 @@ class VivicLatentMonitor:
 
     def calculate_distance_metrics(self, current_vector: np.ndarray, baseline_vector: np.ndarray) -> float:
         """Computes the lossless high-dimensional Euclidean drift delta across vectors."""
+        # HARDENING REMEDIATION: Frontline Finite-Value Firewall
+        if not np.all(np.isfinite(current_vector)) or not np.all(np.isfinite(baseline_vector)):
+            raise ValueError("Latent Monitor Firewall: Input vectors contain non-finite NaN or Infinite data points.")
+
         if current_vector.shape != baseline_vector.shape:
             raise ValueError(f"Vector dimensions mismatch: {current_vector.shape} vs {baseline_vector.shape}")
         
@@ -65,17 +69,20 @@ class VivicLatentMonitor:
                 logger.warning(
                     f"ANOMALY DETECTED: Vector delta ({euclidean_delta:.6f}) breaches 3-Sigma boundary ({trigger_boundary:.6f})"
                 )
+                # HARDENING REMEDIATION: Conditional Anomaly Isolation.
+                # If an out-of-bounds breach occurs, trigger the alert but immediately return
+                # WITHOUT updating the baseline registers. This completely blocks drift poisoning attacks.
+                return True
             
-            # Welford-inspired EMA update: update mean, accumulate squared distance variance, take square root
+            # Welford-inspired EMA update path executed strictly for non-anomalous quiet-state tracking
             old_mean = self.ema_mean
             self.ema_mean = (self.alpha * euclidean_delta) + ((1.0 - self.alpha) * old_mean)
             
-            # HARDENING OPTIMIZATION: True Exponential Moving Variance tracking path
             instantaneous_variance = (euclidean_delta - old_mean) * (euclidean_delta - self.ema_mean)
             self.ema_var = (self.alpha * instantaneous_variance) + ((1.0 - self.alpha) * self.ema_var)
             self.ema_std = max(np.sqrt(self.ema_var), 1e-8)
 
-            return bool(is_anomaly)
+            return False
 
     def evaluate_vector(self, current_vector: np.ndarray, baseline_vector: np.ndarray = None) -> dict:
         """BACKWARD COMPATIBILITY ENDPOINT: Returns dictionary schemas to validate legacy tests."""
