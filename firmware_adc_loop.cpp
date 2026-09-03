@@ -64,26 +64,22 @@ int32_t read_adc_channel_raw(uint8_t channel_cmd) {
     return raw_value;
 }
 
-// HARDENING REMEDIATION: Fast Fixed-Point String Serialization Layer.
-// Safely formats fixed-point telemetry parameters straight into integers,
-// bypassing the slow embedded float libraries and eliminating loop jitter.
+// HARDENING REMEDIATION: Bounded Fixed-Point Math Engine.
+// Scales counts to a precise 4-decimal step scale (100-microvolt units) natively,
+// ensuring absolute scaling precision across the entire -2.048V to +2.048V dynamic range.
 void format_fixed_point_voltage(char *out_str, size_t max_len, int32_t raw_counts) {
-    // Determine sign of raw counts
     bool is_negative = false;
     if (raw_counts < 0) {
         is_negative = true;
         raw_counts = -raw_counts;
     }
 
-    // Scale counts directly into millivolts using fixed-point integer precision math.
-    // 2.048V / 8388607 counts maps exactly via scale factor (20480000 / 8388607)
-    int64_t scaled_microvolts = ((int64_t)raw_counts * 20480000) / 8388607;
+    // Scale counts straight to ten-thousandths of a volt (.0001 precision step)
+    // Formula: (raw_counts * 20480) / 8388607
+    int64_t scaled_units = ((int64_t)raw_counts * 20480) / 8388607;
     
-    int32_t whole_volts = scaled_microvolts / 10000000;
-    int32_t fraction = scaled_microvolts % 10000000;
-    
-    // Scale fraction down to our 4-decimal target precision window (.0001 precision step)
-    int32_t decimal_part = fraction / 1000;
+    int32_t whole_volts = scaled_units / 10000;
+    int32_t decimal_part = scaled_units % 10000;
 
     if (is_negative) {
         snprintf(out_str, max_len, "-%ld.%04ld", (long)whole_volts, (long)decimal_part);
