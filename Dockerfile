@@ -1,4 +1,5 @@
-# Global ARG declared before Stage 1 applies globally to all downstream stages
+# syntax=docker/dockerfile:1
+# Declare global image parameters to standardize the lightweight Debian base
 ARG BASE_IMAGE=python:3.12-slim
 
 # ==============================================================================
@@ -22,9 +23,11 @@ WORKDIR /build
 # Copy the hardened python dependency and supply chain configuration manifests
 COPY requirements.txt pyproject.toml ./
 
-# HARDENING: Upgrade setuptools and cffi to ensure compatibility with modern C-macro formats
-RUN python -m pip install --upgrade pip setuptools cffi && \
-    python -m pip wheel --no-cache-dir --wheel-dir /build/wheels -r requirements.txt
+# HARDENING REMEDIATION: Inject BuildKit persistent cache mounts straight into the compiler paths.
+# This prevents pip from re-downloading massive multi-gigabyte wheels if requirements are unchanged.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip setuptools && \
+    python -m pip wheel --wheel-dir /build/wheels -r requirements.txt
 
 # ==============================================================================
 # 🌌 STAGE 2: THE HARDENED ZERO-TRUST RUNTIME EDGE CONTAINER
@@ -43,15 +46,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Extract only the fully compiled production binary wheels from the builder image layers
 COPY --from=builder /build/wheels /app/wheels
-RUN python -m pip install --no-cache-dir /app/wheels/* && \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --no-index --find-links=/app/wheels /app/wheels/* && \
     rm -rf /app/wheels
 
-# Ingest your multi-layer obfuscated logic modules and text vault assets cleanly into the image
+# Establish the unprivileged system user account before copying tracking modules
+RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator
+
+# Ingest your multi-layer logic modules cleanly into the workspace image
 COPY . /app/
 
-# Establish an unprivileged runtime user account to block root escalation vectors inside the container
-RUN useradd -u 10001 -m vivic_operator && \
-    chown -R vivic_operator:vivic_operator /app
+# HARDENING REMEDIATION: Principle of Least Privilege / Immutable Source Code Invariant.
+# 1. Source files are strictly owned by root and kept READ-ONLY (0555) so the application process 
+#    can never overwrite its own running Python code modules during a remote attack exploit.
+# 2. Provision an isolated, non-executable storage workspace for runtime ephemeral data logs.
+RUN mkdir -p /app/scratch && \
+    chown -R root:root /app && \
+    chown -R vivic_operator:vivic_operator /app/scratch && \
+    chmod -R 0555 /app && \
+    chmod -R 0700 /app/scratch
+
+# Bind execution strictly to the unprivileged account context
 USER vivic_operator
 
 # Execute the repository configuration validation engine at active container launch
