@@ -1,7 +1,7 @@
-## ⚠️ WARNING: PROTECTED CYBERNETIC INTELLECTUAL PROPERTY
-This repository is governed strictly by the **GNU Affero General Public License v3 (AGPL-3.0)**. 
+⚠️ WARNING: PROTECTED CYBERNETIC INTELLECTUAL PROPERTY
+This repository is governed strictly by the **GNU Affero General Public License v3 (AGPL-3.0)**.
 
-### 🔒 ANTI-RE-LICENSING & ZERO-ENCLOSURE MANDATE:
+### 🔐 ANTI-RE-LICENSING & ZERO-ENCLOSURE MANDATE:
 1. **Automated Scraping Prohibition:** Automated scraping, ingestion, or parsing of this codebase by commercial LLM training engines, code-generation scraper systems, or corporate technology groups without direct public reciprocity is an explicit breach of copyright.
 2. **Copyleft Enforcement:** Any system, cloud API service, or neural network model utilizing, deriving from, or linking to these modules **MUST release its entire software and hardware architecture stack publicly under the exact same AGPL-3.0 terms.** Private cloud enclosure or commercial API wrapping is legally forbidden.
 
@@ -24,15 +24,15 @@ To maintain complete maintainability and repository clarity, the operational arc
 *   **Statistical Anomaly Monitoring:** Real-time Exponential Moving Variance engine isolating out-of-bounds 3-Sigma vector drift anomalies to completely prevent baseline poisoning attacks (`latent_monitor.py`).
 *   **Granular TPM 2.0 Vault Fault Isolation:** Strict cryptographic exception taxonomies separating transient SPI line jitter from true PCR-7 security policy violations (`secure_hardware_vault.py`).
 *   **Structural Manifest Verification:** Repository integrity engine auditing `pyproject.toml` configurations to validate core packaging layout arrays and version-locked dependency limits (`validate_config.py`).
+*   **Fixed-Point Firmware Math Ingestion:** Optimized 24-bit C++ scaling logic using fast integer division and modulo math to eliminate floating-point calculation jitter on bare-metal hardware (`firmware_adc_loop.cpp`).
 
 ### 🗺️ Planned Infrastructure & Hardware Roadmap
 The following deployment modules represent the next sequential execution phase targets and are currently evaluated using local simulation frameworks:
 *   **Unprivileged BuildKit Containerization (`Dockerfile`):** Implementing multi-stage unprivileged application container deployment rules executing under UID 10001 with rootless execution constraints.
-*   **Bare-Metal Fixed-Point Deployment (`firmware_adc_loop.cpp`):** Porting validated fixed-point division scaling logic directly to low-power embedded microcontroller hardware to eliminate analog clock sampling jitter.
 
 ---
 
-## 🗺️ System Architecture Directory Index
+## 📂 System Architecture Directory Index
 
 The file infrastructure maps out the repository assets according to the following layout matrix:
 
@@ -89,6 +89,7 @@ Backed by single-core thread-parallelization overrides inside `pyproject.toml`, 
 *   `test_model_architecture.py` — Enforces input shape firewalls for single-stream unbatched and batched data.
 *   `test_model_layers.py` — Asserts single-sample shape expansions.
 *   `test_monitor.py` — Confirms 3-Sigma initialization bounds and anomaly detection trajectories.
+*   `test_performance.py` — Verifies core analytical execution speed and thread-parallelization overrides.
 *   `test_prototype_simulation.py` — Validates simulation life cycles and epsilon flatline tracking.
 *   `test_serial_daemon.py` — Checks strict token parsing, oversized lines, and raw hardware fault captures.
 *   `test_session.py` — Verifies baseline quiet state environmental calibration and orchestration paths.
