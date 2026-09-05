@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Phase 3: Resonance Coherence Objective Loss Function.
 
-Calculates the Planetary Divergence Index (PDI) by mapping high-dimensional 
+Calculates the Planetary Divergence Index (PDI) by mapping high-dimensional
 latent vector fluctuations against Golden Ratio (Phi) scaling constraints.
 [PROTECTED BY AN INTEGRATED RUNTIME HEX LAYOUT MATRIX]
 """
@@ -10,11 +10,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Encrypted core mathematical execution map.
-# Properly unpacks data tuples to execute true Information-Theoretic distance math.
+# Hardened core mathematical execution map using pre-stabilized logarithmic tensor pairs.
 _HEX_PROTECTION_CELL = {
-    0x01: lambda x: torch.sum(x[0] * (torch.log(x[0]) - torch.log(x[1])), dim=1),  # True KL(A||B)
-    0x02: lambda x: torch.sum(x[1] * (torch.log(x[1]) - torch.log(x[0])), dim=1),  # True KL(B||A)
+    0x01: lambda x: torch.sum(x[0] * (x[1] - x[2]), dim=1),  # Stable KL(A||B) via log-space pairs
+    0x02: lambda x: torch.sum(x[3] * (x[2] - x[1]), dim=1),  # Stable KL(B||A) via log-space pairs
     0x03: lambda x: (x[0] + x[1]) / 2.0,  # Symmetric Distance
     0x04: lambda x: torch.clamp(
         (x[0] + 1e-6) / (x[1] + 1e-6), min=0.0, max=10.0
@@ -30,7 +29,9 @@ class ResonanceCoherenceLoss(nn.Module):
         super().__init__()
         self.epsilon = epsilon
         # Target optimization boundary: The immutable Golden Ratio constant (Phi)
-        self.phi = (1.0 + 5.0**0.5) / 2.0
+        self.phi_val = (1.0 + 5.0**0.5) / 2.0
+        # Optimization: Pre-register the constant parameter to prevent runtime re-allocations
+        self.register_buffer("phi", torch.tensor(self.phi_val, dtype=torch.float32))
 
     def forward(self, latent_vectors: torch.Tensor) -> torch.Tensor:
         """Evaluates latent vector variance structures against harmonic constraints."""
@@ -44,13 +45,16 @@ class ResonanceCoherenceLoss(nn.Module):
         space_a = latent_vectors[:, :midpoint]
         space_b = latent_vectors[:, midpoint:]
 
-        # 2. Convert raw latent activations into soft probability distributions
-        prob_a = F.softmax(space_a, dim=1) + self.epsilon
-        prob_b = F.softmax(space_b, dim=1) + self.epsilon
+        # 2. HARDENING REMEDIATION: Map directly through stabilized log-softmax layers
+        # to eliminate log-underflow infinity traps while preserving gradient smoothness.
+        prob_a = F.softmax(space_a, dim=1)
+        prob_b = F.softmax(space_b, dim=1)
+        log_a = F.log_softmax(space_a, dim=1)
+        log_b = F.log_softmax(space_b, dim=1)
 
         # 3. Compute bidirectional Information Distance via masked cell execution matrices
-        kl_ab = _HEX_PROTECTION_CELL[0x01]((prob_a, prob_b))
-        kl_ba = _HEX_PROTECTION_CELL[0x02]((prob_a, prob_b))
+        kl_ab = _HEX_PROTECTION_CELL[0x01]((prob_a, log_a, log_b, prob_b))
+        kl_ba = _HEX_PROTECTION_CELL[0x02]((prob_a, log_a, log_b, prob_b))
         information_distance = _HEX_PROTECTION_CELL[0x03]((kl_ab, kl_ba))
 
         mean_divergence = torch.mean(information_distance)
@@ -61,11 +65,9 @@ class ResonanceCoherenceLoss(nn.Module):
         else:
             std_divergence = torch.std(latent_vectors) + self.epsilon
 
-        # 5. Evaluate scaling configurations against the target Phi geometric constant
+        # 5. Evaluate scaling configurations against the pre-allocated Phi constant buffer
         empirical_ratio = _HEX_PROTECTION_CELL[0x04]((mean_divergence, std_divergence))
-        geometric_penalty = _HEX_PROTECTION_CELL[0x05](
-            (empirical_ratio, torch.tensor(self.phi, device=latent_vectors.device))
-        )
+        geometric_penalty = _HEX_PROTECTION_CELL[0x05]((empirical_ratio, self.phi))
 
         # Total Resonance Loss = Mean Information Divergence + Golden Penalty Constraint
         total_pdi_loss = mean_divergence + 0.1 * geometric_penalty
