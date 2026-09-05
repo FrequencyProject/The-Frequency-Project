@@ -1,9 +1,8 @@
-# [SECURE SUPPLY CHAIN BOUNDARY] -- DO NOT PERMUTE --
-numpy==1.26.4
-scipy==1.12.0
-torch==2.2.1
-tpm2-pytss>=2.3.0
-black==24.2.0
-pytest==8.0.2
-pyserial
+numpy>=1.26.4
+scipy>=1.12.0
+torch>=2.2.1
+tpm2-pytss>=2.3.0,<3.0.0
+pyserial>=3.5
 cryptography<=42.0.8
+pytest>=9.1.1
+pytest-env>=1.7.0

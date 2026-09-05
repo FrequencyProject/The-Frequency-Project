@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Phase 5: Unified Core Orchestration and Session Management.
+"""Phase 5: Core Session Orchestration.
 
 Manages continuous background ingestion cycles, data loops, and monitoring pipelines.
-[PROTECTED BY AN INTEGRATED RUNTIME HEX LAYOUT MATRIX & DYNAMIC CALIBRATION ENGINE]
 """
 import time
 import torch
@@ -11,14 +10,15 @@ from sensor_adapter import MultiChannelSensorAdapter
 from train_engine import VivicTrainingEngine
 from latent_monitor import VivicLatentMonitor
 
-_SESSION_CELL = {
-    0xE1: lambda: time.sleep(0.01),
-    0xE2: lambda step, total: print(f" -> [CYCLE {step}/{total}] Optimization Pass Complete."),
-    0xE3: lambda: torch.cuda.is_available(),
-    0xE4: lambda ch, mean, std: print(
-        f"    -> [CH {ch}] Ambient Baseline: μ={mean:.4f}, σ={std:.4f}"
-    ),
-}
+
+def log_ambient_baseline(ch: int, mean: float, std: float):
+    """Outputs channel statistical baselines during environment calibration."""
+    print(f"    -> [CH {ch}] Ambient Baseline: μ={mean:.4f}, σ={std:.4f}")
+
+
+def log_cycle_completion(step: int, total: int):
+    """Outputs optimization cycle progress tracking parameters."""
+    print(f" -> [CYCLE {step}/{total}] Optimization Pass Complete.")
 
 
 class UnifiedVivicSession:
@@ -77,7 +77,7 @@ class UnifiedVivicSession:
             # Enforce statistical epsilon boundary guards to prevent subsequent zero-division
             if self.ambient_stds[ch] < 1e-6:
                 self.ambient_stds[ch] = 1e-6
-            _SESSION_CELL[0xE4](ch, self.ambient_means[ch], self.ambient_stds[ch])
+            log_ambient_baseline(ch, self.ambient_means[ch], self.ambient_stds[ch])
 
         self.is_calibrated = True
         print("[SUCCESS] Dynamic baseline calibration completed. Environmental limits set.")
@@ -88,27 +88,25 @@ class UnifiedVivicSession:
             print("[WARNING] Session execution halted. Initializing auto-calibration fallback.")
             self.execute_baseline_calibration()
 
-        print("[INIT] Launching secure orchestrated operational cycle...")
+        print("[INIT] Launching orchestrated operational cycle...")
         self.is_active = True
 
         for step in range(1, steps + 1):
             if not self.is_active:
                 break
 
-            # HARDENING REMEDIATION: Consume single-pass latent vectors returned directly 
-            # by train_step() during the active backpropagation loop. This completely eliminates 
-            # the redundant second inference forward pass, saving core processing cycles.
+            # Consume single-pass latent vectors returned directly by train_step()
             loss_val, latent_vector = self.engine.train_step()
-            
+
             if loss_val < 0.0 or latent_vector is None:
                 continue
 
             # Execute the 3-Sigma vector divergence metric monitoring tracking
             _ = self.monitor.evaluate_vector(latent_vector.detach().cpu().numpy())
 
-            # Trigger masked indicator cell callbacks
-            _SESSION_CELL[0xE2](step, steps)
-            _SESSION_CELL[0xE1]()
+            # Trigger clear progress reporting and timing increments
+            log_cycle_completion(step, steps)
+            time.sleep(0.01)
 
         self.is_active = False
         print("[SUCCESS] Operational session cycle completed cleanly.")

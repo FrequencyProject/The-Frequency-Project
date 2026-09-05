@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "spectral_processing", "model_architecture", "resonance_loss", "train_engine", "latent_monitor", "prototype_simulation", "stress_harness"]
+py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "spectral_processing", "model_architecture", "resonance_loss", "train_engine", "latent_monitor", "prototype_simulation", "stress_harness", "config"]
 
 # HARDENING REMEDIATION: Explicitly bind the test tracking suite folder to the 
 # setuptools package directory discovery map to guarantee absolute remote verifiability.

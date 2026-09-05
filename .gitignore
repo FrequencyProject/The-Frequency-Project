@@ -1,47 +1,40 @@
-# ==============================================================================
-# 🌌 VIVIC AI ARCHITECTURE SPECIFICATION SHEET: TRACKING FILTER INDEX
-# [PROTECTED BY AN INTEGRATED REPOSITORY EXCLUSION MANDATE]
-# ==============================================================================
-
-# Generic Non-Semantic Runtime Workspace Cells (0x01 - 0x0F)
-*.py[cod]
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
 *.so
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Testing / cache directories
 .pytest_cache/
-.ipynb_checkpoints/
+.cache/
+htmlcov/
+.tox/
+.noscript/
+.profile/
 
-# Generic Physical Interface Cache Nodes (0x10 - 0x1F)
-*.log
-*.csv
-*.dat
-*.out
-data/
-cache/
-
-# Local Operating System Volatile Context Arrays (0x20 - 0x2F)
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Isolated Environment Deployment Tokens (0x30 - 0x3F)
-.env
-.venv
-env/
+# Environments
 venv/
 ENV/
-
-# Hardened Edge Hardware SPI Validation Enclosures (0x40 - 0x4F)
-# Masks specific physical keys, hardware tokens, and active token profiles
-*.key
-*.pem
-*.token
-*.sig
-secret/
-private/
-.gitsecret/keys/random_seed
-!*.secret
-secure_deployment_playbook.sh
-
-# Filter out local setuptools packaging build directories
-*.egg-info/
+env.bak/
+venv.bak/
