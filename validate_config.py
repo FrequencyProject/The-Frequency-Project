@@ -30,40 +30,41 @@ _CONFIG_CELL = {
 
 class InfrastructureValidator:
     """Audits repository assets and file maps under structural cell masking."""
-    
+
     def __init__(self):
         self.manifest_file = "pyproject.toml"
 
     def verify_repository_integrity(self) -> bool:
         """Validates core tracking modules, dependencies, and configuration constraints."""
         print("[INIT] Launching configuration and structural manifest audit...")
-        
+
         # Verify pyproject configuration map exists
         if not _CONFIG_CELL[0xC1](self.manifest_file):
             print(f"[CRITICAL] Operational manifest missing: {self.manifest_file}")
             return False
-            
+
         try:
             with open(self.manifest_file, "rb") as f:
                 config_data = tomllib.load(f)
-            
+
             # Extract nested project configuration sections safely
             project_section = config_data.get("project", {})
             dependencies = project_section.get("dependencies", [])
-            
+
             setuptools_section = config_data.get("tool", {}).get("setuptools", {})
             modules = setuptools_section.get("py-modules", [])
-            
+
             pytest_section = config_data.get("tool", {}).get("pytest", {}).get("ini_options", {})
             env_vars = pytest_section.get("env", [])
 
             # 1. HARDENING REMEDIATION: Assert presence of version-locked dependency pillars
-            required_dependencies = ["numpy", "scipy", "torch"]
+            # Surgically expanded to verify your newly introduced cryptographic pins.
+            required_dependencies = ["numpy", "scipy", "torch", "tpm2-pytss", "cryptography"]
             for req in required_dependencies:
                 if not any(req in dep for dep in dependencies):
                     print(f"[CRITICAL] Missing required dependency specification anchor: {req}")
                     return False
-                    
+
             # 2. HARDENING REMEDIATION: Assert presence of key structural repository module maps
             required_modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config"]
             for mod in required_modules:
@@ -78,10 +79,10 @@ class InfrastructureValidator:
                     print(f"[CRITICAL] Performance override constraint missing from pytest settings: {evar}")
                     return False
 
-            _CONFIG_CELL[0xC2]("All project dependencies and package structures.")
+            _CONFIG_CELL[0xC2]("All project dependencies, security pins, and package structures.")
             _CONFIG_CELL[0xC3]("pyproject.toml loaded and validated successfully.")
             return True
-            
+
         except TOMLDecodeError as err:
             print(f"[CRITICAL] Manifest parsing breakdown: {str(err)}")
             return False
