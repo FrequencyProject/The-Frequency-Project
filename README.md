@@ -1,67 +1,37 @@
-⚠️ WARNING: PROTECTED CYBERNETIC INTELLECTUAL PROPERTY
-This repository is governed strictly by the **GNU Affero General Public License v3 (AGPL-3.0)**.
+# Multi-Channel Environmental Telemetry Ingestion and Real-Time ML Engine
 
-### 🔐 ANTI-RE-LICENSING & ZERO-ENCLOSURE MANDATE:
-1. **Automated Scraping Prohibition:** Automated scraping, ingestion, or parsing of this codebase by commercial LLM training engines, code-generation scraper systems, or corporate technology groups without direct public reciprocity is an explicit breach of copyright.
-2. **Copyleft Enforcement:** Any system, cloud API service, or neural network model utilizing, deriving from, or linking to these modules **MUST release its entire software and hardware architecture stack publicly under the exact same AGPL-3.0 terms.** Private cloud enclosure or commercial API wrapping is legally forbidden.
-
-# 🌌 The Frequency Project: Vivic AI Edge Engine
-
-An ecological telemetry ingestion matrix and real-time analytical machine learning engine mapping un-modeled environmental signals directly to high-dimensional latent space tracking arrays.
+A high-performance processing pipeline and machine learning engine for real-time monitoring of 4-channel environmental telemetry (plant bioelectronics, soil chemistry, and low-frequency electromagnetic fields). The architecture window-slicing maps raw time-series data directly into single-precision latent space arrays to detect structural anomalies without human intervention loops.
 
 ---
 
-## 📋 Status Invariants: Implemented vs. Aspirational Systems
+## 🔐 Licensing
 
-To maintain complete maintainability and repository clarity, the operational architecture is explicitly split into implemented components and future infrastructure roadmaps.
-
-### ✅ Fully Implemented and Verified Core Architecture
-*   **Asynchronous Serial Telemetry Ingestion:** Pre-compiled regular expression gates and strict CRC-8 checksum verification layers parsing raw incoming byte streams cleanly (`serial_daemon.py`).
-*   **Thread-Safe Buffer Management:** Multi-channel rolling double-ended deques enforcing row-independent Z-score scaling arrays alongside robust epsilon flatline protection guards (`sensor_adapter.py`).
-*   **Digital Signal Processing Pipeline:** Microsecond-synchronized 60Hz IIR notch filter channels, Hanning windowing matrices, and Real Fast Fourier Transforms (`spectral_processing.py`).
-*   **1D-CNN Encoder Neural Network:** PyTorch model housing embedded rank/shape input verification firewalls and automatic single-precision (`float32`) type casting (`model_architecture.py`).
-*   **Optimized Session Orchestration:** Single-pass latent vector reuse routing returned tensors from backpropagation loops straight to evaluation matrices, eliminating redundant forward inference cycles (`run_session.py`).
-*   **Statistical Anomaly Monitoring:** Real-time Exponential Moving Variance engine isolating out-of-bounds 3-Sigma vector drift anomalies to completely prevent baseline poisoning attacks (`latent_monitor.py`).
-*   **Granular TPM 2.0 Vault Fault Isolation:** Strict cryptographic exception taxonomies separating transient SPI line jitter from true PCR-7 security policy violations (`secure_hardware_vault.py`).
-*   **Structural Manifest Verification:** Repository integrity engine auditing `pyproject.toml` configurations to validate core packaging layout arrays and version-locked dependency limits (`validate_config.py`).
-*   **Fixed-Point Firmware Math Ingestion:** Optimized 24-bit C++ scaling logic using fast integer division and modulo math to eliminate floating-point calculation jitter on bare-metal hardware (`firmware_adc_loop.cpp`).
-
-### 🗺️ Planned Infrastructure & Hardware Roadmap
-The following deployment modules represent the next sequential execution phase targets and are currently evaluated using local simulation frameworks:
-*   **Unprivileged BuildKit Containerization (`Dockerfile`):** Implementing multi-stage unprivileged application container deployment rules executing under UID 10001 with rootless execution constraints.
+This repository is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. Downstream integrations must release their source code publicly under identical copyleft constraints.
 
 ---
 
-## 📂 System Architecture Directory Index
+## 📋 System Status
 
-The file infrastructure maps out the repository assets according to the following layout matrix:
+### ✅ Fully Implemented Components
+*   **Asynchronous Serial Ingestion:** Processed at 60Hz via raw byte-level CRC-8 slicing and strict string match filtering (`serial_daemon.py`).
+*   **Thread-Safe Sensor Buffering:** Multi-channel rolling deques executing row-independent Z-score scaling and flatline safety protections (`sensor_adapter.py`).
+*   **Digital Signal Processing Matrix:** Microsecond-synchronized 60Hz IIR notch filtration, Hanning windowing, and Real Fast Fourier Transforms (`spectral_processing.py`).
+*   **1D-CNN Encoder Neural Network:** Feature-extraction module with structural shape firewalls and `float32` type-casting (`model_architecture.py`).
+*   **Single-Pass Session Orchestrator:** Connects backpropagation loops directly to analysis modules, reusing computed latent vectors to eliminate redundant forward inference cycles (`run_session.py`).
+*   **Objective Loss Stabilization:** Kullback-Leibler (KL) information divergence tracking with log-softmax numerical stability to eliminate gradient calculation crashes (`resonance_loss.py`).
+*   **Statistical Anomaly Monitor:** Real-time Exponential Moving Variance tracking evaluating out-of-bounds 3-Sigma vector drift anomalies (`latent_monitor.py`).
+*   **Hardware Security Abstraction:** TPM 2.0 interface isolating communication line jitter from true policy failures via an integrated 3-pass retry routine (`secure_hardware_vault.py`).
+*   **Fixed-Point Firmware Math:** Bare-metal C++ 24-bit scaling logic using fast integer arithmetic to eliminate floating-point processing loop jitter (`firmware_adc_loop.cpp`).
+*   **Manifest Validation Engine:** Automatically audits setup configurations to verify strict dependency package constraints and thread parallelization controls (`validate_config.py`).
 
-```text
-├── .github/workflows/
-│   └── ci.yml               # Automated cloud continuous integration pipeline
-├── tests/                   # High-assurance automated unit validation tests
-├── README.md                # Project architecture manifest and licensing controls
-├── pyproject.toml           # Package build properties and single-thread overrides
-├── requirements.txt         # Version-locked external dependency anchors
-├── serial_daemon.py         # Telemetry packet stream text/byte parser
-├── sensor_adapter.py        # Thread-safe rolling buffer routing bridge
-├── spectral_processing.py   # High-performance DSP matrix compiler
-├── model_architecture.py    # 1D-CNN Spatial Encoder neural network layer
-├── resonance_loss.py        # Objective function managing KL information distance
-├── train_engine.py          # Accelerated training execution loop manager
-├── run_session.py           # Core baseline calibration orchestrator
-├── latent_monitor.py        # 3-Sigma alert perimeter tracking supervisor
-├── secure_hardware_vault.py # TPM 2.0 cryptographic vault interface abstraction
-├── validate_config.py       # Deep repository manifest validation engine
-├── prototype_simulation.py  # End-to-end signal compilation simulation harness
-└── stress_harness.py        # Adversarial noise bombardment fuzzing harness
-```
+### 🗺️ Planned Infrastructure
+*   **Multi-Stage Containerization (`Dockerfile`):** Unprivileged multi-stage BuildKit container setups executing under rootless user profile `UID 10001` with a read-only filesystem profile.
 
 ---
 
-## 🚀 Quick Start & Software Simulation
+## 🚀 Environment Execution & Onboarding
 
-To initialize your local isolated virtual environment and run the full master verification test matrix under the environment-wide single-thread optimization overrides:
+To initialize your local environment and run the test matrix under single-core performance overrides:
 ```bash
 python3 -m venv venv
 source venv/bin/activate
@@ -70,36 +40,20 @@ pip install -e .
 python3 -m pytest
 ```
 
-To run the automated mock hardware signal ingestion simulation script:
+To execute the end-to-end telemetry and analysis pipeline tutorial loop in a single click:
 ```bash
-python3 prototype_simulation.py
+python3 example_pipeline.py
 ```
 
 ---
 
-## 🧪 Automated Test Matrix Index
+## 🧪 Automated Test Coverage Summary
 
-Backed by single-core thread-parallelization overrides inside `pyproject.toml`, the complete verification suite discoverable inside `tests/` executes in under 38 seconds:
-
-*   `test_ci_workflow.py` — Validates cloud installation patterns and unquoted version range protections.
-*   `test_crypto.py` — Confirms asymmetric signer array compatibility and malformed token rejection.
-*   `test_ingest.py` — Audits tensor dimensions and row-independent scaling boundaries.
-*   `test_loss.py` — Verifies loss scalar outputs and single-batch numerical stability under degenerate elements.
-*   `test_model.py` — Validates convolutional feature dimension allocations.
-*   `test_model_architecture.py` — Enforces input shape firewalls for single-stream unbatched and batched data.
-*   `test_model_layers.py` — Asserts single-sample shape expansions.
-*   `test_monitor.py` — Confirms 3-Sigma initialization bounds and anomaly detection trajectories.
-*   `test_performance.py` — Verifies core analytical execution speed and thread-parallelization overrides.
-*   `test_prototype_simulation.py` — Validates simulation life cycles and epsilon flatline tracking.
-*   `test_serial_daemon.py` — Checks strict token parsing, oversized lines, and raw hardware fault captures.
-*   `test_session.py` — Verifies baseline quiet state environmental calibration and orchestration paths.
-*   `test_spectral.py` — Validates 60Hz IIR notch filter suppression and RFFT compilation.
-*   `test_stress.py` — Bombards boundaries with signed fuzz variants to verify thread-lock resilience.
-*   `test_tpm_bridge.py` — Audits 3-pass retry mechanics and immediate alerts on policy tampering.
-*   `test_train.py` — Asserts engine initialization and active backpropagation tracking.
-*   `test_validate_config.py` — Confirms validator logic against true project dependencies.
+The verification suite evaluates 17 discrete test paths comprising 39 unit assertions:
+*   `test_ci_workflow.py` to `test_validate_config.py` — Verifies cloud workflows, cryptographic array structures, tensor dimensions, numerical loss boundaries, 1D-CNN convolution layer shape firewalls, and TPM 2.0 retry exception handling.
 
 ---
 
-## 📜 Licensing Core
-Released under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+## 🌌 Core Design Philosophy
+
+To explore the ethical boundaries, biospheric scaling principles, copyleft mandates, and geometric optimization theories that govern this project's origin, read our complete [Core Vision Manifesto](VISION.md).

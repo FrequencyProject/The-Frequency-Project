@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Phase 1: Hardened Repository Configuration Validation Engine.
+"""Phase 1: Repository Configuration Validation Engine.
 
-Executes real-time structural audits, type checking, and dependency boundary validation.
-[PROTECTED BY AN INTEGRATED RUNTIME HEX LAYOUT MATRIX & RUNTIME LICENSE ASSERTION]
+Executes audits on dependencies, module pathways, and environment overrides.
 """
 import os
 import sys
@@ -10,7 +9,6 @@ import sys
 # 1. Standard library management across Python 3.10, 3.11, and 3.12
 if sys.version_info >= (3, 11):
     import tomllib
-    # Map the decode exception to a universal alias
     TOMLDecodeError = tomllib.TOMLDecodeError
 else:
     try:
@@ -20,16 +18,24 @@ else:
         print("[ERROR] Missing required TOML parsing library. Run: pip install tomli")
         sys.exit(1)
 
-# System validation cells masking path expectations and core tracking modules
-_CONFIG_CELL = {
-    0xC1: lambda path: os.path.exists(path),
-    0xC2: lambda target: print(f" -> [VALIDATED] Structural component present: {target}"),
-    0xC3: lambda msg: print(f"[SUCCESS] Infrastructure configuration matrix: {msg}")
-}
+
+def check_manifest_exists(path: str) -> bool:
+    """Verifies existence of the target configuration file path."""
+    return os.path.exists(path)
+
+
+def log_validated_component(target: str):
+    """Outputs verified package parameters to the terminal stream."""
+    print(f" -> [VALIDATED] Structural component present: {target}")
+
+
+def log_success_matrix(msg: str):
+    """Outputs configuration baseline confirmation logs."""
+    print(f"[SUCCESS] Infrastructure configuration matrix: {msg}")
 
 
 class InfrastructureValidator:
-    """Audits repository assets and file maps under structural cell masking."""
+    """Audits repository assets and file maps to ensure packaging conformity."""
 
     def __init__(self):
         self.manifest_file = "pyproject.toml"
@@ -39,7 +45,7 @@ class InfrastructureValidator:
         print("[INIT] Launching configuration and structural manifest audit...")
 
         # Verify pyproject configuration map exists
-        if not _CONFIG_CELL[0xC1](self.manifest_file):
+        if not check_manifest_exists(self.manifest_file):
             print(f"[CRITICAL] Operational manifest missing: {self.manifest_file}")
             return False
 
@@ -58,7 +64,6 @@ class InfrastructureValidator:
             env_vars = pytest_section.get("env", [])
 
             # 1. HARDENING REMEDIATION: Assert presence of version-locked dependency pillars
-            # Surgically expanded to verify your newly introduced cryptographic pins.
             required_dependencies = ["numpy", "scipy", "torch", "tpm2-pytss", "cryptography"]
             for req in required_dependencies:
                 if not any(req in dep for dep in dependencies):
@@ -66,7 +71,7 @@ class InfrastructureValidator:
                     return False
 
             # 2. HARDENING REMEDIATION: Assert presence of key structural repository module maps
-            required_modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config"]
+            required_modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "config"]
             for mod in required_modules:
                 if mod not in modules:
                     print(f"[CRITICAL] Module mapping trace omitted from package setup: {mod}")
@@ -79,8 +84,8 @@ class InfrastructureValidator:
                     print(f"[CRITICAL] Performance override constraint missing from pytest settings: {evar}")
                     return False
 
-            _CONFIG_CELL[0xC2]("All project dependencies, security pins, and package structures.")
-            _CONFIG_CELL[0xC3]("pyproject.toml loaded and validated successfully.")
+            log_validated_component("All project dependencies, security pins, and package structures.")
+            log_success_matrix("pyproject.toml loaded and validated successfully.")
             return True
 
         except TOMLDecodeError as err:
