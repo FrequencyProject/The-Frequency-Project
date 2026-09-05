@@ -1,51 +1,85 @@
 #!/usr/bin/env python3
-"""Unit test suite for verification of Phase 3 PyTorch Loss Layers."""
+"""Unit and Integration Tests for the Resonance Coherence Loss Function.
+
+Fully resolves continuous deployment Gap 6 by verifying scalar dimensions,
+numerical stability boundaries, and backward gradient propagation flow.
+"""
 import torch
 import pytest
 from resonance_loss import ResonanceCoherenceLoss
 
-# PRODUCTION HARDENING: Automatically detect and bind testing execution loops to 
-# accelerated hardware acceleration blocks (CUDA/MPS) if present in the cluster.
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def test_loss_scalar_output():
-    """Confirms loss calculations collapse to a clean, optimized scalar value for backprop."""
+def test_loss_scalar_dimension_compliance():
+    """Asserts that the loss function properly condenses batches into a 0D scalar."""
     loss_engine = ResonanceCoherenceLoss()
-    # HARDENING: Map tensors to the active operational device architecture
-    mock_latents = torch.randn(4, 64, device=DEVICE)
+    mock_latent_batch = torch.randn(4, 128)
+    
+    computed_loss = loss_engine(mock_latent_batch)
+    
+    assert computed_loss.dim() == 0, "Loss output must be a 0D scalar tensor."
+    assert computed_loss.item() >= 0.0, "Loss output must be non-negative."
 
-    loss_val = loss_engine(mock_latents)
 
-    # In PyTorch, loss objectives must return a zero-dimensional scalar tensor to trigger backward()
-    assert loss_val.dim() == 0
-    assert loss_val.item() >= 0.0
-
-def test_loss_dimension_enforcement():
-    """Ensures input shape compliance boundaries are actively guarded."""
+def test_loss_shape_contract_enforcement():
+    """Asserts that inputs breaking the 2D tensor shape contract are rejected."""
     loss_engine = ResonanceCoherenceLoss()
-    invalid_3d_tensor = torch.randn(2, 4, 128, device=DEVICE)
+    invalid_1d_tensor = torch.randn(128)
+    invalid_3d_tensor = torch.randn(4, 2, 64)
+
+    with pytest.raises(ValueError, match="Expected 2D matrix tensor batch"):
+        loss_engine(invalid_1d_tensor)
 
     with pytest.raises(ValueError, match="Expected 2D matrix tensor batch"):
         loss_engine(invalid_3d_tensor)
 
-def test_loss_reproducibility_on_zeros():
-    """Validates that dead sensor fields or uniform flatlines return stable numeric states."""
-    loss_engine = ResonanceCoherenceLoss()
-    flatline_latents = torch.zeros(2, 128, device=DEVICE)
 
-    loss_val = loss_engine(flatline_latents)
-    assert not torch.isnan(loss_val)
-    assert not torch.isinf(loss_val)
-    assert loss_val.item() >= 0.0
+def test_loss_gradient_flow_and_optimization():
+    """ADVANCED VERIFICATION: Asserts that backward gradients flow seamlessly.
 
-def test_loss_single_batch_numerical_stability():
-    """HARDENING: Explicitly audits the single-sample fallback branch to prevent edge division-by-zero errors."""
+    Ensures that PyTorch gradients propagate back through the bidirectional
+    Kullback-Leibler matrix and the Golden Ratio constraint penalty loop
+    without returning dead or un-instantiated tracking blocks.
+    """
     loss_engine = ResonanceCoherenceLoss()
     
-    # Passing a single vector targets the internal standard deviation fallback code block
-    single_latent_vector = torch.randn(1, 128, device=DEVICE)
-    loss_val = loss_engine(single_latent_vector)
+    # 1. Instantiate a mock latent tracking batch with gradient tracking activated
+    mock_vectors = torch.randn(4, 128, requires_grad=True)
     
-    assert loss_val.dim() == 0
-    assert not torch.isnan(loss_val)
-    assert loss_val.item() >= 0.0
+    # 2. Execute the forward pass through the objective loss calculations
+    loss_value = loss_engine(mock_vectors)
+    
+    # 3. Trigger the backward backpropagation pass
+    loss_value.backward()
+    
+    # 4. Verify that the input tensor accumulated real gradient parameters
+    assert mock_vectors.grad is not None, "Gradients failed to flow backward through the loss engine."
+    assert not torch.isnan(mock_vectors.grad).any(), "Gradient graph returned corrupt NaN parameters."
+    assert not torch.isinf(mock_vectors.grad).any(), "Gradient graph returned exploded Inf parameters."
+
+
+def test_loss_extreme_numerical_stability():
+    """ADVANCED VERIFICATION: Asserts numerical safety under severe edge-case stress inputs.
+
+    Tests behavioral safety when processing massive outliers, uniform flatlines,
+    and structural extreme values to guarantee that stabilized log-softmax layers
+    prevent infinity underflow traps.
+    """
+    loss_engine = ResonanceCoherenceLoss()
+
+    # Case A: Massive Outlier Values (Simulating a sudden extreme signal spike)
+    spike_vectors = torch.ones(4, 128) * 1e6
+    loss_spike = loss_engine(spike_vectors)
+    assert not torch.isnan(loss_spike), "Loss engine crashed into NaN during an extreme signal spike."
+    assert not torch.isinf(loss_spike), "Loss engine crashed into Inf during an extreme signal spike."
+
+    # Case B: Absolute Zeros Flatline (Simulating a temporary sensor open-circuit dropout)
+    flatline_vectors = torch.zeros(4, 128)
+    loss_flatline = loss_engine(flatline_vectors)
+    assert not torch.isnan(loss_flatline), "Loss engine crashed into NaN during an absolute sensor flatline."
+    assert not torch.isinf(loss_flatline), "Loss engine crashed into Inf during an absolute sensor flatline."
+
+    # Case C: Single-Item Batch Constraints (Verifying standard deviation safety)
+    single_batch_vector = torch.randn(1, 128)
+    loss_single = loss_engine(single_batch_vector)
+    assert not torch.isnan(loss_single), "Loss engine crashed into NaN when processing a single-item batch snapshot."
+    assert not torch.isinf(loss_single), "Loss engine crashed into Inf when processing a single-item batch snapshot."
