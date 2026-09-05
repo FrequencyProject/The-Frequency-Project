@@ -44,11 +44,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libtss2-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Extract only the fully compiled production binary wheels from the builder image layers
+# Extract the fully compiled production binary wheels from the builder image layers
 COPY --from=builder /build/wheels /app/wheels
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --no-index --find-links=/app/wheels /app/wheels/* && \
-    rm -rf /app/wheels
 
 # Establish the unprivileged system user account before copying tracking modules
 RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator
@@ -56,8 +53,15 @@ RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator
 # Ingest your multi-layer logic modules cleanly into the workspace image
 COPY . /app/
 
+# HARDENING REMEDIATION: Layer Synchronization for Flat-Layout Packages.
+# Executes installation *after* source ingestion, ensuring the local package module layout 
+# is cleanly compiled and mounted directly onto Python's system path alongside dependencies.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --no-index --find-links=/app/wheels /app/wheels/* . && \
+    rm -rf /app/wheels
+
 # HARDENING REMEDIATION: Principle of Least Privilege / Immutable Source Code Invariant.
-# 1. Source files are strictly owned by root and kept READ-ONLY (0555) so the application process 
+# 1. Source files are strictly owned by root and kept READ-ONLY (0555) so the application process
 #    can never overwrite its own running Python code modules during a remote attack exploit.
 # 2. Provision an isolated, non-executable storage workspace for runtime ephemeral data logs.
 RUN mkdir -p /app/scratch && \
