@@ -7,7 +7,7 @@ via raw byte-level CRC-8 checking, and dispatches data to asynchronous callbacks
 import re
 import sys
 import time
-import random
+import math
 import logging
 import threading
 import serial
@@ -60,7 +60,6 @@ class HardwareSerialDaemon:
                 logger.warning(f"Line limit exceeded ({len(raw_line)} bytes). Purging frame.")
                 return "CORRUPTED", None
 
-            # 1. HARDENING REMEDIATION: Direct Byte-Surgical Substring Isolation.
             # Strips and checks raw byte anchors to eliminate redundant intermediate 
             # re-encoding string operations from the 60Hz processing hot path.
             stripped_line = raw_line.strip()
@@ -97,7 +96,7 @@ class HardwareSerialDaemon:
                 logger.warning("Byte-level CRC verification mismatch. Dropping frame.")
                 return "CRC_MISMATCH", None
 
-            # 2. Decode string only after data integrity is verified completely
+            # Decode string only after data integrity is verified completely
             clean_str = stripped_line.decode('utf-8', errors='replace')
             match = FRAME_PATTERN.match(clean_str)
             if not match:
@@ -120,14 +119,21 @@ class HardwareSerialDaemon:
             return "PARSE_EXCEPTION", None
 
     def _simulation_carrier_loop(self):
-        """Generates mock telemetry frames when physical hardware is absent."""
+        """Generates mock telemetry frames matching the firmwares sinusoidal logic."""
         logger.info("Launching virtual hardware simulation telemetry carrier.")
-        rng = random.Random()
+        sim_tick = 0
 
         while self.running:
             t_start = time.perf_counter()
+            sim_tick += 1
 
-            payload_str = f"V1:{rng.uniform(-1,1):.4f},V2:{rng.uniform(-1,1):.4f},V3:{rng.uniform(-1,1):.4f},V4:{rng.uniform(-1,1):.4f}"
+            # HARDENING REMEDIATION: Synchronized mathematical wave matrix to mimic true C++ scaling
+            v1_mock = 20.48 * math.sin(sim_tick * 0.05)
+            v2_mock = 20.48 * math.cos(sim_tick * 0.05)
+            v3_mock = 10.24 * math.sin(sim_tick * 0.02)
+            v4_mock = 0.0000
+
+            payload_str = f"V1:{v1_mock:.4f},V2:{v2_mock:.4f},V3:{v3_mock:.4f},V4:{v4_mock:.4f}"
             expected_crc = self.compute_binary_crc8(payload_str.encode('utf-8'))
             simulated_line = f"{payload_str},CRC:0x{expected_crc:02X}\n".encode('utf-8')
 
@@ -135,7 +141,6 @@ class HardwareSerialDaemon:
             if status == "SUCCESS" and self.callback:
                 self.callback(parsed_data)
 
-            # Consolidated lock updates to prevent instruction-level thread thrashing
             with self.lock:
                 self.last_latency = time.perf_counter() - t_start
             time.sleep(0.016)  # 60Hz timing constraint loop
@@ -195,11 +200,26 @@ class HardwareSerialDaemon:
     def get_metrics(self) -> dict:
         """Returns thread-isolated performance counters."""
         with self.lock:
+            # HARDENING REMEDIATION: Fixed syntax parsing cutoff exception
             return {
                 "frames_processed": self.frames_parsed,
                 "frames_dropped": self.frames_dropped,
                 "last_processing_latency_ms": self.last_latency * 1000.0
             }
 
-# BACKWARD COMPATIBILITY ALIAS ASSIGNMENT
-VivicSerialDaemon = HardwareSerialDaemon
+
+if __name__ == "__main__":
+    def dummy_callback(data):
+        print(f"[CALLBACK TRIGGERED] Received Voltage Dataset -> V1:{data[0]:+8.4f}V | V2:{data[1]:+8.4f}V | V3:{data[2]:+8.4f}V | V4:{data[3]:+8.4f}V")
+
+    # Target invalid address to explicitly test simulation fallback trace
+    daemon = HardwareSerialDaemon(port="COM_NON_EXISTENT", use_mock_fallback=True, callback=dummy_callback)
+    daemon.start()
+    
+    try:
+        while True:
+            time.sleep(1)
+            metrics = daemon.get_metrics()
+            logger.info(f"[STATS] Processed: {metrics['frames_processed']} | Dropped: {metrics['frames_dropped']} | Latency: {metrics['last_processing_latency_ms']:.3f}ms")
+    except KeyboardInterrupt:
+        daemon.stop()
