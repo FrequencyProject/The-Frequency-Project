@@ -34,9 +34,15 @@ class ResonanceCoherenceLoss(nn.Module):
             raise ValueError(f"Expected 2D matrix tensor batch, got shape: {latent_vectors.shape}")
 
         batch_size, latent_dim = latent_vectors.shape
+        
+        # HARDENING REMEDIATION: Symmetric Space Dimension Assertion Firewall.
+        # Guarantees odd-numbered latent vectors never cause tensor size shape collisions.
+        if latent_dim % 2 != 0:
+            raise ValueError(f"Loss Engine Firewall: Latent dimensional tracking must be perfectly symmetric (even). Received: {latent_dim}")
+            
         midpoint = latent_dim // 2
 
-        # 1. Deconstruct the latent vector space into dual asymmetric sub-spaces
+        # 1. Deconstruct the latent vector space into dual asymmetric sub-spaces cleanly
         space_a = latent_vectors[:, :midpoint]
         space_b = latent_vectors[:, midpoint:]
 
@@ -53,11 +59,14 @@ class ResonanceCoherenceLoss(nn.Module):
 
         mean_divergence = torch.mean(information_distance)
 
-        # 4. Extract standard deviations safely without single-batch zero division crashes
+        # 4. HARDENING REMEDIATION: Uniform Tensor Reduction Alignment.
+        # Forces the standard deviation output to maintain structural tracking uniformity 
+        # across all variable batch size limits to shield against broadcast leaks.
         if batch_size > 1:
             std_divergence = torch.std(information_distance)
         else:
-            std_divergence = torch.std(latent_vectors) + self.epsilon
+            # Flatten to 1D and calculate variance safely to keep dimensions identically mapped
+            std_divergence = torch.std(latent_vectors.reshape(-1)) + self.epsilon
 
         # 5. Evaluate scaling configurations against the pre-allocated Phi constant buffer
         empirical_ratio = (mean_divergence + 1e-6) / (std_divergence + 1e-6)

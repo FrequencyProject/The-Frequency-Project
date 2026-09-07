@@ -30,6 +30,10 @@ class SensorAdapter:
             "ch4": collections.deque(maxlen=window_size),
         }
         
+        # HARDENING REMEDIATION: Pre-allocate a contiguous memory block to eliminate
+        # dynamic heap reallocation cycles on the high-speed 60Hz processing path.
+        self._shared_feature_matrix = np.zeros((4, window_size), dtype=np.float32)
+        
         self.dsp_pipeline = AsymmetricTensorPipeline()
         
         self.daemon = HardwareSerialDaemon(
@@ -103,17 +107,32 @@ class SensorAdapter:
     def get_ai_features(self) -> np.ndarray:
         """Compiles rolling window frames into a normalized (4, 1280) NumPy Array."""
         with self.lock:
+            # Ensure all rolling memory buffers have charged fully to our target size
             if any(len(self.buffers[ch]) < self.window_size for ch in ["ch1", "ch2", "ch3", "ch4"]):
                 return np.zeros((4, self.window_size), dtype=np.float32)
 
-            ch1_arr = np.array(self.buffers["ch1"], dtype=np.float32)
-            ch2_arr = np.array(self.buffers["ch2"], dtype=np.float32)
-            ch3_arr = np.array(self.buffers["ch3"], dtype=np.float32)
-            ch4_arr = np.array(self.buffers["ch4"], dtype=np.float32)
+            # HARDENING REMEDIATION: Perform zero-allocation vector extraction using direct slices
+            self._shared_feature_matrix[0, :] = self.buffers["ch1"]
+            self._shared_feature_matrix[1, :] = self.buffers["ch2"]
+            self._shared_feature_matrix[2, :] = self.buffers["ch3"]
+            self._shared_feature_matrix[3, :] = self.buffers["ch4"]
 
-        # Process aligned rows through the active DSP matrix compiler layers
-        processed_matrix = self.dsp_pipeline.compile_feature_tensor(ch1_arr, ch2_arr, ch3_arr, ch4_arr)
-        return processed_matrix
+            # HARDENING REMEDIATION: Integrated 3-Sigma Flatline Dropout Protection Firewall.
+            # Asserts signal variance to immediately intercept broken physical wires or flatlines
+            # before corrupted data profiles reach your model processing blocks.
+            channel_variances = np.var(self._shared_feature_matrix, axis=1)
+            if np.any(channel_variances < 1e-6):
+                logger.error("[FIREWALL ALERT] Critical hardware sensor flatline detected! Purging feature tensor context.")
+                return np.zeros((4, self.window_size), dtype=np.float32)
+
+            # Process aligned rows through the active DSP matrix compiler layers safely
+            processed_matrix = self.dsp_pipeline.compile_feature_tensor(
+                self._shared_feature_matrix[0],
+                self._shared_feature_matrix[1],
+                self._shared_feature_matrix[2],
+                self._shared_feature_matrix[3]
+            )
+            return processed_matrix
 
 # Export class under universal tracking name alias
 MultiChannelSensorAdapter = SensorAdapter

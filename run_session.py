@@ -25,8 +25,11 @@ class UnifiedVivicSession:
     """Coordinates data extraction pipelines, baseline calibrations, and training updates."""
 
     def __init__(self, port: str = "MOCK"):
+        # Shared core adapter layout to prevent dual-initialization port collisions
         self.adapter = MultiChannelSensorAdapter(port=port)
         self.engine = VivicTrainingEngine(port=port)
+        self.engine.adapter = self.adapter
+        
         self.is_active = False
 
         # Instantiates the statistical 3-Sigma latent space tracking module
@@ -37,34 +40,33 @@ class UnifiedVivicSession:
         self.ambient_stds = np.zeros(4, dtype=np.float32)
         self.is_calibrated = False
 
-    def execute_baseline_calibration(
-        self, sweep_duration_seconds: float = 120.0, sample_rate_hz: float = 100.0
-    ):
+    def execute_baseline_calibration(self, sweep_duration_seconds: float = 120.0, sample_rate_hz: float = 100.0):
         """Executes a non-blocking Quiet State Sweep to map native environment noise thresholds."""
-        print(
-            f"[INIT] Launching mandatory {sweep_duration_seconds}-second ambient calibration sweep..."
-        )
-        total_samples = int(sweep_duration_seconds * sample_rate_hz)
+        self.adapter.start_acquisition()
+        print(f"[INIT] Launching mandatory {sweep_duration_seconds}-second ambient calibration sweep...")
+        
+        # HARDENING REMEDIATION: Dynamic Buffer Charging Safeguard.
+        # If running a mock port profile, poll the active queue size until it passes the 1280 step
+        # sliding window barrier. This ensures calibration matrices receive live wave vectors.
+        if "MOCK" in self.adapter.daemon.port.upper() or "PORT" in self.adapter.daemon.port.upper():
+            print(" -> Simulation track detected: Waiting for background buffer saturation (1280 frames)...")
+            while True:
+                with self.adapter.lock:
+                    current_fill = len(self.adapter.buffers["ch1"])
+                if current_fill >= self.adapter.window_size:
+                    break
+                print(f"    -> Charging registers: {current_fill}/{self.adapter.window_size} frames...", end="\r")
+                time.sleep(0.2)
+            print("\n -> Buffers fully charged. Accelerating calibration window down to 2.0 seconds.")
+            sweep_duration_seconds = 2.0
 
-        # Pre-allocate calibration accumulation matrix for our 4 hardware channels
+        total_samples = int(sweep_duration_seconds * sample_rate_hz)
         calibration_buffer = []
         sample_interval = 1.0 / sample_rate_hz
 
-        # Shorten sample collection duration if we are in a rapid simulation environment
-        if "MOCK" in self.adapter.daemon.port.upper() or "PORT" in self.adapter.daemon.port.upper():
-            print(
-                " -> Simulation environment detected: Throttling calibration window to 2.0 seconds."
-            )
-            total_samples = int(2.0 * sample_rate_hz)
-
         for _ in range(total_samples):
-            # Extract raw frame from sensor adapter matrices
             features = self.adapter.get_ai_features()
-            # Reduce row-wise dimensions to extract instantaneous channel states
-            if hasattr(features, "numpy"):
-                channel_snapshots = features.mean(axis=1)
-            else:
-                channel_snapshots = np.mean(features, axis=1)
+            channel_snapshots = np.mean(features, axis=1)
             calibration_buffer.append(channel_snapshots)
             time.sleep(sample_interval)
 
@@ -74,7 +76,6 @@ class UnifiedVivicSession:
         for ch in range(4):
             self.ambient_means[ch] = history_matrix[:, ch].mean()
             self.ambient_stds[ch] = history_matrix[:, ch].std()
-            # Enforce statistical epsilon boundary guards to prevent subsequent zero-division
             if self.ambient_stds[ch] < 1e-6:
                 self.ambient_stds[ch] = 1e-6
             log_ambient_baseline(ch, self.ambient_means[ch], self.ambient_stds[ch])
@@ -95,25 +96,39 @@ class UnifiedVivicSession:
             if not self.is_active:
                 break
 
-            # Consume single-pass latent vectors returned directly by train_step()
-            loss_val, latent_vector = self.engine.train_step()
+            # Pipe dynamic means and standard deviations directly into the train_step
+            loss_val, latent_vector = self.engine.train_step(
+                ambient_means=self.ambient_means, 
+                ambient_stds=self.ambient_stds
+            )
 
             if loss_val < 0.0 or latent_vector is None:
+                print(f" -> [CYCLE {step}/{steps}] Buffer starvation fallback triggered. Waiting for data...")
+                time.sleep(0.05)
                 continue
 
             # Execute the 3-Sigma vector divergence metric monitoring tracking
-            _ = self.monitor.evaluate_vector(latent_vector.detach().cpu().numpy())
+            _ = self.monitor.evaluate_vector(latent_vector.cpu().numpy().flatten())
 
             # Trigger clear progress reporting and timing increments
             log_cycle_completion(step, steps)
-            time.sleep(0.01)
+            time.sleep(0.016)  # Maintain clean execution rate relative to our 60Hz ingestion
 
         self.is_active = False
         print("[SUCCESS] Operational session cycle completed cleanly.")
 
+    def terminate_session(self):
+        """Safely deactivates acquisition tracking lines cleanly."""
+        print("[INFO] Shutting down orchestrated session tracks...")
+        self.adapter.stop_acquisition()
+
 
 if __name__ == "__main__":
     session = UnifiedVivicSession(port="MOCK")
-    session.execute_baseline_calibration()
-    session.execute_live_cycle(steps=3)
-    session.adapter.stop_acquisition()
+    try:
+        session.execute_baseline_calibration()
+        session.execute_live_cycle(steps=5)
+    except KeyboardInterrupt:
+        print("\n[INFO] Manual interrupt override caught during active session run.")
+    finally:
+        session.terminate_session()

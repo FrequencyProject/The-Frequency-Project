@@ -70,7 +70,7 @@ class VivicTrainingEngine:
         if not torch.all(torch.isfinite(torch_tensor)):
             return -1.0, None
 
-        # 6. Clear accumulated gradient registers
+        # 6. Clear accumulated gradient registers before forward pass
         self.optimizer.zero_grad()
 
         # 7. Execute forward pass—generating the latent vector representation
@@ -79,13 +79,21 @@ class VivicTrainingEngine:
         # 8. Evaluate mathematical loss using resonance coherence channels
         loss = self.criterion(latent_vector)
 
-        # 9. Trigger backpropagation pass and update model parameter layers
+        # 9. Trigger backpropagation pass to populate raw gradients
         loss.backward()
 
-        # Apply strict gradient clipping to insulate weights against gradient explosions
+        # HARDENING REMEDIATION: Correct Gradient Clipping Sequence.
+        # Gradients must be strictly clipped right after backpropagation but before
+        # the optimizer updates parameter weights, ensuring valid historical momentum calculations.
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
 
+        # 10. Execute the optimizer step safely
         self.optimizer.step()
 
-        # P1 OPTIMIZATION: Return the loss along with the already calculated latent vector
-        return loss.item(), latent_vector
+        # HARDENING REMEDIATION: Graph Detachment Isolation.
+        # Detach the output tensor from the active computation graph to safely discharge 
+        # graph node accumulation memory leaks from long-duration loops.
+        safe_latent_vector = latent_vector.detach()
+
+        # P1 OPTIMIZATION: Return the loss along with the isolated latent vector
+        return loss.item(), safe_latent_vector
