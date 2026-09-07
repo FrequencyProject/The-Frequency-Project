@@ -30,6 +30,10 @@ class AsymmetricSpatialEncoder(nn.Module):
             nn.Linear(32 * 4, latent_dim),
             nn.LayerNorm(latent_dim)
         )
+        
+        # HARDENING REMEDIATION: Force absolute single-precision float32 compilation 
+        # on layer initialization to block double-precision memory expansion leakage.
+        self.float()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Executes the forward inference pass while validating input tensor dimensions.
@@ -74,8 +78,10 @@ class AsymmetricSpatialEncoder(nn.Module):
         # Execute 1D convolutional feature extraction layers
         features = self.feature_extractor(x)
         
-        # Flatten spatial feature rows cleanly into vectors
-        flattened = features.view(features.size(0), -1)
+        # HARDENING REMEDIATION: Replace the high-risk `.view()` execution frame with a 
+        # memory-safe `.reshape()` structure. This seamlessly handles non-contiguous memory allocations
+        # caused by downstream Adaptive Pooling layers without dropping process execution loops.
+        flattened = features.reshape(features.size(0), -1)
         
         # Map features onto the standard latent spaces layer
         latent_vector = self.fc(flattened)
