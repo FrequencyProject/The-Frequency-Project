@@ -70,21 +70,32 @@ class InfrastructureValidator:
                     print(f"[CRITICAL] Missing required dependency specification anchor: {req}")
                     return False
 
-            # 2. HARDENING REMEDIATION: Assert presence of key structural repository module maps
-            required_modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "config"]
+            # 2. HARDENING REMEDIATION: Expanded to track all 12 modules present inside pyproject.toml
+            required_modules = [
+                "run_session", "sensor_adapter", "serial_daemon", "validate_config",
+                "spectral_processing", "model_architecture", "resonance_loss",
+                "train_engine", "latent_monitor", "prototype_simulation",
+                "stress_harness", "config"
+            ]
             for mod in required_modules:
                 if mod not in modules:
                     print(f"[CRITICAL] Module mapping trace omitted from package setup: {mod}")
                     return False
 
-            # 3. HARDENING REMEDIATION: Assert presence of single-thread performance overrides
-            required_env_vars = ["OMP_NUM_THREADS=1", "MKL_NUM_THREADS=1"]
+            # 3. HARDENING REMEDIATION: Expanded to cover all 5 parallel-thread core performance overrides
+            required_env_vars = [
+                "OMP_NUM_THREADS=1",
+                "MKL_NUM_THREADS=1",
+                "OPENBLAS_NUM_THREADS=1",
+                "VECLIB_MAXIMUM_THREADS=1",
+                "NUMEXPR_NUM_THREADS=1"
+            ]
             for evar in required_env_vars:
                 if evar not in env_vars:
                     print(f"[CRITICAL] Performance override constraint missing from pytest settings: {evar}")
                     return False
 
-            log_validated_component("All project dependencies, security pins, and package structures.")
+            log_validated_component("All project dependencies, security pins, and 12-module package structures.")
             log_success_matrix("pyproject.toml loaded and validated successfully.")
             return True
 
