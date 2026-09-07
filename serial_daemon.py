@@ -8,6 +8,7 @@ import re
 import sys
 import time
 import math
+import random
 import logging
 import threading
 import serial
@@ -131,7 +132,7 @@ class HardwareSerialDaemon:
             v1_mock = 20.48 * math.sin(sim_tick * 0.05)
             v2_mock = 20.48 * math.cos(sim_tick * 0.05)
             v3_mock = 10.24 * math.sin(sim_tick * 0.02)
-            v4_mock = 0.0000
+            v4_mock = float(random.uniform(-0.005, 0.005))
 
             payload_str = f"V1:{v1_mock:.4f},V2:{v2_mock:.4f},V3:{v3_mock:.4f},V4:{v4_mock:.4f}"
             expected_crc = self.compute_binary_crc8(payload_str.encode('utf-8'))
