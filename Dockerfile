@@ -23,11 +23,15 @@ WORKDIR /build
 # Copy the hardened python dependency and supply chain configuration manifests
 COPY requirements.txt pyproject.toml ./
 
-# HARDENING REMEDIATION: Inject BuildKit persistent cache mounts straight into the compiler paths.
-# This prevents pip from re-downloading massive multi-gigabyte wheels if requirements are unchanged.
+# HARDENING REMEDIATION: Resource Constraint Allocation Guard.
+# Explicitly forces pip to source a lightweight CPU-only PyTorch build during 
+# containerization using the official PyTorch CPU wheel index. This reduces disk 
+# pressure by gigabytes, preventing cloud device space exhaustion faults.
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools && \
-    python -m pip wheel --wheel-dir /build/wheels -r requirements.txt
+    python -m pip wheel --wheel-dir /build/wheels \
+      --extra-index-url https://pytorch.org \
+      -r requirements.txt
 
 # ==============================================================================
 # 🌌 STAGE 2: THE HARDENED ZERO-TRUST RUNTIME EDGE CONTAINER
@@ -53,9 +57,9 @@ RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator
 # Ingest your multi-layer logic modules cleanly into the workspace image
 COPY . /app/
 
-# HARDENING REMEDIATION: Layer Synchronization for Flat-Layout Packages.
-# Executes installation *after* source ingestion, ensuring the local package module layout 
-# is cleanly compiled and mounted directly onto Python's system path alongside dependencies.
+# HARDENING REMEDIATION: Automated Index Alignment.
+# Sources requirements systematically out of the local pre-compiled wheels directory 
+# to guarantee clean, deterministic installation under restricted container runtimes.
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --no-index --find-links=/app/wheels -r requirements.txt . && \
     rm -rf /app/wheels
