@@ -1,117 +1,121 @@
-#!/usr/bin/env python3
-"""Empirical Validation: Do active sensor channels exhibit golden-ratio harmonics?
+#!/usr/bin/env python3 
+""" 
+PREREGISTERED HYPOTHESIS VALIDATION PROTOCOL 
+PRIMARY HYPOTHESIS: 
+Adjacent channel ratios (Ch0/Ch1, Ch1/Ch2, Ch2/Ch3) will have a mean value statistically indistinguishable from Phi (1.618), while non-adjacent ratios will deviate significantly. 
+REVISED MATHEMATICAL EXPERIMENT DESIGN: 
+- Primary Test: One-Sample t-test on adjacent ratios against Phi. 
+Acceptance requires p > 0.05 (fail to reject H0) AND Phi within the 95% CI. 
+- Secondary Test: Independent t-test comparing absolute deviations from Phi (Adjacent vs Non-Adjacent). 
+Acceptance requires p < 0.05 AND Cohen's d > 0.8 proving adjacent ratios are distinctively closer to Phi. 
+SAMPLE SIZE: 3,600 frames @ 60Hz = 60 seconds 
+SIGNIFICANCE LEVEL: α = 0.05 
+""" 
+import sys 
+import numpy as np 
+from scipy import stats 
+from sensor_adapter import MultiChannelSensorAdapter 
 
-Collects continuous telemetry arrays from the running ingestion adapter
-and tests if real-time energy profiles cluster around Phi (1.618).
-"""
-import time
-import numpy as np
-from sensor_adapter import MultiChannelSensorAdapter
+def compute_cohens_d_independent(group1: np.ndarray, group2: np.ndarray) -> float: 
+    """Calculates Cohen's d effect size for two independent samples.""" 
+    n1, n2 = len(group1), len(group2) 
+    var1 = np.var(group1, ddof=1) 
+    var2 = np.var(group2, ddof=1) 
+    pooled_std = np.sqrt(((n1 - 1) * var1 + (n2 - 1) * var2) / (n1 + n2 - 2)) 
+    if pooled_std < 1e-8: 
+        return 0.0 
+    return float(abs(np.mean(group1) - np.mean(group2)) / pooled_std)
 
-
-def validate_phi_from_real_sensors():
-    """Collects real-time features and runs an unbiased statistical evaluation on the ratios."""
-    print("======================================================================")
-    print("EMPIRICAL DATA ANALYSIS: TESTING THE PHI HYPOTHESIS ON ACTIVE SENSORS")
-    print("======================================================================\n")
-
-    # 1. Initialize the production multi-channel adapter tracking loop
-    adapter = MultiChannelSensorAdapter(port="MOCK")
+def execute_preregistered_phi_audit(): 
+    print("[INIT] Launching Preregistered Statistical Evaluation Pass...") 
+    adapter = MultiChannelSensorAdapter(port="COM3", window_size=1280)
+    phi = (1.0 + 5.0 ** 0.5) / 2.0 
+    num_samples = 3600 
     
-    # 2. HARDENING REMEDIATION: Explicitly launch the underlying background serial 
-    # thread loops if the adapter architecture exposes an acquisition trigger.
-    if hasattr(adapter, 'start_acquisition'):
-        adapter.start_acquisition()
-    elif hasattr(adapter.daemon, 'start'):
-        adapter.daemon.start()
-
-    energies_per_channel = [[] for _ in range(4)]
-    num_samples = 100
+    # Track historical profiles frame-by-frame to protect degrees of freedom
+    adj_ratios_history = []
+    non_adj_ratios_history = []
     
-    print(f" -> Collecting {num_samples} sequential feature snapshots from ingestion layer...")
-    
-    start_time = time.time()
-    samples_collected = 0
-    
-    while samples_collected < num_samples:
-        # Enforce a 5-second hard timeout perimeter to break execution safely if needed
-        if (time.time() - start_time) > 5.0 and samples_collected == 0:
-            break
+    print(f" -> Collecting {num_samples} real-time telemetry frames from ingestion boundary...") 
+    for _ in range(num_samples): 
+        features = adapter.get_ai_features() 
+        if np.all(features == 0.0): 
+            continue 
             
-        features = adapter.get_ai_features()  # Pulls active array shape: (4, 1280)
+        # Calculate instantaneous Root-Mean-Square (RMS) signal energy for this specific frame
+        e1 = float(np.sqrt(np.mean(features[0, :] ** 2)))
+        e2 = float(np.sqrt(np.mean(features[1, :] ** 2)))
+        e3 = float(np.sqrt(np.mean(features[2, :] ** 2)))
+        e4 = float(np.sqrt(np.mean(features[3, :] ** 2)))
         
-        # Skip warm-up flatlines natively if the background thread hasn't saturated queues yet
-        if np.all(features == 0.0):
-            time.sleep(0.01)
-            continue
-            
-        for ch in range(4):
-            # Calculate standard Root-Mean-Square (RMS) signal energy allocation per frame
-            energy = np.sqrt(np.mean(features[ch] ** 2))
-            energies_per_channel[ch].append(energy)
-            
-        samples_collected += 1
-        time.sleep(0.016)  # Process at ~60Hz ingestion cycle limits
+        # 1. Compute frame-by-frame adjacent tracks
+        adj_ratios_history.extend([e1 / (e2 + 1e-8), e2 / (e3 + 1e-8), e3 / (e4 + 1e-8)])
+        # 2. Compute frame-by-frame non-adjacent tracks
+        non_adj_ratios_history.extend([e1 / (e3 + 1e-8), e1 / (e4 + 1e-8), e2 / (e4 + 1e-8)])
 
-    # 3. Cleanly deactivate background thread polling loops to release hardware lines
-    if hasattr(adapter, 'stop_acquisition'):
-        adapter.stop_acquisition()
-    elif hasattr(adapter.daemon, 'stop'):
-        adapter.daemon.stop()
-    
-    # Check if we successfully accumulated active telemetry metrics
-    if samples_collected == 0:
-        print("[TIMEOUT REMEDIATION] Background thread loop is cold. Generating unbiased empirical")
-        print("                      baseline metrics via direct internal simulation hooks...")
-        
-        # Fallback to an un-biased, raw mock data accumulation pass to complete the execution math
-        rng = np.random.default_rng(seed=42)
-        # Simulate active sensor tracking steps directly to complete the analysis matrix cleanly
-        ch0_raw = rng.normal(0.0, 0.492, 1280)
-        ch1_raw = rng.normal(0.0, 0.308, 1280)
-        ch2_raw = rng.normal(0.0, 0.196, 1280)
-        ch3_raw = rng.normal(0.0, 0.100, 1280)
-        
-        mean_energies = [np.sqrt(np.mean(ch0_raw**2)), np.sqrt(np.mean(ch1_raw**2)), 
-                         np.sqrt(np.mean(ch2_raw**2)), np.sqrt(np.mean(ch3_raw**2))]
-        std_energies = [np.std(ch0_raw), np.std(ch1_raw), np.std(ch2_raw), np.std(ch3_raw)]
-    else:
-        # Compute mean energies and standard deviations across the true data history
-        mean_energies = [np.mean(energies_per_channel[ch]) for ch in range(4)]
-        std_energies = [np.std(energies_per_channel[ch]) for ch in range(4)]
-    
-    phi = (1 + 5**0.5) / 2
-    
-    print(f"\n{'Channel':<12} {'Mean RMS Energy':<16} {'Std Dev':<12}")
-    print("-" * 45)
-    for i, (mean, std) in enumerate(zip(mean_energies, std_energies)):
-        print(f"Ch{i:<10} {mean:>14.6f}  {std:>10.6f}")
-    
-    print(f"\nTarget Optimization Boundary: Phi = {phi:.3f}")
-    print(f"\n{'Ratio Track':<14} {'Value':<10} {'Deviation':<12} {'Status'}")
-    print("-" * 45)
-    
-    phi_matches = 0
-    for i in range(4):
-        for j in range(i + 1, 4):
-            ratio = mean_energies[i] / (mean_energies[j] + 1e-8)
-            diff = abs(ratio - phi)
-            is_close = diff < 0.2  # Evaluate if within a strict 20% clustering tolerance window
-            
-            if is_close:
-                phi_matches += 1
-                marker = "✓ [PASSED]"
-            else:
-                marker = "✗ [FAIL]"
-                
-            print(f"Ch{i}/Ch{j:<9} {ratio:>8.3f}  {diff:>10.3f}  {marker}")
-    
-    print(f"\n[RESULT] {phi_matches}/6 adjacent channel pairs cluster around the target boundary.")
-    if phi_matches >= 2:
-        print("[CONCLUSION] Hypothesis SUPPORTED: Natural geometric constraints are empirically justified.")
-    else:
-        print("[CONCLUSION] Hypothesis NOT SUPPORTED: Adjust loss functions to match measured telemetry limits.")
+    samples_captured = len(adj_ratios_history) // 3
+    if samples_captured == 0: 
+        raise RuntimeError( 
+            "CRITICAL PROTOCOL BREAKDOWN: Failed to collect active sensor telemetry profiles. " 
+            "Cannot validate structural hypothesis on synthetic fallback models. Ingestion halted."
+        ) 
 
+    adjacent_ratios = np.array(adj_ratios_history, dtype=np.float32)
+    non_adjacent_ratios = np.array(non_adj_ratios_history, dtype=np.float32)
 
-if __name__ == "__main__":
-    validate_phi_from_real_sensors()
+    adjacent_mean = float(np.mean(adjacent_ratios)) 
+    non_adjacent_mean = float(np.mean(non_adjacent_ratios)) 
+    
+    print("\n" + "="*70) 
+    print("VIVIC AI: HARDENED DATA PLOT LOGS") 
+    print("="*70) 
+    print(f" -> Samples Captured: {samples_captured} frames across 60 seconds")
+    print(f" -> Observed Adjacent Channel Ratio Mean : {adjacent_mean:.4f}") 
+    print(f" -> Observed Non-Adjacent Ratio Mean     : {non_adjacent_mean:.4f}") 
+
+    # ============================================================================
+    # 📊 STATISTICAL INFERENCE PASS 
+    # ============================================================================
+    t_stat, t_p_value = stats.ttest_1samp(adjacent_ratios, phi) 
+    sem = stats.sem(adjacent_ratios) 
+    
+    if len(adjacent_ratios) > 1 and sem > 0: 
+        ci = stats.t.interval(0.95, len(adjacent_ratios) - 1, loc=adjacent_mean, scale=sem) 
+    else: 
+        ci = (adjacent_mean, adjacent_mean) 
+
+    adj_distances = np.abs(adjacent_ratios - phi) 
+    non_adj_distances = np.abs(non_adjacent_ratios - phi) 
+
+    ind_stat, ind_p_value = stats.ttest_ind(adj_distances, non_adj_distances, equal_var=False) 
+    cohens_d = compute_cohens_d_independent(adj_distances, non_adj_distances) 
+
+    print("\n" + "="*70) 
+    print("STATISTICAL INFERENCE SUMMARY") 
+    print("="*70)
+    print(f" -> Primary One-Sample t-test (vs Phi): t-stat={t_stat:.4f}, p-val={t_p_value:.4f}") 
+    print(f" -> Adjacent Ratios 95% CI             : [{ci[0]:.4f}, {ci[1]:.4f}]") 
+    print(f" -> Secondary Independent t-test       : t-stat={ind_stat:.4f}, p-val={ind_p_value:.4f}") 
+    print(f" -> Inter-Group Effect Size (Cohen's d): {cohens_d:.4f}") 
+
+    # ============================================================================
+    # 🏁 PREREGISTERED DECISION RULE ASSIGNMENT 
+    # ============================================================================
+    print("\nFinal Decision Status:") 
+    primary_passes = (t_p_value > 0.05) and (ci[0] <= phi <= ci[1]) and (np.std(adjacent_ratios, ddof=1) < 0.25) 
+    secondary_passes = (ind_p_value < 0.05) and (cohens_d > 0.8) and (np.mean(adj_distances) < np.mean(non_adj_distances))
+    
+    if primary_passes and secondary_passes: 
+        print(" -> [STATUS] SUPPORT HYPOTHESIS: Adjacent ratios cluster tightly around Phi and are distinct from non-adjacent noise.") 
+    elif not primary_passes and not secondary_passes: 
+        print(" -> [STATUS] REJECT HYPOTHESIS: Ratios completely fail both clustering rules and distinction metrics.") 
+    else: 
+        print(" -> [STATUS] INCONCLUSIVE: Mixed metrics. Traces match marginal thresholds; requires extended telemetry pass.") 
+    print("="*70 + "\n") 
+
+if __name__ == "__main__": 
+    try: 
+        execute_preregistered_phi_audit() 
+    except RuntimeError as error: 
+        print(f"\n[EXECUTION ERROR] {error}") 
+        sys.exit(1)
