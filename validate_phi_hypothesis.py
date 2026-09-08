@@ -15,7 +15,6 @@ import sys
 import time
 import numpy as np 
 from scipy import stats 
-from sensor_adapter import MultiChannelSensorAdapter 
 
 def compute_cohens_d_independent(group1: np.ndarray, group2: np.ndarray) -> float: 
     """Calculates Cohen's d effect size for two independent samples.""" 
@@ -29,7 +28,12 @@ def compute_cohens_d_independent(group1: np.ndarray, group2: np.ndarray) -> floa
 
 def execute_preregistered_phi_audit(): 
     print("[INIT] Launching Preregistered Statistical Evaluation Pass...") 
-    adapter = MultiChannelSensorAdapter(port="MOCK", window_size=1280)
+    
+    # Secure multi-threaded communication lines using the active engine layout
+    from train_engine import VivicTrainingEngine
+    engine = VivicTrainingEngine(port="MOCK")
+    adapter = engine.adapter
+    
     phi = (1.0 + 5.0 ** 0.5) / 2.0 
     num_samples = 3600 
     
@@ -39,6 +43,15 @@ def execute_preregistered_phi_audit():
     
     # Boot background threads to fill up deques
     adapter.start_acquisition()
+    
+    # HARDENING REMEDIATION: Active Ingestion Drain.
+    # Instead of passively sleeping and starving the worker thread interaction gates,
+    # actively poll and clear the feature arrays to keep the background simulation open
+    # until the sliding window deques are completely saturated.
+    print(" -> Simulation engine detected: Pre-charging telemetry registers...")
+    for _ in range(100):
+        _ = adapter.get_ai_features()
+        time.sleep(0.01)
     
     print(f" -> Collecting {num_samples} real-time telemetry frames from ingestion boundary...") 
     for _ in range(num_samples): 
@@ -57,9 +70,6 @@ def execute_preregistered_phi_audit():
         # 2. Compute frame-by-frame non-adjacent tracks
         non_adj_ratios_history.extend([e1 / (e3 + 1e-8), e1 / (e4 + 1e-8), e2 / (e4 + 1e-8)])
 
-        # HARDENING REMEDIATION: Fast-Forward Mock Execution Speed.
-        # Drops the 16ms sleep interval if running inside a virtual mock track environment,
-        # compressing testing loop durations from 22 seconds down to milliseconds.
         if "MOCK" not in adapter.port.upper() and "NON_EXISTENT" not in adapter.port.upper():
             time.sleep(0.016)
 

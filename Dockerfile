@@ -57,7 +57,7 @@ COPY . /app/
 # Executes installation *after* source ingestion, ensuring the local package module layout 
 # is cleanly compiled and mounted directly onto Python's system path alongside dependencies.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --no-index --find-links=/app/wheels /app/wheels/* . && \
+    python -m pip install --no-index --find-links=/app/wheels -r requirements.txt . && \
     rm -rf /app/wheels
 
 # HARDENING REMEDIATION: Principle of Least Privilege / Immutable Source Code Invariant.
