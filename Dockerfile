@@ -11,7 +11,6 @@ FROM ${BASE_IMAGE} AS builder
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install bare-metal C-compiler tools, system development headers, and pkg-config
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
@@ -20,7 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
-# Copy the hardened python dependency and supply chain configuration manifests
 COPY requirements.txt pyproject.toml ./
 
 # HARDENING REMEDIATION: Resource Constraint Allocation Guard.
@@ -43,18 +41,15 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
-# Provision strictly the runtime Linux TCG software stack components, omitting compiler paths
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libtss2-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Extract the fully compiled production binary wheels from the builder image layers
 COPY --from=builder /build/wheels /app/wheels
 
 # Establish the unprivileged system user account before copying tracking modules
 RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator
 
-# Ingest your multi-layer logic modules cleanly into the workspace image
 COPY . /app/
 
 # HARDENING REMEDIATION: Automated Index Alignment.
@@ -73,6 +68,11 @@ RUN mkdir -p /app/scratch && \
     chown -R vivic_operator:vivic_operator /app/scratch && \
     chmod -R 0555 /app && \
     chmod -R 0700 /app/scratch
+
+# HARDENING REMEDIATION: Network Observability Exposition.
+# Signals your container service mesh (Docker/Kubernetes) to open port 8000
+# for Prometheus scraping and cluster liveness/readiness probes.
+EXPOSE 8000
 
 # Bind execution strictly to the unprivileged account context
 USER vivic_operator

@@ -1,23 +1,19 @@
-# Block local python runtime caches and bytecode artifacts
-**/__pycache__/
+# Exclude git metadata and version tracking nodes
+.git
+.gitignore
+
+# Exclude local python execution caches and build artifacts
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
-
-# Block testing infrastructure caches and metrics logs
 .pytest_cache/
-.coverage
-htmlcov/
-*.log
-
-# Block heavy local virtual environments and configuration overrides
+the_frequency_project.egg-info/
+build/
+dist/
+wheels/
 venv/
-.venv/
-env/
-.env
 
-# Block version control metadata and sensitive staging trees
-.git/
-.gitignore
-.gitsecret/
-.github/
+# Exclude raw testing modules and configuration manuals from production layers
+tests/
+*.md
