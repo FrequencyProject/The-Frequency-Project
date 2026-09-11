@@ -1,5 +1,5 @@
 # 📐 Technical Appendix: Operational Parameters & Ingestion Specifications
-> **Document Status: Technical Specification v1.2 (4-Channel Environmental Framework)**
+> **Document Status: Technical Specification v1.3 (4-Channel Environmental Framework)**
 
 This document specifies how each of the 4 telemetry channels is sampled, filtered, and normalized to maintain mathematical consistency across the processing matrix.
 
@@ -44,13 +44,15 @@ Localized noise (such as ground loops or hardware interference) affects individu
 
 ---
 
-### 🔒 5. Advanced Infrastructure Hardening: Cryptographic & Runtime Isolation
+### 🔒 5. Active Infrastructure Hardening: Cryptographic & Runtime Isolation
 
-#### 5.1 Edge-Level Cryptographic Telemetry Signing
-The moment an analog waveform is digitized at the edge, the payload vector ($\mathbf{X}_{\text{payload}}$) is hashed and signed using an immutable, hardware-isolated private key ($\mathbf{K}_{\text{private}}$) inside a secure Trusted Platform Module (TPM 2.0) soldered to the processor bus. The central ingestion daemon instantly drops any telemetry slice that fails cryptographic verification, preventing transit-layer signal spoofing.
+#### 5.1 Realized Edge-Level Cryptographic Hardware Abstraction
+The ingestion subsystem directly interfaces with a Trusted Platform Module (TPM 2.0) interface layer (`secure_hardware_vault.py`). The core session manager enforces strict exception taxonomies to prevent low-level bus voltage drops from corrupting processing threads:
+- **`TPMCommunicationError`:** Intercepts transient SPI bus timeouts (`0x101`) or line jitter, automatically initiating a 3-pass retry loop to stabilize connection traces natively.
+- **`TPMSecurityBreachError`:** Intercepts physical policy tampering, authorization failures, or PCR-7 verification mismatches (`0x9A`), placing the execution path into an immediate fail-secure lockdown.
 
-#### 5.2 Immutable microVM Sandbox Runtimes
+#### 5.2 Immutable microVM Sandbox Runtimes (Roadmap Lifecycle)
 The processing engine executes inside isolated, minimal micro-Virtual Machine runtimes (such as AWS Firecracker or secure WebAssembly sandboxes) rather than a shared mutable OS. The microVM boots up from a completely read-only root filesystem with zero host privilege extensions. If an execution anomaly is triggered, the isolated sandbox automatically destroys, refreshes, and replaces itself from a clean image baseline every 60 seconds, preventing persistent runtime intrusion.
 
-#### 5.3 Hardware Saturation Protection
+#### 5.3 Hardware Saturation Protection (Roadmap Lifecycle)
 If an extreme over-voltage spike clips the absolute hardware limits of the operational amplifiers, the ingestion engine monitors the rate-of-change ($\Delta_{V}$) before the FFT blocks. If a voltage spike hits the limits within a window of $\Delta_t < 2\text{ milliseconds}$, the software triggers a hard crowbar isolation loop: it temporary uncouples the live data bus from the primary tensor stack, populates the queue with a maximum-entropy placeholder vector to mark an active "Telemetry Blindspot," and insulates the underlying learning models while the analog hardware mechanically re-stabilizes.
