@@ -1,4 +1,4 @@
-# 🚀 Multi-Channel Environmental Telemetry Ingestion and Real-Time ML Engin
+# 🚀 Multi-Channel Environmental Telemetry Ingestion and Real-Time ML Engine
 
 A high-performance processing pipeline and machine learning engine for real-time monitoring of 4-channel environmental telemetry (plant bioelectronics, soil chemistry, and low-frequency electromagnetic fields). The architecture window-slicing maps raw time-series data directly into single-precision latent space arrays to detect structural anomalies without human intervention loops.
 
