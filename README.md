@@ -6,45 +6,77 @@ A high-performance processing pipeline and machine learning engine for real-time
 
 ## 🏗️ 1. Complete Repository Directory Architecture
 
-The repository enforces a strict, modular layout separating bare-metal firmware collection points from production deep learning pipelines, system configuration validation layers, and cloud-native automation matrices:
+The repository enforces a strict, modular layout separating bare-metal firmware collection points from production deep learning pipelines, system configuration validation layers, hidden cryptographic abstractions, and cloud-native automation matrices:
 
 ```text
 the-frequency-project/
-├── .github/workflows/          # Continuous Integration (CI) and Security Scanners
-│   └── ci.yml                  # bandit security, pip-audit, and automated pytest engine
-├── tests/                      # 47-Item High-Assurance Automated Testing Matrix
-│   ├── test_ci_workflow.py     # Pipeline supply chain range validation asserts
-│   ├── test_crypto.py          # Cryptographic tuple & array compatibility checks
-│   ├── test_ingest.py          # Row-independent Z-score normalization validation
-│   ├── test_integration_pipeline.py # End-to-end multi-channel data flow verification
-│   ├── test_loss.py            # Custom loss scalar reproducibility and stability tests
-│   ├── test_metrics_endpoint.py # Mutex-locked HTTP Prometheus & health probe integration tests
-│   ├── test_model.py           # Core encoder layer dimensions and legacy tracking configurations
-│   ├── test_model_architecture.py # Frontline tensor dimension contract firewall checks
-│   ├── test_model_layers.py    # Auto-dimension expansion and unbatched waveform validation
-│   ├── test_monitor.py         # 3-Sigma anomaly detection trajectory threshold testing
-│   ├── test_performance.py     # Microsecond-level clock bound and throughput performance limits
-│   ├── test_prototype_simulation.py # Epsilon flatline protection and signal simulation checks
-│   ├── test_serial_daemon.py   # Asynchronous serial regex packet ingestion lifecycle tests
-│   ├── test_session.py         # Orchestration calibration matrix sweep verification
-│   ├── test_spectral.py        # Notch filter suppression and spectral output processing tests
-│   ├── test_stress.py          # Pipeline fuzzing and adversarial bombardment resilience tests
-│   ├── test_tpm_bridge.py      # TPM 2.0 vault bus timeout and policy tamper alerts
-│   ├── test_train.py           # Training engine backprop warmups and initialization gates
-│   └── test_validate_config.py  # Repository manifest schema and configuration validation checks
-├── CHANGELOG.md                # Keep a Changelog semantic version history layout
-├── config.example.yaml         # Self-documenting external parameter infrastructure guide
-├── DEPLOYMENT.md               # Hardened multi-stage container orchestration & service mesh manual
-├── Dockerfile                  # Hardened multi-stage build image; rootless UID 10001 execution
-├── dockerfile-compose.yml      # Multi-container dev setup pairing engine with swtpm emulator
-├── firmware_adc_loop.cpp       # Bare-metal C++ asynchronous interrupt-driven ring buffer loop
-├── model_architecture.py       # Asymmetric Spatial Encoder PyTorch architecture with auto-casting
-├── PERFORMANCE.md              # Verifiable latency budgets, throughput limits, and resource SLAs
-├── prototype_simulation.py     # Real-time synthetic multi-rate wave matrix simulation harness
-├── run_session.py              # Main orchestrator hosting embedded non-blocking metrics socket server
-├── secure_hardware_vault.py    # TPM 2.0 interface managing granular exception taxonomy rules
-├── serial_daemon.py            # Async serial regex engine tracking line frame drop boundaries
-└── validate_config.py          # Deep structural TOML parsing auditor verifying package constraints
+├── .github/workflows/                 # Continuous Integration (CI) and Security Scanners
+│   └── ci.yml                         # bandit security, pip-audit, and automated pytest engine
+├── documentation/                     # Specialized operational architecture guides
+├── philosophy_archive/                # Historical records of core foundational theories
+├── technical_specifications/          # Mathematical proofs and engineering limits
+├── tests/                             # 47-Item High-Assurance Automated Testing Matrix
+│   ├── test_ci_workflow.py            # Pipeline supply chain range validation asserts
+│   ├── test_crypto.py                 # Cryptographic tuple & array compatibility checks
+│   ├── test_ingest.py                 # Row-independent Z-score normalization validation
+│   ├── test_integration_pipeline.py    # End-to-end multi-channel data flow verification
+│   ├── test_loss.py                   # Custom loss scalar reproducibility and stability tests
+│   ├── test_metrics_endpoint.py       # Mutex-locked HTTP Prometheus & health probe integration tests
+│   ├── test_model.py                  # Core encoder layer dimensions and legacy configurations
+│   ├── test_model_architecture.py      # Frontline tensor dimension contract firewall checks
+│   ├── test_model_layers.py           # Auto-dimension expansion and unbatched waveform validation
+│   ├── test_monitor.py                # 3-Sigma anomaly detection trajectory threshold testing
+│   ├── test_performance.py            # Microsecond-level clock bound and throughput performance limits
+│   ├── test_prototype_simulation.py    # Epsilon flatline protection and signal simulation checks
+│   ├── test_serial_daemon.py          # Asynchronous serial regex packet ingestion lifecycle tests
+│   ├── test_session.py                # Orchestration calibration matrix sweep verification
+│   ├── test_spectral.py               # Notch filter suppression and spectral output processing tests
+│   ├── test_stress.py                 # Pipeline fuzzing and adversarial resilience tests
+│   ├── test_tpm_bridge.py             # TPM 2.0 vault bus timeout and policy tamper alerts
+│   ├── test_train.py                  # Training engine backprop warmups and initialization gates
+│   ├── test_validate_config.py         # Repository manifest schema validation checks
+│   └── test_validate_phi_hypothesis.py # Non-linear Phi parameter convergence validations
+├── .dockerignore                      # Context exclusions isolating build caches from deployment images
+├── .gitignore                         # Local drive parameter and cache line block tracking omissions
+├── .gitsecret                         # Tracking indices for hidden repository keys
+├── .pre-commit-config.yaml            # Automatic pre-flight syntax and code quality gatehooks
+├── CHANGELOG.md                       # Keep a Changelog semantic version history layout
+├── CONTRIBUTING.md                    # Developer onboarding guidelines and code contribution workflows
+├── DEPLOYMENT.md                      # Hardened multi-stage container orchestration & service mesh manual
+├── Dockerfile                         # Hardened multi-stage build image; rootless UID 10001 execution
+├── ENGINEERING_GUIDE.md               # Technical overview of core algorithmic structures
+├── HARDENING.PATCH                    # Low-level system boundary patch matrix overrides
+├── LICENSE                            # Complete legal text for the AGPL-3.0 copyleft parameters
+├── PERFORMANCE.md                     # Verifiable latency budgets, throughput limits, and resource SLAs
+├── PHI_VALIDATION_RESULTS.md          # Numerical validation metrics for non-linear convergence targets
+├── README.md                          # Master infrastructure directory manual and blueprint guide
+├── SECURITY.md                        # Threat model documentation and active parameter firewalls
+├── TROUBLESHOOTING.md                 # Triage runbook for hardware drops and container faults
+├── VISION.md                          # Core Vision Manifesto and biospheric engineering foundations
+├── config.example.yaml                # Self-documenting external parameter infrastructure guide
+├── config.py                          # Local run environment path compiler
+├── crypto_signer.py                   # Elliptic-curve vector signing and frame verification hooks
+├── dockerfile-compose.yml             # Multi-container dev setup pairing engine with swtpm emulator
+├── example_pipeline.py                # Comprehensive end-to-end operational tutorial loop
+├── firmware_adc_loop.cpp              # Bare-metal C++ asynchronous interrupt-driven ring buffer loop
+├── latent_monitor.py                  # Real-time EMV array tracking out-of-bounds 3-Sigma drift
+├── model_architecture.py              # Asymmetric Spatial Encoder PyTorch architecture with auto-casting
+├── protect_vault.py                   # Automated perimeter lockdown execution routines
+├── prototype_simulation.py            # Real-time synthetic multi-rate wave matrix simulation harness
+├── pyproject.toml                     # Master package manager manifest containing tight version locks
+├── requirements.txt                   # Version-locked baseline dependencies
+├── resonance_loss.py                  # Custom KL loss tracking with log-softmax stability
+├── run_session.py                     # Main orchestrator hosting embedded metrics socket server
+├── secure_deployment_playbook.sh.secret # Protected cloud cluster deployment script configuration
+├── secure_hardware_vault.py           # TPM 2.0 interface managing granular exception taxonomy rules
+├── sensor_adapter.py                  # Multi-channel rolling deques executing Z-score scaling
+├── serial_daemon.py                   # Async serial regex engine tracking line frame drop boundaries
+├── spectral_processing.py             # Microsecond-synchronized 60Hz filtration and Real FFT loops
+├── stress_harness.py                  # Adversarial fuzzing and malformed payload injection engine
+├── train_engine.py                    # Backpropagation optimization engine and warmup configurations
+├── unseal_hardware_vault.py           # Execution path unlocking underlying HSM root seeds
+├── validate_config.py                 # Deep structural TOML parsing auditor verifying package constraints
+└── validate_phi_hypothesis.py         # Golden ratio parameter optimization matrix validation
 ```
 
 ---
