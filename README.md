@@ -6,7 +6,7 @@ A high-performance processing pipeline and machine learning engine for real-time
 
 ## 🏗️ 1. Complete Repository Directory Architecture
 
-The repository enforces a strict, modular layout separating bare-metal firmware collection points from production deep learning pipelines, system configuration validation layers, hidden cryptographic abstractions, and cloud-native automation matrices:
+The repository enforces a strict, modular layout separating bare-metal firmware collection points from production deep learning pipelines, system configuration validation layers, hidden cryptographic abstractions, and advanced non-linear analytical research tracks:
 
 ```text
 the-frequency-project/
@@ -53,6 +53,7 @@ the-frequency-project/
 ├── SECURITY.md                        # Threat model documentation and active parameter firewalls
 ├── TROUBLESHOOTING.md                 # Triage runbook for hardware drops and container faults
 ├── VISION.md                          # Core Vision Manifesto and biospheric engineering foundations
+├── analyze_information_flow.py        # Shannon Entropy (H) and relative informational flow mapping tools
 ├── config.example.yaml                # Self-documenting external parameter infrastructure guide
 ├── config.py                          # Local run environment path compiler
 ├── crypto_signer.py                   # Elliptic-curve vector signing and frame verification hooks
@@ -60,10 +61,13 @@ the-frequency-project/
 ├── example_pipeline.py                # Comprehensive end-to-end operational tutorial loop
 ├── firmware_adc_loop.cpp              # Bare-metal C++ asynchronous interrupt-driven ring buffer loop
 ├── latent_monitor.py                  # Real-time EMV array tracking out-of-bounds 3-Sigma drift
+├── map_latent_manifold.py             # Principal Component Analysis (PCA) 128D latent cluster topography auditor
 ├── model_architecture.py              # Asymmetric Spatial Encoder PyTorch architecture with auto-casting
+├── predict_chaos.py                   # Localized non-linear phase-space nearest neighbor trajectory predictor
 ├── protect_vault.py                   # Automated perimeter lockdown execution routines
 ├── prototype_simulation.py            # Real-time synthetic multi-rate wave matrix simulation harness
 ├── pyproject.toml                     # Master package manager manifest containing tight version locks
+├── reconstruct_attractor.py           # Takens' Delay-Coordinate Embedding loop mapping 3D chaotic attractors
 ├── requirements.txt                   # Version-locked baseline dependencies
 ├── resonance_loss.py                  # Custom KL loss tracking with log-softmax stability
 ├── run_session.py                     # Main orchestrator hosting embedded metrics socket server
@@ -73,6 +77,7 @@ the-frequency-project/
 ├── serial_daemon.py                   # Async serial regex engine tracking line frame drop boundaries
 ├── spectral_processing.py             # Microsecond-synchronized 60Hz filtration and Real FFT loops
 ├── stress_harness.py                  # Adversarial fuzzing and malformed payload injection engine
+├── track_wasserstein.py               # Earth Mover's Distance (Wasserstein-1) manifold drift velocity metrics
 ├── train_engine.py                    # Backpropagation optimization engine and warmup configurations
 ├── unseal_hardware_vault.py           # Execution path unlocking underlying HSM root seeds
 ├── validate_config.py                 # Deep structural TOML parsing auditor verifying package constraints

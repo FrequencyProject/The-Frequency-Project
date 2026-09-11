@@ -20,6 +20,10 @@ The components are benchmarked to stay well within strict, deterministic process
 | **Z-Score Array Normalization**| ~120 µs | Row-Independent Matrix Math | < 1.5 ms |
 | **1D-CNN Encoder Inference**   | ~8.4 ms | PyTorch CPU Forward Pass | < 14.0 ms |
 | **3-Sigma Vector Evaluation**  | ~45 µs  | Statistical Divergence Map | < 0.5 ms |
+| **Takens Delay Embedding**     | ~110 µs | Non-Linear Array Realignment | < 1.0 ms |
+| **PCA Manifold Projection**    | ~1.1 ms | Eigh Covariance Reduction | < 3.5 ms |
+| **Wasserstein Drift Mapping**  | ~2.2 ms | Scipy Earth Mover Integration | < 5.0 ms |
+| **Trajectory Lookahead Chaos** | ~850 µs | Local Neighborhood Search | < 2.0 ms |
 
 ## 🧠 3. Resource Consumption Footprint (Single Container)
 
