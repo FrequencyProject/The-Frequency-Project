@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Stage A: The Hardware Security Module Emulator Daemon
+  swtpm:
+    image: stefanberger/swtpm:latest
+    container_name: vivic-tpm-emulator
+    command: >
+      swtpm socket --tpmstate dir=/tmp/mytpm 
+                   --tpm2 
+                   --server port=2321 
+                   --ctrl port=2322 
+                   --flags startup-clear
+    volumes:
+      - vivic-tpm-state:/tmp/mytpm
+    ports:
+      - "2321:2321"
+    restart: unless-stopped
+    networks:
+      - vivic-isolated-net
+
+  # Stage B: The Hardened Core Ingestion & Telemetry Machine
+  vivic-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vivic-core-engine
+    depends_on:
+      - swtpm
+    environment:
+      - TPM2TOOLS_TCTI=mssim:port=2321
+      - OMP_NUM_THREADS=1
+      - MKL_NUM_THREADS=1
+      - OPENBLAS_NUM_THREADS=1
+      - VECLIB_MAXIMUM_THREADS=1
+      - NUMEXPR_NUM_THREADS=1
+    ports:
+      - "8000:8000"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: always
+    networks:
+      - vivic-isolated-net
+
+volumes:
+  vivic-tpm-state:
+    driver: local
+
+networks:
+  vivic-isolated-net:
+    driver: bridge

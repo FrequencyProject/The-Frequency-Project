@@ -34,15 +34,13 @@ def emit_structured_log(event_type: str, level: str, msg: str, data: dict = None
 class MetricsHttpExporter(threading.Thread):
     """Hosts a minimal, lightweight, zero-dependency HTTP server for Prometheus scraping and health probes."""
 
-    # HARDENING REMEDIATION: Inject inline static analysis exclusion (# nosec B104) to document
-    # that binding to the zero-subnet wildcard is an intentional choice for container loopbacks.
     def __init__(self, session, host: str = "0.0.0.0", port: int = 8000):  # nosec B104
         super().__init__()
         self.session = session
         self.host = host
         self.port = port
         self.running = False
-        self.daemon = True  # Allows immediate process teardown on exit
+        self.daemon = True
         self.server_socket = None
 
     def run(self):
@@ -57,7 +55,6 @@ class MetricsHttpExporter(threading.Thread):
             emit_structured_log("METRICS_SERVER_ERROR", "CRITICAL", f"Failed to bind HTTP Exporter: {str(e)}")
             return
 
-        # Configure short timeout to prevent accept() from blocking SIGTERM loops indefinitely
         self.server_socket.settimeout(0.5)
 
         while self.running:
@@ -70,16 +67,16 @@ class MetricsHttpExporter(threading.Thread):
 
             try:
                 request = client_sock.recv(1024).decode('utf-8', errors='ignore')
-                first_line = request.split('\r\n') if request else ""
+                if not request:
+                    client_sock.close()
+                    continue
                 
-                # Route A: Docker/Kubernetes Liveness and Readiness Health Probes
-                if "GET /health" in first_line:
+                if "GET /health" in request:
                     status_code = "200 OK" if self.session.is_active or self.session.is_calibrated else "503 Service Unavailable"
                     body = json.dumps({"status": "HEALTHY" if "200" in status_code else "INITIALIZING"})
                     response = f"HTTP/1.1 {status_code}\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
                 
-                # Route B: Standard Prometheus Text Metric Exposition Scraping
-                elif "GET /metrics" in first_line:
+                elif "GET /metrics" in request:
                     with self.session.metrics_lock:
                         body = (
                             f"# HELP vivic_total_packets_parsed Total telemetry packets processed\n"
@@ -128,7 +125,6 @@ class UnifiedVivicSession:
         self.ambient_stds = np.zeros(4, dtype=np.float32)
         self.is_calibrated = False
 
-        # ADVANCED HARDENING: Observability state parameters tracked via internal mutex lock
         self.metrics_lock = threading.Lock()
         self.total_cycles_run = 0
         self.anomalies_found = 0
@@ -191,10 +187,8 @@ class UnifiedVivicSession:
                 time.sleep(0.05)
                 continue
 
-            # Execute the 3-Sigma vector divergence metric monitoring tracking
             is_anomaly = self.monitor.evaluate_vector(latent_vector.cpu().numpy().flatten())
 
-            # ADVANCED HARDENING: Increment standard performance counters safely
             with self.metrics_lock:
                 self.total_cycles_run += 1
                 if is_anomaly:
@@ -214,8 +208,6 @@ class UnifiedVivicSession:
 if __name__ == "__main__":
     session = UnifiedVivicSession(port="MOCK")
     
-    # Spin up our independent cloud observability server natively in the background thread
-    # HARDENING REMEDIATION: Inject inline static analysis exclusion (# nosec B104) to satisfy the CI checker.
     exporter_server = MetricsHttpExporter(session=session, host="0.0.0.0", port=8000)  # nosec B104
     exporter_server.start()
 
