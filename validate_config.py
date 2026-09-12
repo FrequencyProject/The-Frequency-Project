@@ -39,6 +39,7 @@ class InfrastructureValidator:
 
     def __init__(self):
         self.manifest_file = "pyproject.toml"
+        self.firmware_file = "firmware_adc_loop.cpp"
 
     def verify_repository_integrity(self) -> bool:
         """Validates core tracking modules, dependencies, and configuration constraints."""
@@ -94,6 +95,20 @@ class InfrastructureValidator:
                 if evar not in env_vars:
                     print(f"[CRITICAL] Performance override constraint missing from pytest settings: {evar}")
                     return False
+
+            # 4. HARDENING REMEDIATION: Microcontroller Interconnect Configuration Safety Audit
+            # Verifies that physical pin declarations have been updated to the native FSPI hardware tracks.
+            if check_manifest_exists(self.firmware_file):
+                with open(self.firmware_file, "r") as f:
+                    firmware_content = f.read()
+                
+                if "ADC_CS_PIN = 10" not in firmware_content:
+                    print("[CRITICAL] Hardware Mismatch: ADC_CS_PIN is not synchronized to native FSPI FSPICS0 (GPIO 10).")
+                    return False
+                if "ADC_DRDY_PIN = 4" not in firmware_content:
+                    print("[CRITICAL] Hardware Mismatch: ADC_DRDY_PIN is not synchronized to Hardware Interrupt (GPIO 4).")
+                    return False
+                log_validated_component("ESP32-S3 hardware pin mapping configurations.")
 
             log_validated_component("All project dependencies, security pins, and 12-module package structures.")
             log_success_matrix("pyproject.toml loaded and validated successfully.")
