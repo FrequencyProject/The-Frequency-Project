@@ -2,7 +2,7 @@
 #include <SPI.h>
 
 // --- PIN DEFINITIONS (Synchronized to Hardware Blueprint) ---
-const int ADC_CS_PIN = 5;
+const int ADC_CS_PIN = 10;
 const int ADC_DRDY_PIN = 4; 
 
 // --- HARDWARE SIMULATION TOGGLE ---
