@@ -19,17 +19,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
-COPY requirements.txt pyproject.toml ./
+COPY pyproject.toml ./
 
 # HARDENING REMEDIATION: Resource Constraint Allocation Guard.
-# Explicitly forces pip to source a lightweight CPU-only PyTorch build during 
-# containerization using the official PyTorch CPU wheel index. This reduces disk 
-# pressure by gigabytes, preventing cloud device space exhaustion faults.
+# Correctly targets the official PyTorch CPU wheel index to strip out giant CUDA frameworks.
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools && \
     python -m pip wheel --wheel-dir /build/wheels \
       --extra-index-url https://pytorch.org \
-      -r requirements.txt
+      .
 
 # ==============================================================================
 # 🌌 STAGE 2: THE HARDENED ZERO-TRUST RUNTIME EDGE CONTAINER
@@ -53,16 +51,11 @@ RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator
 COPY . /app/
 
 # HARDENING REMEDIATION: Automated Index Alignment.
-# Sources requirements systematically out of the local pre-compiled wheels directory 
-# to guarantee clean, deterministic installation under restricted container runtimes.
 RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --no-index --find-links=/app/wheels -r requirements.txt . && \
+    python -m pip install --no-index --find-links=/app/wheels . && \
     rm -rf /app/wheels
 
 # HARDENING REMEDIATION: Principle of Least Privilege / Immutable Source Code Invariant.
-# 1. Source files are strictly owned by root and kept READ-ONLY (0555) so the application process
-#    can never overwrite its own running Python code modules during a remote attack exploit.
-# 2. Provision an isolated, non-executable storage workspace for runtime ephemeral data logs.
 RUN mkdir -p /app/scratch && \
     chown -R root:root /app && \
     chown -R vivic_operator:vivic_operator /app/scratch && \
@@ -70,12 +63,10 @@ RUN mkdir -p /app/scratch && \
     chmod -R 0700 /app/scratch
 
 # HARDENING REMEDIATION: Network Observability Exposition.
-# Signals your container service mesh (Docker/Kubernetes) to open port 8000
-# for Prometheus scraping and cluster liveness/readiness probes.
 EXPOSE 8000
 
 # Bind execution strictly to the unprivileged account context
 USER vivic_operator
 
-# Execute the repository configuration validation engine at active container launch
-ENTRYPOINT ["python", "validate_config.py"]
+# Execute pre-flight configuration validation before launching the live telemetry cluster session
+ENTRYPOINT ["sh", "-c", "python validate_config.py && python run_session.py"]
