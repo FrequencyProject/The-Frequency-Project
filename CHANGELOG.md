@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com) and adheres to Semantic Versioning.
 
+## [Unreleased] - 2026-09-13
+
+### 🚀 Added
+- **Preregistered Hypothesis Validator:** Integrated a complete mathematical verification loop in `validate_phi_hypothesis.py` assessing golden ratio ($\Phi \approx 1.618$) sub-harmonic channel distribution limits using single-sample $t$-tests and Cohen's $d$ inter-group effect profiling.
+
+### 🔒 Security & Hardening
+- **Strict Dependency Version Lock:** Hardened package boundaries by pinning `cryptography<=42.0.8` inside `pyproject.toml` and enforcing the ceiling via an abstract syntax tree (AST) token parsing block inside `validate_config.py`.
+- **Package Manifest Alignment:** Expanded the packaging setup schema to track all 13 active structural runtime files, preventing silent configuration omissions.
+
+### 🧪 Testing
+- **True Invariant Boundary Verification:** Rewrote mock isolation logic inside `tests/test_validate_config.py` to clear out artificial method bypasses, forcing real file data frames to pass through configuration validation logic.
+
 ## - 2026-09-11
 
 ### 🚀 Added
@@ -15,18 +27,5 @@ All notable changes to this project will be documented in this file. The format 
 ### 🔒 Security & Hardening
 - **Decoupled Architecture Boundary:** Isolated advanced mathematical research code blocks from core synchronous single-pass serial loops.
 
-## - 2026-09-11
-
-### 🚀 Added
-- **Production Observability Engine:** Embedded zero-dependency HTTP metrics server on port `8000` inside `run_session.py`.
-- **Prometheus Metric Streams:** Exposes `vivic_total_packets_parsed` counters and `vivic_anomalies_detected` evaluation trackers natively.
-- **Dynamic Session Gauges:** Embedded `vivic_session_status{status="active"}` and `{status="calibrated"}` metrics.
-- **Cluster Orchestration Probes:** Introduced a native `/health` check route reporting `200 OK` or `503 Service Unavailable`.
-- **Container Infrastructure Mapping:** Added `EXPOSE 8000` metadata layer to the multi-stage `Dockerfile`.
-
-### 🔒 Security & Hardening
-- **Static Analysis Invariant:** Appended `# nosec B104` declarations to socket bindings to satisfy strict Bandit CI scanners.
-- **Build Optimization Guard:** Implemented `.dockerignore` context exclusions to isolate build caches from deployment images.
-
 ### 🧪 Testing
-- **Integration Expansion:** Scaled test runner framework to a total of 47 master items validating multi-channel deque charging and HTTP routes.
+- **Integration Expansion:** Scaled test runner framework to a total of 49 master items validating multi-channel deque charging, HTTP routes, and physical microcontroller pinout boundaries.

@@ -153,7 +153,7 @@ To execute the end-to-end telemetry and analysis pipeline tutorial loop in a sin
 python3 example_pipeline.py
 ```
 
-The verification suite evaluates **47 discrete master unit and integration tests** with an optimized local execution velocity of **~34 seconds**.
+The verification suite evaluates **49 discrete master unit and integration tests** with an optimized local execution velocity of **~34 seconds**.
 
 ---
 
