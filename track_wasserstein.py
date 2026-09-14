@@ -48,7 +48,7 @@ def execute_wasserstein_drift_audit():
     w1_chaos_drift = wasserstein_distance(arr_alpha, arr_chaos)
     
     print("\n" + "="*70)
-    print("LAENT MANIFOLD WASSERSTEIN DRIFT LOGS")
+    print("LATENT MANIFOLD WASSERSTEIN DRIFT LOGS")
     print("="*70)
     print(f" -> Baseline Background Jitter (W1 Distance) : {w1_baseline:.6f}")
     print(f" -> Chaotic Shift Velocity     (W1 Distance) : {w1_chaos_drift:.6f}")

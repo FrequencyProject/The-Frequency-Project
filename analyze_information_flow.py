@@ -23,8 +23,12 @@ def generate_chaotic_stress_vectors(num_cycles: int = 50):
     chaotic_manifold = build_takens_embedding(raw_chaos_signal, delay=10, dimension=3)
     
     for idx in range(num_cycles):
-        # 1. Standard Nominal Fibonacci Wavefront Configuration
-        t = np.linspace(0, 10, 1280, dtype=np.float32)
+        # 1. Standard Nominal Fibonacci Wavefront Configuration (Hardened tracking time window)
+        time_offset = idx * 10.0
+        t = np.linspace(time_offset, time_offset + 10.0, 1280, dtype=np.float32)
+        # Apply micro-phase variance using the initialized random number generator
+        phase_jitter = rng.uniform(-0.02, 0.02)
+        t += phase_jitter
         ch1 = np.sin(t * 60.0 * (phi**0))
         ch2 = np.sin(t * 60.0 * (phi**-1))
         ch3 = np.sin(t * 60.0 * (phi**-2))
