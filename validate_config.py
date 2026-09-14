@@ -49,7 +49,7 @@ class InfrastructureValidator:
             modules = setuptools_section.get('py-modules', [])
             pytest_section = config_data.get('tool', {}).get('pytest', {}).get('ini_options', {})
             env_vars = pytest_section.get('env', [])
-            required_dependencies = ['numpy', 'scipy', 'torch', 'tpm2-pytss', 'cryptography<=42.0.8']
+            required_dependencies = ['numpy', 'scipy', 'torch', 'tpm2-pytss', 'cryptography==43.0.1']
             for req in required_dependencies:
                 if not any((req in dep.replace(' ', '') for dep in dependencies)):
                     print(f'[CRITICAL] Missing required dependency specification anchor: {req}')
