@@ -11,10 +11,7 @@ from validate_config import InfrastructureValidator
 def test_validator_production_manifest_integrity():
     """Asserts that the canonical repository manifest passes all structural checks successfully."""
     validator = InfrastructureValidator()
-    
-    # Executing the integrity validation pass against your true pyproject.toml and firmware files
     success = validator.verify_repository_integrity()
-    
     assert success is True
 
 def test_validator_detects_mismatched_cs_pin():
@@ -22,17 +19,26 @@ def test_validator_detects_mismatched_cs_pin():
     validator = InfrastructureValidator()
     
     # Mocking a corrupted firmware module where the CS pin is left at legacy GPIO 5
-    mocked_corrupt_firmware = (
-        "const int ADC_CS_PIN = 5;\n"
-        "const int ADC_DRDY_PIN = 4;\n"
-    )
+    mocked_corrupt_firmware = "const int ADC_CS_PIN = 5;\nconst int ADC_DRDY_PIN = 4;\n"
     
+    # We load a valid structural manifest block so the check gets past block 1, 2, and 3 safely
+    valid_manifest = b"""
+    [project]
+    dependencies = ["numpy", "scipy", "torch", "tpm2-pytss", "cryptography<=42.0.8"]
+    [tool.setuptools]
+    py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "spectral_processing", "model_architecture", "resonance_loss", "train_engine", "latent_monitor", "prototype_simulation", "stress_harness", "config", "validate_phi_hypothesis"]
+    [tool.pytest.ini_options]
+    env = ["OMP_NUM_THREADS=1", "MKL_NUM_THREADS=1", "OPENBLAS_NUM_THREADS=1", "VECLIB_MAXIMUM_THREADS=1", "NUMEXPR_NUM_THREADS=1"]
+    """
+
+    def mock_open_multiple(path, *args, **kwargs):
+        if "pyproject.toml" in str(path):
+            return mock_open(read_data=valid_manifest).return_value
+        return mock_open(read_data=mocked_corrupt_firmware).return_value
+
     with patch("os.path.exists", return_value=True), \
-         patch("builtins.open", mock_open(read_data=mocked_corrupt_firmware)):
-        
-        # Override manifest parsing to simulate a clean pyproject data frame bypass
-        with patch.object(InfrastructureValidator, "verify_repository_integrity", return_value=False):
-            success = validator.verify_repository_integrity()
+         patch("builtins.open", side_effect=mock_open_multiple):
+        success = validator.verify_repository_integrity()
             
     assert success is False
 
@@ -41,15 +47,23 @@ def test_validator_detects_mismatched_drdy_pin():
     validator = InfrastructureValidator()
     
     # Mocking a corrupted firmware module where the DRDY pin is misaligned to GPIO 2
-    mocked_corrupt_firmware = (
-        "const int ADC_CS_PIN = 10;\n"
-        "const int ADC_DRDY_PIN = 2;\n"
-    )
-    
+    mocked_corrupt_firmware = "const int ADC_CS_PIN = 10;\nconst int ADC_DRDY_PIN = 2;\n"
+    valid_manifest = b"""
+    [project]
+    dependencies = ["numpy", "scipy", "torch", "tpm2-pytss", "cryptography<=42.0.8"]
+    [tool.setuptools]
+    py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "spectral_processing", "model_architecture", "resonance_loss", "train_engine", "latent_monitor", "prototype_simulation", "stress_harness", "config", "validate_phi_hypothesis"]
+    [tool.pytest.ini_options]
+    env = ["OMP_NUM_THREADS=1", "MKL_NUM_THREADS=1", "OPENBLAS_NUM_THREADS=1", "VECLIB_MAXIMUM_THREADS=1", "NUMEXPR_NUM_THREADS=1"]
+    """
+
+    def mock_open_multiple(path, *args, **kwargs):
+        if "pyproject.toml" in str(path):
+            return mock_open(read_data=valid_manifest).return_value
+        return mock_open(read_data=mocked_corrupt_firmware).return_value
+
     with patch("os.path.exists", return_value=True), \
-         patch("builtins.open", mock_open(read_data=mocked_corrupt_firmware)):
-        
-        with patch.object(InfrastructureValidator, "verify_repository_integrity", return_value=False):
-            success = validator.verify_repository_integrity()
+         patch("builtins.open", side_effect=mock_open_multiple):
+        success = validator.verify_repository_integrity()
             
     assert success is False
