@@ -138,7 +138,7 @@ class UnifiedVivicSession:
             emit_structured_log("SIMULATION_DETECTED", "INFO", "Simulation track detected: Waiting for background buffer saturation (1280 frames)...")
             while True:
                 with self.adapter.lock:
-                    current_fill = len(self.adapter.buffers["ch1"])
+                    current_fill = self.adapter._count
                 if current_fill >= self.adapter.window_size:
                     break
                 time.sleep(0.2)
