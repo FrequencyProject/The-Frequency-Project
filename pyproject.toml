@@ -22,7 +22,7 @@ dependencies = [
     "torch>=2.2.1",
     "tpm2-pytss>=2.3.0,<=3.0.0",
     "pyserial>=3.5",
-    "cryptography<=42.0.8"
+    "cryptography==50.0.0"
 ]
 
 [tool.setuptools]
