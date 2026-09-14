@@ -12,7 +12,7 @@ pip install -e .
 Ensure all 49 master structural, cryptographic, and mathematical invariant tests pass cleanly:
 ```bash
 python3 -m pytest
-# Expected output: 49 passed in ~32 seconds
+# Expected output: 52 passed in ~32 seconds
 ```
 
 ## 3. Launch the Operational Engine
