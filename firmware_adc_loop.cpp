@@ -3,11 +3,10 @@
 
 // --- PIN DEFINITIONS (Synchronized to Hardware Blueprint) ---
 const int ADC_CS_PIN = 10;
-const int ADC_DRDY_PIN = 4; 
+const int ADC_DRDY_PIN = 4;
 
 // --- HARDWARE SIMULATION TOGGLE ---
-// Set to 'true' to generate software matrix waves without needing real sensors connected.
-const bool HARDWARE_SIMULATION_MODE = true; 
+const bool HARDWARE_SIMULATION_MODE = true;
 
 struct TelemetryFrame {
     int32_t ch1;
@@ -76,17 +75,27 @@ void setup() {
 }
 
 void loop() {
-    // SIMULATION TRACK: Generates synthetically perfect data if hardware isn't attached yet
+    bool local_data_pending = false;
+
+    // ATOMIC BLOCK: Read and clear the interrupt flag safely
+    noInterrupts();
+    if (adc_data_pending) {
+        local_data_pending = true;
+        adc_data_pending = false;
+    }
+    interrupts();
+
     if (HARDWARE_SIMULATION_MODE) {
         static uint32_t sim_tick = 0;
         sim_tick++;
 
-        // Generate out-of-phase synthetic sine waves scaled to 24-bit integer limits
         int32_t ch1 = (int32_t)(8388607.0 * sin(sim_tick * 0.05));
         int32_t ch2 = (int32_t)(8388607.0 * cos(sim_tick * 0.05));
         int32_t ch3 = (int32_t)(4194303.0 * sin(sim_tick * 0.02));
-        int32_t ch4 = 0; // Ground line approximation
+        int32_t ch4 = 0;
 
+        // ATOMIC BLOCK: Protect ring buffer write pointers from concurrent corruption
+        noInterrupts();
         size_t next_head = (head_idx + 1) % BUFFER_SIZE;
         if (next_head != tail_idx) {
             frame_buffer[head_idx].ch1 = ch1;
@@ -96,10 +105,10 @@ void loop() {
             frame_buffer[head_idx].is_valid = true;
             head_idx = next_head;
         }
-        delay(16); // Mimic our target 60Hz loop cycle timing perfectly
-    } else if (adc_data_pending) {
-        // Active bare-metal hardware loop path
-        adc_data_pending = false;
+        interrupts();
+        delay(16); 
+    } 
+    else if (local_data_pending) {
         digitalWrite(ADC_CS_PIN, LOW);
         SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE1));
         int32_t ch1 = read_adc_channel(0x01);
@@ -109,6 +118,8 @@ void loop() {
         SPI.endTransaction();
         digitalWrite(ADC_CS_PIN, HIGH);
 
+        // ATOMIC BLOCK: Protect ring buffer write pointers during hardware acquisition
+        noInterrupts();
         size_t next_head = (head_idx + 1) % BUFFER_SIZE;
         if (next_head != tail_idx) {
             frame_buffer[head_idx].ch1 = ch1;
@@ -118,11 +129,13 @@ void loop() {
             frame_buffer[head_idx].is_valid = true;
             head_idx = next_head;
         }
+        interrupts();
     }
 
     TelemetryFrame current_frame;
     bool data_available = false;
 
+    // ATOMIC BLOCK: Safely pop data from the ring buffer
     noInterrupts();
     if (tail_idx != head_idx) {
         current_frame.ch1 = frame_buffer[tail_idx].ch1;
@@ -140,6 +153,7 @@ void loop() {
         return;
     }
 
+    // Fixed array allocations prevent variable truncation
     char s1[24], s2[24], s3[24], s4[24];
     format_fixed_point_voltage(s1, sizeof(s1), current_frame.ch1);
     format_fixed_point_voltage(s2, sizeof(s2), current_frame.ch2);
