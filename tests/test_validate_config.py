@@ -24,7 +24,7 @@ def test_validator_detects_mismatched_cs_pin():
     # We load a valid structural manifest block so the check gets past block 1, 2, and 3 safely
     valid_manifest = b"""
     [project]
-    dependencies = ["numpy", "scipy", "torch", "tpm2-pytss", "cryptography==43.0.1"]
+    dependencies = ["numpy", "scipy", "torch", "tpm2-pytss", "cryptography==44.0.1"]
     [tool.setuptools]
     py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "spectral_processing", "model_architecture", "resonance_loss", "train_engine", "latent_monitor", "prototype_simulation", "stress_harness", "config", "validate_phi_hypothesis"]
     [tool.pytest.ini_options]
@@ -50,7 +50,7 @@ def test_validator_detects_mismatched_drdy_pin():
     mocked_corrupt_firmware = "const int ADC_CS_PIN = 10;\nconst int ADC_DRDY_PIN = 2;\n"
     valid_manifest = b"""
     [project]
-    dependencies = ["numpy", "scipy", "torch", "tpm2-pytss", "cryptography==43.0.1"]
+    dependencies = ["numpy", "scipy", "torch", "tpm2-pytss", "cryptography==44.0.1"]
     [tool.setuptools]
     py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "spectral_processing", "model_architecture", "resonance_loss", "train_engine", "latent_monitor", "prototype_simulation", "stress_harness", "config", "validate_phi_hypothesis"]
     [tool.pytest.ini_options]
