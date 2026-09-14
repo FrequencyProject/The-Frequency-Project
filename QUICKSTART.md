@@ -3,7 +3,7 @@
 ## 1. Environment Setup
 Clone the repository and install the verified production package locally:
 ```bash
-git clone https://github.com
+git clone https://github.com/FrequencyProject/The-Frequency-Project.git
 cd the-frequency-project
 pip install -e .
 ```
