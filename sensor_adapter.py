@@ -30,10 +30,16 @@ class TelemetryCircularBuffer:
         """Pushes a validated 4-channel data tuple into the circular matrix memory map."""
         with self.lock:
             idx = self._head
-            for ch in range(4):
-                val = float(data_tuple[ch])
-                self._circular_buffer[ch, idx] = val
-                self._circular_buffer[ch, idx + self.window_size] = val
+            self._circular_buffer[0, idx] = float(data_tuple[0])
+            self._circular_buffer[1, idx] = float(data_tuple[1])
+            self._circular_buffer[2, idx] = float(data_tuple[2])
+            self._circular_buffer[3, idx] = float(data_tuple[3])
+
+            # Mirror copy to the second half of the buffer to enable zero-copy contiguous slicing view maps
+            self._circular_buffer[0, idx + self.window_size] = float(data_tuple[0])
+            self._circular_buffer[1, idx + self.window_size] = float(data_tuple[1])
+            self._circular_buffer[2, idx + self.window_size] = float(data_tuple[2])
+            self._circular_buffer[3, idx + self.window_size] = float(data_tuple[3])
 
             self._head = (self._head + 1) % self.window_size
             if self._count < self.window_size:
@@ -47,13 +53,6 @@ class TelemetryCircularBuffer:
             start_idx = self._head
             destination_matrix[:, :] = self._circular_buffer[:, start_idx : start_idx + self.window_size]
             return True
-
-    def reset(self):
-        """Resets pointers and clear metrics for testing framework integration setups."""
-        with self.lock:
-            self._head = 0
-            self._count = 0
-            self._circular_buffer.fill(0)
 
 
 class FeatureCompiler:
@@ -173,45 +172,6 @@ class SensorAdapter:
 
             return self._feature_compiler.process_window(self._shared_feature_matrix)
 
-
-# Export class under universal tracking name alias
-MultiChannelSensorAdapter = SensorAdapter                self.frames_dropped += 1
-        except Exception as e:
-            self.frames_dropped += 1
-            logger.debug(f"Transient boundary ingestion drop: {str(e)}")
-
-    def start_acquisition(self):
-        """Spins up the background hardware polling daemon loops."""
-        self.daemon.start()
-
-    def stop_acquisition(self):
-        """Safely terminates the background hardware polling daemon loops."""
-        self.daemon.stop()
-
-    def get_ai_features(self) -> np.ndarray:
-        """Compiles rolling window frames into a normalized (4, 1280) NumPy Array in O(1)."""
-        with self.lock:
-            # Check if buffer has fully saturated its 1280 historical footprints yet
-            if self._count < self.window_size:
-                return np.zeros((4, self.window_size), dtype=np.float32)
-
-            # ZERO-COPY O(1) SLICE VIEW: Pull chronological slice instantly from pre-mirrored memory array maps
-            start_idx = self._head
-            self._shared_feature_matrix[:, :] = self._circular_buffer[:, start_idx : start_idx + self.window_size]
-
-            # 3-Sigma Flatline Dropout Protection Firewall
-            channel_variances = np.var(self._shared_feature_matrix, axis=1)
-            if np.any(channel_variances < 1e-6):
-                logger.error("[FIREWALL ALERT] Critical hardware sensor flatline detected! Purging feature tensor context.")
-                return np.zeros((4, self.window_size), dtype=np.float32)
-
-            processed_matrix = self.dsp_pipeline.compile_feature_tensor(
-                self._shared_feature_matrix[0],
-                self._shared_feature_matrix[1],
-                self._shared_feature_matrix[2],
-                self._shared_feature_matrix[3]
-            )
-            return processed_matrix
 
 # Export class under universal tracking name alias
 MultiChannelSensorAdapter = SensorAdapter
