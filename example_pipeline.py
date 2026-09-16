@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """End-to-End Operational Pipeline Tutorial.
 
-Demonstrates the core adoption pathway by connecting the ingestion system, 
-rolling sensor arrays, 1D-CNN spatial encoder inference, and the statistical 
-latent space monitor in a unified execution loop.
+Demonstrates the primary integration pathway by connecting raw serial line parsing, 
+circular buffering, 1D-CNN spatial encoding, and statistical anomaly tracking.
 """
-import time
 import torch
 import numpy as np
-from serial_daemon import HardwareSerialDaemon
 from sensor_adapter import SensorAdapter
 from model_architecture import AsymmetricSpatialEncoder
 from latent_monitor import VivicLatentMonitor
@@ -16,43 +13,46 @@ from latent_monitor import VivicLatentMonitor
 
 def run_integrated_pipeline_tutorial():
     print("======================================================================")
-    print("ENVIRONMENT ENGINE: END-TO-END TELEMETRY AND ANALYSIS PIPELINE")
+    print("TELEMETRY INGESTION AND DEEP LEARNING ANALYSIS PIPELINE")
     print("======================================================================\n")
 
     # 1. Initialize Spatial Neural Network Structure
-    print("[STEP 1/4] Initializing deep learning 1D-CNN Spatial Encoder...")
+    print("[STEP 1/4] Allocating 1D-CNN Spatial Encoder...")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = AsymmetricSpatialEncoder(latent_dim=128).to(device)
     model.eval()  # Switch network layers cleanly to evaluation/inference mode
     print(f" -> Execution device: {device}")
-    print(" -> Model structures successfully allocated.\n")
+    print(" -> Model memory successfully allocated.\n")
 
     # 2. Initialize the Rolling Buffer Sensor Adapter Layer
-    print("[STEP 2/4] Provisioning thread-safe Sensor Adapter matrices...")
+    print("[STEP 2/4] Initializing thread-safe Sensor Adapter...")
     # Instantiate with a window size of 1280 samples matching our operational footprint
     adapter = SensorAdapter(port="MOCK_TUTORIAL_PORT", window_size=1280)
-    print(f" -> Circular buffer pre-allocated for 4 channels (window_size={adapter.window_size}).\n")
+    print(f" -> Circular buffer allocated for 4 channels (window_size={adapter.window_size}).\n")
 
     # 3. Initialize the Statistical Anomaly Monitor
-    print("[STEP 3/4] Instantiating 3-Sigma Latent Space Monitor...")
+    print("[STEP 3/4] Instantiating Latent Space Variance Monitor...")
     monitor = VivicLatentMonitor(latent_dim=128, history_len=20)
-    print(" -> Moving variance registers initialized.\n")
+    print(" -> Statistical tracking registers initialized.\n")
 
-    # 4. Simulate Live High-Frequency Ingestion Processing Loops
-    print("[STEP 4/4] Launching baseline telemetry ingestion pass...")
-
-    # DATA CONTRACT ALIGNMENT: Prime our pre-allocated circular matrix layout 
-    # natively with a series of clean 4-tuples matching the production callback API
-    print(" -> Saturating rolling memory windows with warm-up baseline metrics...")
+    # 4. Simulate Live High-Frequency Ingestion Processing Loops via Public Endpoints
+    print("[STEP 4/4] Running baseline telemetry ingestion loop...")
+    print(" -> Saturating circular buffer windows with simulated baseline frames...")
+    
     rng = np.random.default_rng(seed=42)
     for _ in range(1280):
-        mock_tuple = (
-            float(rng.normal(0.0, 0.1)),  # ch1
-            float(rng.normal(0.0, 0.1)),  # ch2
-            float(rng.normal(0.0, 0.1)),  # ch3
-            float(rng.normal(0.0, 0.1))   # ch4
-        )
-        adapter._packet_ingestion_callback(mock_tuple)
+        # Generate random baseline values
+        v1 = float(rng.normal(0.0, 0.1))
+        v2 = float(rng.normal(0.0, 0.1))
+        v3 = float(rng.normal(0.0, 0.1))
+        v4 = float(rng.normal(0.0, 0.1))
+        
+        # Build raw string payload matching the exact output layout of the ESP32-S3 C++ firmware
+        mock_raw_frame = f"V1:{v1:.4f},V2:{v2:.4f},V3:{v3:.4f},V4:{v4:.4f}\n"
+        
+        # Public data contract method handles string decoding, parsing, and circular buffering
+        adapter.process_incoming_packet(mock_raw_frame)
+        
     print(" -> Ingestion memory matrices fully saturated.")
 
     # 5. Extract snapshot matrices, map to PyTorch, and evaluate anomalies
