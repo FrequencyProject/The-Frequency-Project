@@ -1,9 +1,10 @@
+cat << 'EOF' > example_pipeline.py
 #!/usr/bin/env python3
 """End-to-End Operational Pipeline Tutorial.
 
-Provides outside developers with an explicit adoption pathway by connecting
-the ingestion daemon, rolling sensor buffers, 1D-CNN spatial encoder inference,
-and statistical 3-Sigma latent monitor in a unified execution loop.
+Demonstrates the core adoption pathway by connecting the ingestion system, 
+rolling sensor arrays, 1D-CNN spatial encoder inference, and the statistical 
+latent space monitor in a unified execution loop.
 """
 import time
 import torch
@@ -16,52 +17,49 @@ from latent_monitor import VivicLatentMonitor
 
 def run_integrated_pipeline_tutorial():
     print("======================================================================")
-    print("VIVIC AI: END-TO-END TELEMETRY AND ANALYSIS PIPELINE TUTORIAL")
+    print("ENVIRONMENT ENGINE: END-TO-END TELEMETRY AND ANALYSIS PIPELINE")
     print("======================================================================\n")
 
-    # 1. Initialize the Core Spatial Neural Network Structure
+    # 1. Initialize Spatial Neural Network Structure
     print("[STEP 1/4] Initializing deep learning 1D-CNN Spatial Encoder...")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = AsymmetricSpatialEncoder(latent_dim=128).to(device)
     model.eval()  # Switch network layers cleanly to evaluation/inference mode
-    print(f" -> Execution device locked: {device}")
-    print(" -> Model dimensions successfully allocated.\n")
+    print(f" -> Execution device: {device}")
+    print(" -> Model structures successfully allocated.\n")
 
     # 2. Initialize the Rolling Buffer Sensor Adapter Layer
-    print("[STEP 2/4] Provisioning thread-safe Sensor Adapter buffers...")
-    # Instantiate with a window size of 1280 samples matching our production footprint
+    print("[STEP 2/4] Provisioning thread-safe Sensor Adapter matrices...")
+    # Instantiate with a window size of 1280 samples matching our operational footprint
     adapter = SensorAdapter(port="MOCK_TUTORIAL_PORT", window_size=1280)
-    print(f" -> Rolling queues allocated for 4 isolated tracks (size={adapter.window_size}).\n")
+    print(f" -> Circular buffer pre-allocated for 4 channels (window_size={adapter.window_size}).\n")
 
     # 3. Initialize the Statistical Anomaly Monitor
     print("[STEP 3/4] Instantiating 3-Sigma Latent Space Monitor...")
     monitor = VivicLatentMonitor(latent_dim=128, history_len=20)
-    print(" -> Exponential moving variance registers primed.\n")
+    print(" -> Moving variance registers initialized.\n")
 
     # 4. Simulate Live High-Frequency Ingestion Processing Loops
-    print("[STEP 4/4] Launching live telemetry processing bombardment pass...")
+    print("[STEP 4/4] Launching baseline telemetry ingestion pass...")
 
-    # Prime our rolling ring buffer queues manually with nominal baseline waveforms 
-    # to satisfy the model's un-saturated 1280 sequence footprint assertion
+    # DATA CONTRACT ALIGNMENT: Prime our pre-allocated circular matrix layout 
+    # natively with a series of clean 4-tuples matching the production callback API
     print(" -> Saturating rolling memory windows with warm-up baseline metrics...")
     rng = np.random.default_rng(seed=42)
     for _ in range(1280):
-        mock_packet = {
-            "status": "VALID",
-            "data": {
-                "ch1": float(rng.normal(0.0, 0.1)),
-                "ch2": float(rng.normal(0.0, 0.1)),
-                "ch3": float(rng.normal(0.0, 0.1)),
-                "ch4": float(rng.normal(0.0, 0.1))
-            }
-        }
-        adapter._packet_ingestion_callback(mock_packet)
+        mock_tuple = (
+            float(rng.normal(0.0, 0.1)),  # ch1
+            float(rng.normal(0.0, 0.1)),  # ch2
+            float(rng.normal(0.0, 0.1)),  # ch3
+            float(rng.normal(0.0, 0.1))   # ch4
+        )
+        adapter._packet_ingestion_callback(mock_tuple)
     print(" -> Ingestion memory matrices fully saturated.")
 
     # 5. Extract snapshot matrices, map to PyTorch, and evaluate anomalies
     print("\n -> Triggering end-to-end tensor inference step...")
     with torch.no_grad():
-        # A. Pull the thread-safe, normalized Z-score feature snapshot out of the adapter
+        # A. Pull the thread-safe, normalized Z-score feature snapshot out of the adapter circular view
         compiled_features = adapter.get_ai_features()  # Returns shape (4, 1280)
         
         # B. Convert the arrays cleanly into a device-native single-precision tensor profile
@@ -74,8 +72,6 @@ def run_integrated_pipeline_tutorial():
         unwrapped_vector = latent_output.squeeze(0).cpu().numpy()
         
         # E. Process through the 3-Sigma alert perimeter tracking logic
-        # HARDENING REMEDIATION: Capture the output as a generic result container 
-        # to cleanly display the complete tracking state without type-casting failures.
         pipeline_result = monitor.evaluate_vector(unwrapped_vector)
         
         print("\n======================================================================")
@@ -89,3 +85,4 @@ def run_integrated_pipeline_tutorial():
 
 if __name__ == "__main__":
     run_integrated_pipeline_tutorial()
+EOF
