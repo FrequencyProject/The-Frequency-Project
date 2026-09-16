@@ -1,4 +1,3 @@
-cat << 'EOF' > example_pipeline.py
 #!/usr/bin/env python3
 """End-to-End Operational Pipeline Tutorial.
 
@@ -85,4 +84,3 @@ def run_integrated_pipeline_tutorial():
 
 if __name__ == "__main__":
     run_integrated_pipeline_tutorial()
-EOF
