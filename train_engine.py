@@ -2,7 +2,7 @@
 """Phase 4: Integrated Neural Network Optimization and Backpropagation Engine.
 
 Coordinates raw tensor mappings, optimization updates, and forward-backward training steps.
-[PROTECTED BY AN INTEGRATED INFRASTRUCTURE ENCLOSURE MANDATE]
+Decoupled architectural engine supporting strict dependency injection contracts.
 """
 import torch
 import torch.nn as nn
@@ -12,17 +12,48 @@ from model_architecture import AsymmetricSpatialEncoder
 from resonance_loss import ResonanceCoherenceLoss
 from sensor_adapter import MultiChannelSensorAdapter
 
+
+class TelemetryPreprocessor:
+    """Handles environmental baseline noise calibration corrections and input sanitization."""
+
+    @staticmethod
+    def calibrate_and_verify(features: np.ndarray, ambient_means: np.ndarray = None, ambient_stds: np.ndarray = None) -> np.ndarray:
+        """Applies dynamic baseline corrections and tests array elements for stability."""
+        if ambient_means is None:
+            ambient_means = np.zeros(4, dtype=np.float32)
+        if ambient_stds is None:
+            ambient_stds = np.ones(4, dtype=np.float32)
+
+        # Apply environmental baseline noise calibration adjustments natively on the input matrix
+        corrected_features = features.copy()
+        for ch in range(4):
+            if ambient_stds[ch] > 1e-6:
+                corrected_features[ch] = (corrected_features[ch] - ambient_means[ch]) / ambient_stds[ch]
+
+        if not np.all(np.isfinite(corrected_features)):
+            print("[SECURITY QUARANTINE] Non-finite values detected in ingestion matrix. Squashing frame.")
+            return None
+
+        return corrected_features
+
+
 class VivicTrainingEngine:
-    """Manages weights, gradient tracking states, and micro-batch training steps."""
+    """Manages weights, gradient tracking states, and micro-batch training steps via dependency injection."""
 
-    def __init__(self, port: str = "MOCK"):
+    def __init__(self, model: nn.Module = None, criterion: nn.Module = None, optimizer: optim.Optimizer = None, adapter: MultiChannelSensorAdapter = None):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = AsymmetricSpatialEncoder().to(self.device)
-        self.criterion = ResonanceCoherenceLoss()
-        self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-3, weight_decay=1e-4)
-
-        # Internal reference adapter tracking input ingestion
-        self.adapter = MultiChannelSensorAdapter(port=port)
+        
+        # Dependency Injection Layer with smart production fallbacks
+        self.model = model.to(self.device) if model is not None else AsymmetricSpatialEncoder().to(self.device)
+        self.criterion = criterion if criterion is not None else ResonanceCoherenceLoss()
+        
+        if optimizer is not None:
+            self.optimizer = optimizer
+        else:
+            self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-3, weight_decay=1e-4)
+            
+        self.adapter = adapter if adapter is not None else MultiChannelSensorAdapter(port="MOCK")
+        self.preprocessor = TelemetryPreprocessor()
         self.warmed_up = False
 
     def train_step(self, ambient_means: np.ndarray = None, ambient_stds: np.ndarray = None) -> tuple:
@@ -38,62 +69,43 @@ class VivicTrainingEngine:
         self.model.train()
 
         # 1. Fetch raw multi-channel feature frames from the ingestion layer
-        features = self.adapter.get_ai_features()
+        raw_features = self.adapter.get_ai_features()
 
         # Verify buffer warm-up behavior safely
-        if np.all(features == 0.0):
+        if np.all(raw_features == 0.0):
+            return -1.0, None
+
+        # 2. Delegate environmental baseline calibration and validation checks to the preprocessor class
+        features = self.preprocessor.calibrate_and_verify(raw_features, ambient_means, ambient_stds)
+        if features is None:
             return -1.0, None
 
         self.warmed_up = True
 
-        # 2. BACKWARDS-COMPATIBILITY GUARD: Fallback to neutral arrays if arguments are omitted in tests
-        if ambient_means is None:
-            ambient_means = np.zeros(4, dtype=np.float32)
-        if ambient_stds is None:
-            ambient_stds = np.ones(4, dtype=np.float32)
-
-        # 3. Apply environmental baseline noise calibration adjustments natively on the input matrix
-        for ch in range(4):
-            if ambient_stds[ch] > 1e-6:
-                features[ch] = (features[ch] - ambient_means[ch]) / ambient_stds[ch]
-
-        # 4. P1 FINITE-VALUE FIREWALL: Instant check for NaNs or non-finite elements
-        if not np.all(np.isfinite(features)):
-            print("[SECURITY QUARANTINE] Non-finite values detected in ingestion matrix. Squashing frame.")
-            return -1.0, None
-
-        # 5. HARDENING REMEDIATION: Instantiates a clean, device-native, single-precision 
-        # execution tensor in a single operation. This completely eliminates shared-buffer 
-        # striding contention and memory duplication lag on the training hot-paths.
+        # 3. Instantiate device-native tensor block cleanly
         torch_tensor = torch.tensor(features, dtype=torch.float32, device=self.device).unsqueeze(0)
-
         if not torch.all(torch.isfinite(torch_tensor)):
             return -1.0, None
 
-        # 6. Clear accumulated gradient registers before forward pass
+        # 4. Clear accumulated gradient registers before forward pass
         self.optimizer.zero_grad()
 
-        # 7. Execute forward pass—generating the latent vector representation
+        # 5. Execute forward pass—generating the latent vector representation
         latent_vector = self.model(torch_tensor)
 
-        # 8. Evaluate mathematical loss using resonance coherence channels
+        # 6. Evaluate mathematical loss using resonance coherence channels
         loss = self.criterion(latent_vector)
 
-        # 9. Trigger backpropagation pass to populate raw gradients
+        # 7. Trigger backpropagation pass to populate raw gradients
         loss.backward()
 
-        # HARDENING REMEDIATION: Correct Gradient Clipping Sequence.
-        # Gradients must be strictly clipped right after backpropagation but before
-        # the optimizer updates parameter weights, ensuring valid historical momentum calculations.
+        # 8. Gradient norm clipping boundary check
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
 
-        # 10. Execute the optimizer step safely
+        # 9. Execute the optimizer step safely
         self.optimizer.step()
 
-        # HARDENING REMEDIATION: Graph Detachment Isolation.
-        # Detach the output tensor from the active computation graph to safely discharge 
-        # graph node accumulation memory leaks from long-duration loops.
+        # 10. Graph detachment isolation protecting context loops against leaks
         safe_latent_vector = latent_vector.detach()
 
-        # P1 OPTIMIZATION: Return the loss along with the isolated latent vector
         return loss.item(), safe_latent_vector
