@@ -19,7 +19,7 @@ classifiers = [
 dependencies = [
     "numpy>=1.26.4",
     "scipy>=1.12.0",
-    "torch>=2.2.1",
+    "torch==2.14.0",
     "tpm2-pytss>=2.3.0,<=3.0.0",
     "pyserial>=3.5",
     "cryptography==50.0.0"
@@ -28,15 +28,12 @@ dependencies = [
 [tool.setuptools]
 py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "spectral_processing", "model_architecture", "resonance_loss", "train_engine", "latent_monitor", "prototype_simulation", "stress_harness", "config","validate_phi_hypothesis"]
 
-# HARDENING REMEDIATION: Explicitly bind the test tracking suite folder to the 
-# setuptools package directory discovery map to guarantee absolute remote verifiability.
 [tool.setuptools.packages.find]
 include = ["tests*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-# Strict single-core thread-parallelization overrides to prevent OS core thrashing
 env = [
     "OMP_NUM_THREADS=1",
     "MKL_NUM_THREADS=1",
