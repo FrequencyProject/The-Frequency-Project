@@ -35,8 +35,8 @@ jobs:
       run: |
         # Stop build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Stylistic and complexity warnings processed as warning outputs
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        # HARDENING REMEDIATION: Catch programmatic bugs (F401, F841) while ignoring pure spacing noise
+        flake8 . --count --max-complexity=10 --ignore=W291,W293,E501,E261,E302,E305 --statistics --exclude=venv,.git,__pycache__,build,dist
 
     - name: "HARDENING REMEDIATION: Automated Dependency Vulnerability Scanning (pip-audit)"
       run: pip-audit -r requirements.txt
@@ -55,3 +55,7 @@ jobs:
 
     - name: Run Core PyTest Matrix Suite
       run: python -m pytest
+
+    - name: Validate Production Container Image Build Architecture
+      run: |
+        docker build -t the-frequency-project:test .

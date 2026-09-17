@@ -5,7 +5,6 @@ Leverages TPM 2.0 physical crypto-chips via tpm2-pytss to securely generate
 and verify asymmetric ECDSA cryptographic signatures directly at the edge.
 """
 import os
-import sys
 import logging
 from typing import Tuple, Union
 import numpy as np

@@ -13,7 +13,7 @@ from reconstruct_attractor import simulate_lorenz_chaos, build_takens_embedding
 
 def generate_chaotic_stress_vectors(num_cycles: int = 50):
     """Generates pairs of nominal Fibonacci wavefronts and chaotic Lorenz stress matrices."""
-    rng = np.random.default_rng(seed=42)
+    # np.random.default_rng(seed=42)
     phi = (1.0 + 5.0 ** 0.5) / 2.0
     
     nominal_set = []
