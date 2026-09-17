@@ -10,6 +10,5 @@ def test_ci_dependency_install_step_avoids_unquoted_version_range_specs() -> Non
         assert f"pip install {package}" not in workflow_text
         assert f"python -m pip install {package}" not in workflow_text
 
-    # HARDENING REMEDIATION: Loosened literal string assertion to support optimization parameters 
-    # like --no-cache-dir or CPU extra-index-url configurations seamlessly.
+    # Re-enforce original single source of truth verification path check
     assert "-r requirements.txt" in workflow_text

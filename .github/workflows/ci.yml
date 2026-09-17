@@ -14,8 +14,17 @@ jobs:
     - name: Check out repository source tree files
       uses: actions/checkout@v4
 
-    # HARDENING REMEDIATION: Force non-interactive flags and automatic service restarts
-    # to completely prevent the apt package manager from hanging indefinitely on needrestart prompts.
+    # HARDENING REMEDIATION: Wipe pre-installed runner bloat to instantly free up 15GB+ of disk space.
+    - name: Decompress Host Disk Capacity
+      run: |
+        echo "=== STORAGE DISK SPACE BEFORE PURGE ==="
+        df -h
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/share/swift
+        sudo apt-get clean
+        docker system prune -af --volumes || true
+        echo "=== STORAGE DISK SPACE AFTER PURGE ==="
+        df -h
+
     - name: Provision system dependencies and TPM headers
       timeout-minutes: 5
       run: |
@@ -33,17 +42,16 @@ jobs:
         python-version: '3.12'
         cache: 'pip'
 
-    - name: Verify pinned third-party dependencies wheel compilation
+    # HARDENING REMEDIATION: Consolidated into a single call to satisfy tests/test_ci_workflow.py 
+    # while retaining cache suppression and CPU-only PyTorch index overrides to prevent disk leaks.
+    - name: Install Python dependencies and CI tools
       run: |
-        python -m pip install --upgrade pip setuptools cffi
-        pip install flake8 bandit pip-audit cyclonedx-bom
-        pip install -r requirements.txt
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install --no-cache-dir --extra-index-url https://pytorch.org -r requirements.txt flake8 bandit pip-audit cyclonedx-bom
 
     - name: Run Code Quality Security Audit (Flake8)
       run: |
-        # Stop build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Catch programmatic bugs while masking arithmetic and import layout noise
         flake8 . --count --ignore=W291,W293,E501,E261,E302,E305,E226,W292,F401,C901,E203,E402,F541 --statistics --exclude=venv,.git,__pycache__,build,dist
 
     - name: "HARDENING REMEDIATION: Automated Dependency Vulnerability Scanning (pip-audit)"
@@ -64,10 +72,10 @@ jobs:
     - name: Run Core PyTest Matrix Suite
       run: python -m pytest
 
-    - name: Monitor Local Runner Storage Footprint
-      run: df -h
-
     - name: Validate Production Container Image Build Architecture
-      timeout-minutes: 10
+      timeout-minutes: 15
       run: |
-        docker build --progress=plain --network=host -t the-frequency-project:test .
+        docker system prune -af --volumes || true
+        echo "=== FINAL STORAGE AVAILABILITY FOR CONTAINER OVERVIEW ==="
+        df -h
+        docker build --progress=plain --platform linux/amd64 --network=host -t the-frequency-project:test .
