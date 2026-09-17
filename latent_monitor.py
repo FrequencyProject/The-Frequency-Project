@@ -16,7 +16,7 @@ logger = logging.getLogger("VivicLatentMonitor")
 class VivicLatentMonitor:
     def __init__(self, history_window: int = 100, alpha: float = 0.2, ambient_floor: float = 1e-6, *args, **kwargs):
         """Initializes the real-time anomaly tracker with a zero-trust EMA engine."""
-        self.history_window = history_window
+        self.history_window = kwargs.get("history_len", history_window)
         self.alpha = alpha                 # EMA smoothing factor for instantaneous tracking
         self.ambient_floor = ambient_floor # Environmental noise baseline compensation floor
         

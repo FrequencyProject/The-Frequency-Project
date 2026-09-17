@@ -76,7 +76,7 @@ class VivicTrainingEngine:
         self.model.train()
 
         # 1. Fetch raw multi-channel feature frames from the ingestion layer
-        raw_features = self.adapter.get_ai_features()
+        raw_features = self.adapter.get_ai_features().copy()
 
         # Verify buffer warm-up behavior safely
         if np.all(raw_features == 0.0):

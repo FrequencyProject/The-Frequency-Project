@@ -131,7 +131,7 @@ class SensorAdapter:
             self.frames_received += 1
             self._buffer_manager.push(data_tuple)
 
-    def process_incoming_packet(self, raw_input: str or bytes):
+    def process_incoming_packet(self, raw_input: str | bytes | None):
         """Strict Data Contract Endpoint decoding incoming raw network string packets."""
         if raw_input is None:
             return
