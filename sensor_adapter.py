@@ -163,6 +163,14 @@ class SensorAdapter:
     def stop_acquisition(self):
         self.daemon.stop()
 
+    def get_raw_features(self) -> np.ndarray:
+        """Extracts chronological window metrics without routing them through the normalization compiler."""
+        with self.lock:
+            has_data = self._buffer_manager.get_window_view(self._shared_feature_matrix)
+            if not has_data:
+                return np.zeros((4, self.window_size), dtype=np.float32)
+            return self._shared_feature_matrix.copy()
+
     def get_ai_features(self) -> np.ndarray:
         """Extracts chronological window metrics and routes them through the compiler module."""
         with self.lock:

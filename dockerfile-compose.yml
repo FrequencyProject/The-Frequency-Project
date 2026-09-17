@@ -28,7 +28,7 @@ services:
     depends_on:
       - swtpm
     environment:
-      - TPM2TOOLS_TCTI=mssim:port=2321
+      - TPM2TOOLS_TCTI=mssim:host=swtpm,port=2321
       - OMP_NUM_THREADS=1
       - MKL_NUM_THREADS=1
       - OPENBLAS_NUM_THREADS=1
