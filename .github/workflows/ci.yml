@@ -35,7 +35,7 @@ jobs:
       run: |
         # Stop build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # HARDENING REMEDIATION: Catch runtime bugs while masking arithmetic and import layout noise
+        # Catch programmatic bugs while masking arithmetic and import layout noise
         flake8 . --count --ignore=W291,W293,E501,E261,E302,E305,E226,W292,F401,C901,E203,E402,F541 --statistics --exclude=venv,.git,__pycache__,build,dist
 
     - name: "HARDENING REMEDIATION: Automated Dependency Vulnerability Scanning (pip-audit)"
@@ -56,6 +56,12 @@ jobs:
     - name: Run Core PyTest Matrix Suite
       run: python -m pytest
 
+    # HARDENING REMEDIATION: Clear out storage visibility indicators to track resource pressure
+    - name: Monitor Local Runner Storage Footprint
+      run: df -h
+
+    # HARDENING REMEDIATION: Force native compilation under strict execution budgets to bypass QEMU stalls
     - name: Validate Production Container Image Build Architecture
+      timeout-minutes: 10
       run: |
-        docker build -t the-frequency-project:test .
+        docker build --progress=plain --network=host -t the-frequency-project:test .

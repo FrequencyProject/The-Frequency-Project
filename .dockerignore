@@ -1,19 +1,12 @@
-# Exclude git metadata and version tracking nodes
-.git
-.gitignore
-
-# Exclude local python execution caches and build artifacts
+# Exclude raw development files from production container contexts
+.git/
+.github/
+venv/
+tests/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-the_frequency_project.egg-info/
-build/
-dist/
-wheels/
-venv/
 
-# Exclude raw testing modules and configuration manuals from production layers
-tests/
+# HARDENING REMEDIATION: Whitelist README.md so python packaging utilities 
+# can access it during wheel compilation loops in the builder stage.
 *.md
+!README.md
