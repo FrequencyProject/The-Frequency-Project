@@ -22,7 +22,7 @@ class VivicLatentMonitor:
         
         # HARDENING REMEDIATION: Swap native Python list for an optimized collections.deque
         # to guarantee safe, O(1) contiguous memory mutations on the high-speed data path.
-        self.delta_history = collections.deque(maxlen=history_window)
+        self.delta_history = collections.deque(maxlen=self.history_window)
         self.lock = threading.Lock()       # HARDENING: Guarantees atomic updates across threads
         
         # Exponential Moving Average state registers to eliminate cold-start bias

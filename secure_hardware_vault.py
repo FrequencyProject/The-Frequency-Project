@@ -78,7 +78,7 @@ class SecureHardwareVault:
         if policy_session_token == "FORCE_SPI_BUS_LAG":
             raise TPMCommunicationError("TPM Hardware Fault: Critical SPI bus communication loss.")
             
-        return b"VERIFIED_HARDWARE_SEED_ROOT_KEY"
+        raise NotImplementedError("TPM 2.0 hardware unseal path not implemented in current mock/scaffold layer.")
 
 # ==============================================================================
 # 🔒 BACKWARD-COMPATIBILITY ALIAS MATRIX
