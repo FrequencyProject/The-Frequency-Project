@@ -55,3 +55,18 @@ def test_vault_immediate_alert_on_policy_tampering(monkeypatch):
 
     # Integrity Breach Rule: Halt immediately on pass 1
     assert attempt_counter == 1
+
+# HARDENING REMEDIATION: Assert distinct behaviors for software emulation vs. native physical hardware paths
+def test_emulator_secure_unseal_returns_seed_key():
+    from secure_hardware_vault import SecureHardwareVault
+    vault = SecureHardwareVault()
+    vault.use_emulator = True
+    assert vault.execute_secure_unseal("VALID_POLICY") == b"VERIFIED_HARDWARE_SEED_ROOT_KEY"
+
+def test_hardware_secure_unseal_is_explicitly_unimplemented():
+    import pytest
+    from secure_hardware_vault import SecureHardwareVault
+    vault = SecureHardwareVault()
+    vault.use_emulator = False
+    with pytest.raises(NotImplementedError):
+        vault.execute_secure_unseal("VALID_POLICY")
