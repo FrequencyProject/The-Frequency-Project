@@ -14,10 +14,18 @@ jobs:
     - name: Check out repository source tree files
       uses: actions/checkout@v4
 
+    # HARDENING REMEDIATION: Force non-interactive flags and automatic service restarts
+    # to completely prevent the apt package manager from hanging indefinitely on needrestart prompts.
     - name: Provision system dependencies and TPM headers
+      timeout-minutes: 5
       run: |
+        export DEBIAN_FRONTEND=noninteractive
+        export NEEDRESTART_MODE=a
         sudo apt-get update
-        sudo apt-get install -y libtss2-dev build-essential tpm2-tools
+        sudo apt-get install -y --no-install-recommends \
+          -o Dpkg::Options::="--force-confdef" \
+          -o Dpkg::Options::="--force-confold" \
+          libtss2-dev build-essential tpm2-tools
 
     - name: Configure Python 3.12 Runtime
       uses: actions/setup-python@v5
@@ -56,11 +64,9 @@ jobs:
     - name: Run Core PyTest Matrix Suite
       run: python -m pytest
 
-    # HARDENING REMEDIATION: Clear out storage visibility indicators to track resource pressure
     - name: Monitor Local Runner Storage Footprint
       run: df -h
 
-    # HARDENING REMEDIATION: Force native compilation under strict execution budgets to bypass QEMU stalls
     - name: Validate Production Container Image Build Architecture
       timeout-minutes: 10
       run: |
