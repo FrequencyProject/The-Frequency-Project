@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
     libtss2-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
@@ -40,6 +41,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libtss2-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy pre-compiled wheels from the builder

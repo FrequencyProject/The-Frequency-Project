@@ -116,8 +116,7 @@ class UnifiedVivicSession:
 
     def __init__(self, port: str = "MOCK"):
         self.adapter = MultiChannelSensorAdapter(port=port)
-        self.engine = VivicTrainingEngine(port=port)
-        self.engine.adapter = self.adapter
+        self.engine = VivicTrainingEngine(port=port, adapter=self.adapter)
         
         self.is_active = False
         self.monitor = VivicLatentMonitor(latent_dim=128)
@@ -191,7 +190,7 @@ class UnifiedVivicSession:
 
             with self.metrics_lock:
                 self.total_cycles_run += 1
-                if is_anomaly:
+                if isinstance(is_anomaly, dict) and is_anomaly.get("is_anomaly", False):
                     self.anomalies_found += 1
 
             time.sleep(0.016)

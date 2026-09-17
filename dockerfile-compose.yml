@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Stage A: The Hardware Security Module Emulator Daemon
   swtpm:
-    image: stefanberger/swtpm:latest
+    image: stefanberger/swtpm:v0.8.1
     container_name: vivic-tpm-emulator
     command: >
       swtpm socket --tpmstate dir=/tmp/mytpm 
@@ -14,7 +14,7 @@ services:
     volumes:
       - vivic-tpm-state:/tmp/mytpm
     ports:
-      - "2321:2321"
+      - "127.0.0.1:2321:2321"
     restart: unless-stopped
     networks:
       - vivic-isolated-net
