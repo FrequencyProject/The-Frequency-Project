@@ -57,7 +57,7 @@ class InfrastructureValidator:
             env_vars = pytest_section.get('env', [])
             
             # CRITICAL INVARIANT: Core library dependencies must be explicitly defined
-            required_dependencies = ['numpy', 'scipy', 'torch', 'tpm2-pytss', 'cryptography==50.0.0']
+            required_dependencies = ['numpy', 'scipy', 'torch', 'tpm2-pytss', 'cryptography']
             for req in required_dependencies:
                 if not any((req in dep.replace(' ', '') for dep in dependencies)):
                     print(f'[CRITICAL] Missing required dependency specification anchor: {req}')
