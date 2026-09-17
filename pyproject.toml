@@ -34,6 +34,9 @@ include = ["tests*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+# HARDENING REMEDIATION: Force pytest to immediately ignore the heavy virtual environment directory
+# to completely prevent test collection recursion stalls and infinite parsing loops.
+norecursedirs = ["venv", ".git", "__pycache__", "build", "dist"]
 env = [
     "OMP_NUM_THREADS=1",
     "MKL_NUM_THREADS=1",
