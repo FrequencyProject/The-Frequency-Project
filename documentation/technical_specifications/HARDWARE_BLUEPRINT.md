@@ -41,7 +41,7 @@ graph LR
 
 | Physical Pin | Signal Identifier | Hardware Subsystem Connection | Electrical Operational Constraints |
 | :--- | :--- | :--- | :--- |
-| **GPIO Pin 5** | `ADC_CS_PIN` | Microcontroller Master Pin $\rightarrow$ ADC Chip Select | Output Active-Low. Toggled strictly within software loops. |
+| **GPIO Pin 10** | `ADC_CS_PIN` | Microcontroller Master Pin $\rightarrow$ ADC Chip Select | Output Active-Low. Toggled strictly within software loops. |
 | **GPIO Pin 4** | `ADC_DRDY_PIN` | ADC Data Ready $\rightarrow$ Microcontroller Input | Input Pull-Up. Monitored via high-impedance clock gates. |
 | **SCK Bus** | `SPI_SCK` | Hardware Serial Clock Bus | Output Uniform Pulse. Locked to Mode 1 (CPOL=0, CPHA=1). |
 | **MOSI Lane** | `SPI_MOSI` | Master Out Slave In Configuration Lane | Output Command Word. Carries register bytes. |
