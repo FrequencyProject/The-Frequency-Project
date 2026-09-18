@@ -37,7 +37,7 @@ def test_validator_detects_mismatched_cs_pin():
         return mock_open(read_data=mocked_corrupt_firmware).return_value
 
     with patch("os.path.exists", return_value=True), \
-         patch("builtins.open", side_effect=mock_open_multiple):
+            patch("builtins.open", side_effect=mock_open_multiple):
         success = validator.verify_repository_integrity()
 
     assert success is False
@@ -63,7 +63,7 @@ def test_validator_detects_mismatched_drdy_pin():
         return mock_open(read_data=mocked_corrupt_firmware).return_value
 
     with patch("os.path.exists", return_value=True), \
-         patch("builtins.open", side_effect=mock_open_multiple):
+            patch("builtins.open", side_effect=mock_open_multiple):
         success = validator.verify_repository_integrity()
 
     assert success is False
