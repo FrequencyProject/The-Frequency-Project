@@ -81,7 +81,7 @@ class MetricsHttpExporter(threading.Thread):
                         body = (
                             f"# HELP vivic_total_packets_parsed Total telemetry packets processed\n"
                             f"# TYPE vivic_total_packets_parsed counter\n"
-                            f"vivic_total_packets_parsed {self.adapter.daemon.frames_parsed if hasattr(self, "adapter") and self.adapter.daemon else self.session.total_cycles_run}\n"
+                            f"vivic_total_packets_parsed {self.session.adapter.daemon.frames_parsed if (hasattr(self.session, 'adapter') and self.session.adapter and self.session.adapter.daemon) else self.session.total_cycles_run}\n"
                             f"# HELP vivic_anomalies_detected Total 3-Sigma structural anomalies captured\n"
                             f"# TYPE vivic_anomalies_detected counter\n"
                             f"vivic_anomalies_detected {self.session.anomalies_found}\n"
