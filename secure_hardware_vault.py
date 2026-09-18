@@ -74,11 +74,19 @@ class SecureHardwareVault:
         """Attempts an automated unseal execution pass with granular fault isolation rules."""
         if policy_session_token == "TAMPER_BREACH_DETECTED" or not self.pcr_locked:
             raise TPMSecurityBreachError("TPM Security Breach: PCR-7 verification failed or session compromised.")
-            
+
         if policy_session_token == "FORCE_SPI_BUS_LAG":
             raise TPMCommunicationError("TPM Hardware Fault: Critical SPI bus communication loss.")
+
+        # HARDENING REMEDIATION: Differentiate mock simulation boundaries from production silicon execution
+        if self.tcti_profile == "none":
+            return b"MOCK_SCAFFOLD_ENV_TESTING_SEED_KEY"
+
+        # Real Hardware Flow
+        if not self.authenticated:
+            raise TPMSecurityBreachError("TPM Access Blocked: Vault session must be authenticated before unseal execution.")
             
-        return b"VERIFIED_HARDWARE_SEED_ROOT_KEY"
+        raise NotImplementedError("Production hardware-protected object unsealing and PCR policy authorization loops are currently in target development phases.")
 
 # ==============================================================================
 # 🔒 BACKWARD-COMPATIBILITY ALIAS MATRIX

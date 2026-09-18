@@ -81,6 +81,8 @@ class HardwareTelemetrySigner:
             validation = constants.TPMT_TK_HASHCHECK(tag=constants.TPM2_ST_HASHCHECK, hierarchy=constants.TPM2_RH_OWNER)
 
             # Execute low-level SPI cryptographic signing pass inside isolated hardware registers
+            if self._key_handle is None:
+                raise RuntimeError("TPM Hardware Execution Aborted: Primary key context handle is unitialized.")
             signature_token, _ = self._esapi.sign(self._key_handle, digest, in_scheme, validation)
             
             # HARDENING REMEDIATION: Safely serialize structured TPMT_SIGNATURE tokens to flat binary vectors
