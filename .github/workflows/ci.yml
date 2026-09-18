@@ -11,6 +11,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # HARDENING REMEDIATION: Expand runner storage array to prevent Docker build space exhaustion
+    name: Optimize runner disk space allocation
+    run: |
+      sudo rm -rf /usr/share/dotnet
+      sudo rm -rf /usr/local/lib/android
+      sudo rm -rf /opt/ghc
+      sudo rm -rf /opt/hostedtoolcache/CodeQL
+      docker image prune --all --force
+
     - name: Check out repository source tree files
       uses: actions/checkout@v4
 
@@ -35,8 +44,8 @@ jobs:
       run: |
         # Stop build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # HARDENING REMEDIATION: Enforce explicit style rules by removing --exit-zero
-        flake8 . --count --exclude=venv,./venv,env,.env --max-complexity=10 --max-line-length=127 --statistics
+        # Enforce explicit style rules via root configuration contract
+        flake8 . --count --statistics
 
     - name: "HARDENING REMEDIATION: Automated Dependency Vulnerability Scanning (pip-audit)"
       run: pip-audit -r requirements.txt
