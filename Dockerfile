@@ -58,4 +58,5 @@ RUN mkdir -p /app/scratch && \
 EXPOSE 8000
 USER vivic_operator
 
-ENTRYPOINT ["sh", "-c", "python validate_config.py && python run_session.py"]
+COPY --chmod=755 entrypoint.sh /app/
+ENTRYPOINT ["/app/entrypoint.sh"]
