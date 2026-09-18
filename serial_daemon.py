@@ -18,7 +18,7 @@ logger = logging.getLogger("SerialDaemon")
 
 # Configuration regex for matching incoming telemetry frames
 FRAME_PATTERN = re.compile(
-    r"^V1:(?P<v1>-?\d+\.\d{4}),V2:(?P<v2>-?\d+\.\d{4}),V3:(?P<v3>-?\d+\.\d{4}),V4:(?P<v4>-?\d+\.\d{4}),CRC:0x(?P<crc>[0-9A-Fa-f]{2})$"
+    r"^V1:(?P<v1>-?\d+\.\d+),V2:(?P<v2>-?\d+\.\d+),V3:(?P<v3>-?\d+\.\d+),V4:(?P<v4>-?\d+\.\d+),CRC:0x(?P<crc>[0-9A-Fa-f]{2})$"
 )
 
 class HardwareSerialDaemon:

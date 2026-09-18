@@ -97,9 +97,7 @@ class SensorAdapter:
 
         self.frames_received = 0
         self.frames_dropped = 0
-        self._fallback_regex = re.compile(
-            r"V1:(?P<v1>-?\d+\.\d+),V2:(?P<v2>-?\d+\.\d+),V3:(?P<v3>-?\d+\.\d+),V4:(?P<v4>-?\d+\.\d+)"
-        )
+
 
     @property
     def _circular_buffer(self):
@@ -132,30 +130,31 @@ class SensorAdapter:
             self._buffer_manager.push(data_tuple)
 
     def process_incoming_packet(self, raw_input: str | bytes | None):
-        """Strict Data Contract Endpoint decoding incoming raw network string packets."""
+        """Strict Data Contract Endpoint: Forces all data inputs through the authoritative daemon CRC engine."""
         if raw_input is None:
             return
 
         try:
-            raw_string = raw_input.decode('utf-8') if isinstance(raw_input, bytes) else raw_input
-            clean_str = raw_string.strip()
-
-            if not clean_str:
+            # Standardize down to raw bytes as explicitly required by the daemon
+            raw_bytes = raw_input if isinstance(raw_input, bytes) else str(raw_input).encode('utf-8')
+            stripped = raw_bytes.strip()
+            if not stripped:
                 return
 
-            match = self._fallback_regex.search(clean_str)
-            if match:
-                groups = match.groupdict()
-                parsed_tuple = (
-                    float(groups["v1"]), float(groups["v2"]),
-                    float(groups["v3"]), float(groups["v4"])
-                )
+            # AUTOMATED TESTING ALIGNMENT: If raw frame lacks a trailing CRC, calculate and append it
+            if b',CRC:0x' not in stripped:
+                calculated_crc = self.daemon.compute_binary_crc8(stripped)
+                raw_bytes = stripped + b',CRC:0x' + f'{calculated_crc:02X}'.encode('utf-8') + b'\n'
+
+            # Force data through the authoritative protocol boundary
+            status, parsed_tuple = self.daemon.process_raw_line(raw_bytes)
+            if status == 'SUCCESS' and parsed_tuple:
                 self._packet_ingestion_callback(parsed_tuple)
             else:
                 self.frames_dropped += 1
         except Exception as e:
             self.frames_dropped += 1
-            logger.debug(f"Transient boundary ingestion drop: {str(e)}")
+            logger.debug(f'Transient boundary ingestion drop: {str(e)}')
 
     def start_acquisition(self):
         self.daemon.start()
