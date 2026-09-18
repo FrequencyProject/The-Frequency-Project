@@ -23,7 +23,7 @@ The application state parameters are driven cleanly via environmental variables.
 | `OPENBLAS_NUM_THREADS`| `1`                | Limits OpenBLAS background worker pools |
 | `VECLIB_MAXIMUM_THREADS` | `1`             | Restricts Apple VecLib thread exhaustion cascades |
 | `NUMEXPR_NUM_THREADS` | `1`                | Hardens acceleration math against thread leaks |
-| `TPM2TOOLS_TCTI`     | `mssim:port=2321`  | Directs transport protocols to the emulation proxy |
+| `TPM2TOOLS_TCTI`     | `mssim:host=swtpm,port=2321`  | Directs transport protocols to the emulation proxy |
 
 ## 🔒 3. Local Hardware Security Module (TPM 2.0) Setup
 
@@ -61,8 +61,8 @@ docker run -d \
   -e OPENBLAS_NUM_THREADS=1 \
   -e VECLIB_MAXIMUM_THREADS=1 \
   -e NUMEXPR_NUM_THREADS=1 \
-  -e TPM2TOOLS_TCTI="mssim:port=2321" \
-  --network host \
+  -e TPM2TOOLS_TCTI="mssim:host=swtpm,port=2321" \
+  --network frequency-network \
   local/the-frequency-project:latest
 
 ```
