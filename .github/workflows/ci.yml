@@ -53,7 +53,10 @@ jobs:
       - name: Run Core PyTest Matrix Suite
         run: python -m pytest
 
-      # HARDENING REMEDIATION: Force non-cached, light container verification to bypass disk exhaustion
-      - name: Verify Multi-Stage Production Container Build Stability
+      - name: Verify Production Container Build Stability
         run: |
-          docker build --no-cache -t the-frequency-project:ci-gate .
+          set -euxo pipefail
+          df -h
+          free -h
+          docker system df
+          docker build --progress=plain -t the-frequency-project:ci-gate .

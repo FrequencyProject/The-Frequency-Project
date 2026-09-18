@@ -1,8 +1,5 @@
-# Exclude git metadata and version tracking nodes
 .git
 .gitignore
-
-# Exclude local python execution caches and build artifacts
 __pycache__/
 *.pyc
 *.pyo
@@ -13,7 +10,6 @@ build/
 dist/
 wheels/
 venv/
-
-# Exclude raw testing modules and configuration manuals from production layers
 tests/
 *.md
+!README.md
