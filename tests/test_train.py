@@ -27,7 +27,7 @@ def test_training_step_backprop_pass():
     for _ in range(1285):
         v1, v2, v3, v4 = rng.normal(0, 1), rng.normal(0, 1), rng.normal(0, 1), rng.normal(0, 1)
         packet = f"V1:{v1},V2:{v2},V3:{v3},V4:{v4}\n"
-        engine.adapter.process_incoming_packet(packet)
+        engine.adapter.process_incoming_packet(packet, allow_missing_crc=True)
 
     # Run the training step and cleanly unpack both tuple parameters
     loss_val, latent_vector = engine.train_step()

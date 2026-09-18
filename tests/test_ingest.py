@@ -41,7 +41,7 @@ def test_tensor_dimension_compliance(
     # 2. Feed exactly 1,280 synchronized historical data packet frames
     for _ in range(1280):
         mock_packet = "V1:10.0,V2:20.0,V3:-5.0,V4:1.2\n"
-        clean_adapter.process_incoming_packet(mock_packet)
+        clean_adapter.process_incoming_packet(mock_packet, allow_missing_crc=True)
 
     # 3. Verify hot post-saturation matrix dimension compliance
     saturated_tensor = clean_adapter.get_ai_features()
@@ -73,7 +73,7 @@ def test_row_independent_zscore_normalization(
     # Multi-Version Fix: Explicitly unpack float indices to handle NumPy array string casting rules smoothly
     for frame in mock_signals:
         packet = f"V1:{frame[0]:.4f},V2:{frame[1]:.4f},V3:{frame[2]:.4f},V4:{frame[3]:.4f}\n"
-        clean_adapter.process_incoming_packet(packet)
+        clean_adapter.process_incoming_packet(packet, allow_missing_crc=True)
 
     normalized_tensor = clean_adapter.get_ai_features()
 
@@ -101,7 +101,7 @@ def test_malformed_string_packet_rejection(
     """
     # 1. Pre-fill queue with baseline data frames
     for _ in range(1279):
-        clean_adapter.process_incoming_packet("V1:1.0,V2:1.0,V3:1.0,V4:1.0\n")
+        clean_adapter.process_incoming_packet("V1:1.0,V2:1.0,V3:1.0,V4:1.0\n", allow_missing_crc=True)
 
     # 2. Inject adversarial malformed string packets (Simulating line cuts or serial parsing interference)
     corrupted_inputs = [
@@ -112,7 +112,7 @@ def test_malformed_string_packet_rejection(
     ]
 
     for malicious_packet in corrupted_inputs:
-        clean_adapter.process_incoming_packet(malicious_packet)
+        clean_adapter.process_incoming_packet(malicious_packet, allow_missing_crc=True)
 
     # 3. Ingestion engine must decline partial matrix state mutations
     tensor = clean_adapter.get_ai_features()
@@ -130,7 +130,7 @@ def test_epsilon_flatline_protection(
     """
     # Force absolute flatline array state values across all 4 sensors simultaneously
     for _ in range(1280):
-        clean_adapter.process_incoming_packet("V1:0.0,V2:0.0,V3:0.0,V4:0.0\n")
+        clean_adapter.process_incoming_packet("V1:0.0,V2:0.0,V3:0.0,V4:0.0\n", allow_missing_crc=True)
 
     flat_tensor = clean_adapter.get_ai_features()
 

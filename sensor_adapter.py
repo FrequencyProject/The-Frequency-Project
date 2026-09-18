@@ -129,7 +129,7 @@ class SensorAdapter:
             self.frames_received += 1
             self._buffer_manager.push(data_tuple)
 
-    def process_incoming_packet(self, raw_input: str | bytes | None):
+    def process_incoming_packet(self, raw_input: str | bytes | None, allow_missing_crc: bool = False):
         """Strict Data Contract Endpoint: Forces all data inputs through the authoritative daemon CRC engine."""
         if raw_input is None:
             return
@@ -141,8 +141,13 @@ class SensorAdapter:
             if not stripped:
                 return
 
-            # AUTOMATED TESTING ALIGNMENT: If raw frame lacks a trailing CRC, calculate and append it
+            # HARDENING REMEDIATION: Restrict CRC auto-generation strictly to explicit development/mock contexts
             if b',CRC:0x' not in stripped:
+                if not allow_missing_crc:
+                    self.frames_dropped += 1
+                    import logging
+                    logging.getLogger('SensorAdapter').warning('Data perimeter rejection: Input frame lacks mandatory trailing CRC signature verification code.')
+                    return
                 calculated_crc = self.daemon.compute_binary_crc8(stripped)
                 raw_bytes = stripped + b',CRC:0x' + f'{calculated_crc:02X}'.encode('utf-8') + b'\n'
 

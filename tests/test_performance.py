@@ -19,7 +19,7 @@ def test_sustained_telemetry_load_performance():
     for i in range(iterations):
         # Generate clean synthetic spatial signal matrices
         packet = f"V1:{np.sin(i):.4f},V2:{np.cos(i):.4f},V3:0.1234,V4:-0.5678\n"
-        adapter.process_incoming_packet(packet)
+        adapter.process_incoming_packet(packet, allow_missing_crc=True)
 
         # Periodic feature extraction to ensure the Z-score normalizer has no memory leaks
         if i % 500 == 0:
