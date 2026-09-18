@@ -12,7 +12,7 @@ def test_spectral_pipeline_matrix_compilation():
     ch2 = np.random.normal(0, 1, 1280)
     ch3 = np.random.normal(0, 1, 1280)
     ch4 = np.random.normal(0, 1, 2560)
-    
+
     tensor = pipeline.compile_feature_tensor(ch1, ch2, ch3, ch4)
     assert tensor.shape == (4, 1280)
 

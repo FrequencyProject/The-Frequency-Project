@@ -17,10 +17,10 @@ def test_validator_production_manifest_integrity():
 def test_validator_detects_mismatched_cs_pin():
     """Asserts that an un-synchronized or legacy Chip Select pin triggers a strict failure state."""
     validator = InfrastructureValidator()
-    
+
     # Mocking a corrupted firmware module where the CS pin is left at legacy GPIO 5
     mocked_corrupt_firmware = "const int ADC_CS_PIN = 5;\nconst int ADC_DRDY_PIN = 4;\n"
-    
+
     # We load a valid structural manifest block so the check gets past block 1, 2, and 3 safely
     valid_manifest = b"""
     [project]
@@ -39,13 +39,13 @@ def test_validator_detects_mismatched_cs_pin():
     with patch("os.path.exists", return_value=True), \
          patch("builtins.open", side_effect=mock_open_multiple):
         success = validator.verify_repository_integrity()
-            
+
     assert success is False
 
 def test_validator_detects_mismatched_drdy_pin():
     """Asserts that an un-synchronized Data Ready interrupt pin triggers a strict failure state."""
     validator = InfrastructureValidator()
-    
+
     # Mocking a corrupted firmware module where the DRDY pin is misaligned to GPIO 2
     mocked_corrupt_firmware = "const int ADC_CS_PIN = 10;\nconst int ADC_DRDY_PIN = 2;\n"
     valid_manifest = b"""
@@ -65,5 +65,5 @@ def test_validator_detects_mismatched_drdy_pin():
     with patch("os.path.exists", return_value=True), \
          patch("builtins.open", side_effect=mock_open_multiple):
         success = validator.verify_repository_integrity()
-            
+
     assert success is False

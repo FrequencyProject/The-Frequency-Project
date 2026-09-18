@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Phase 2: Digital Signal Processing Pipeline.
 
-Applies 60Hz IIR notch filtration, Hanning windowing matrices, 
+Applies 60Hz IIR notch filtration, Hanning windowing matrices,
 and Real Fast Fourier Transforms (RFFT) to condition streaming analog signals.
 """
 import numpy as np
@@ -25,7 +25,7 @@ class AsymmetricTensorPipeline:
     def compile_feature_tensor(self, ch1: np.ndarray, ch2: np.ndarray, ch3: np.ndarray, ch4: np.ndarray) -> np.ndarray:
         """Processes 4 input streams, applying filters and dimensions alignment matches."""
         # HARDENING REMEDIATION: Frontline Array Dimensional Alignment.
-        # Forces incoming arrays to squeeze down to clean 1D vectors. This completely resolves 
+        # Forces incoming arrays to squeeze down to clean 1D vectors. This completely resolves
         # dimensional errors if 2D shared matrix slices are forwarded by the sensor adapter.
         c1 = np.asarray(ch1).ravel()[:self.target_len]
         c2 = np.asarray(ch2).ravel()[:self.target_len]
@@ -34,7 +34,7 @@ class AsymmetricTensorPipeline:
 
         # Process and filter Channel 1 (Arboreal Bio-potentials)
         filtered_ch1 = apply_60hz_notch_filter(c1, sample_rate=1000.0)
-        
+
         # HARDENING REMEDIATION: NumPy 2.0 Architecture Protection.
         # Replaces deprecated root-level np.hanning call with an explicit von Hann implementation
         # to guarantee execution immutability under advanced library runtimes.
@@ -52,7 +52,7 @@ class AsymmetricTensorPipeline:
 
         # Assemble the clean data rows into a single multi-channel snapshot array
         feature_matrix = np.stack([fft_1, features_ch2, features_ch3, fft_4], axis=0)
-        
+
         # Enforce z-score normalization along the temporal axis safely
         means = feature_matrix.mean(axis=1, keepdims=True)
         stds = feature_matrix.std(axis=1, keepdims=True) + 1e-8

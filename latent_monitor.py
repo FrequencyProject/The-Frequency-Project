@@ -19,22 +19,22 @@ class VivicLatentMonitor:
         self.history_window = kwargs.get("history_len", history_window)
         self.alpha = alpha                 # EMA smoothing factor for instantaneous tracking
         self.ambient_floor = ambient_floor # Environmental noise baseline compensation floor
-        
+
         # HARDENING REMEDIATION: Swap native Python list for an optimized collections.deque
         # to guarantee safe, O(1) contiguous memory mutations on the high-speed data path.
         self.delta_history = collections.deque(maxlen=self.history_window)
         self.lock = threading.Lock()       # HARDENING: Guarantees atomic updates across threads
-        
+
         # Exponential Moving Average state registers to eliminate cold-start bias
         self.ema_mean = None
         self.ema_var = None                # HARDENING: Track variance instead of raw absolute deviation
         self.ema_std = None
-        
+
         # BACKWARD COMPATIBILITY REGISTERS
         self.latent_dim = kwargs.get("latent_dim", None)
         self.anomalies_detected = 0
         self._test_step_counter = 0
-        
+
         logger.info("Initializing zero-trust statistical tracking matrix pool...")
 
     def calculate_distance_metrics(self, current_vector: np.ndarray, baseline_vector: np.ndarray) -> float:
@@ -45,7 +45,7 @@ class VivicLatentMonitor:
 
         if current_vector.shape != baseline_vector.shape:
             raise ValueError(f"Vector dimensions mismatch: {current_vector.shape} vs {baseline_vector.shape}")
-        
+
         euclidean_delta = float(np.linalg.norm(current_vector - baseline_vector))
         return max(euclidean_delta, self.ambient_floor)
 
@@ -76,11 +76,11 @@ class VivicLatentMonitor:
                 # If an out-of-bounds breach occurs, trigger the alert but immediately return
                 # WITHOUT updating the baseline registers. This completely blocks drift poisoning attacks.
                 return True
-            
+
             # Welford-inspired EMA update path executed strictly for non-anomalous quiet-state tracking
             old_mean = self.ema_mean
             self.ema_mean = (self.alpha * euclidean_delta) + ((1.0 - self.alpha) * old_mean)
-            
+
             instantaneous_variance = (euclidean_delta - old_mean) * (euclidean_delta - self.ema_mean)
             self.ema_var = (self.alpha * instantaneous_variance) + ((1.0 - self.alpha) * self.ema_var)
             self.ema_std = max(np.sqrt(self.ema_var), 1e-8)
@@ -90,10 +90,10 @@ class VivicLatentMonitor:
     def evaluate_vector(self, current_vector: np.ndarray, baseline_vector: np.ndarray = None) -> dict:
         """BACKWARD COMPATIBILITY ENDPOINT: Returns dictionary schemas to validate legacy tests."""
         flat_vec = current_vector.flatten()
-        
+
         if self.latent_dim is not None and flat_vec.shape[0] != self.latent_dim:
             raise ValueError(f"Expected latent dimension of {self.latent_dim}, got {flat_vec.shape}")
-            
+
         if baseline_vector is None:
             baseline_vector = np.zeros_like(flat_vec)
         else:
@@ -101,7 +101,7 @@ class VivicLatentMonitor:
 
         delta = self.calculate_distance_metrics(flat_vec, baseline_vector)
         is_anomaly = self.evaluate_vector_anomaly(delta)
-        
+
         with self.lock:
             self._test_step_counter += 1
             current_step = self._test_step_counter
@@ -123,11 +123,11 @@ class VivicLatentMonitor:
         try:
             delta = self.calculate_distance_metrics(current_vector, baseline_vector)
             anomaly_triggered = self.evaluate_vector_anomaly(delta)
-            
+
             with self.lock:
                 current_mean = self.ema_mean
                 current_std = self.ema_std
-            
+
             return {
                 "status": "SUCCESS",
                 "euclidean_delta": delta,

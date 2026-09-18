@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Phase 2: Sensor Adapter Bridge and Feature Compilation Engine.
 
-Decoupled architectural components splitting circular buffering storage, 
+Decoupled architectural components splitting circular buffering storage,
 stream ingestion orchestration, and digital signal feature compilation.
 """
 import logging
@@ -17,7 +17,7 @@ logger = logging.getLogger("SensorAdapter")
 
 class TelemetryCircularBuffer:
     """Thread-safe storage class managing O(1) circular buffers and pointers."""
-    
+
     def __init__(self, window_size: int = 1280):
         self.window_size = window_size
         self.lock = threading.RLock()
@@ -57,7 +57,7 @@ class TelemetryCircularBuffer:
 
 class FeatureCompiler:
     """Handles statistical validation and DSP conversions on extraction blocks."""
-    
+
     def __init__(self, window_size: int = 1280):
         self.window_size = window_size
         self.dsp_pipeline = AsymmetricTensorPipeline()
@@ -79,11 +79,11 @@ class SensorAdapter:
 
     def __init__(self, port: str = "COM3", baudrate: int = 115200, window_size: int = 1280, *args, **kwargs):
         self.window_size = window_size
-        
+
         # Instantiate single-responsibility child dependencies
         self._buffer_manager = TelemetryCircularBuffer(window_size=window_size)
         self._feature_compiler = FeatureCompiler(window_size=window_size)
-        
+
         # Maintain public state properties for backwards compatibility with tests and run_session.py
         self.lock = self._buffer_manager.lock
         self._shared_feature_matrix = np.zeros((4, window_size), dtype=np.float32)

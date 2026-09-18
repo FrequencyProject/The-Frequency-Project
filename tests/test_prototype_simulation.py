@@ -14,5 +14,5 @@ def test_prototype_whole_system_integration():
         session.adapter._count = session.adapter.window_size
         # Fill the entire circular space with stable ambient baseline metrics
         session.adapter._circular_buffer[:, :] = np.random.uniform(0.1, 0.2, session.adapter._circular_buffer.shape).astype(np.float32)
-            
+
     assert session.adapter._count == session.adapter.window_size

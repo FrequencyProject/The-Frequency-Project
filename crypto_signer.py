@@ -27,7 +27,7 @@ class HardwareTelemetrySigner:
         self.use_simulation = use_simulation or (not HAS_TPM_HARDWARE)
         self._key_handle = None
         self._esapi = None
-        
+
         # PRODUCTION HARDENING: Allow adaptive TCTI configuration mapping (device vs swtpm socket network)
         self.tcti_string = tcti_env or os.getenv("TPM_TCTI_INTERFACE", "device:/dev/tpmrm0")
 
@@ -71,7 +71,7 @@ class HardwareTelemetrySigner:
         try:
             import hashlib
             from tpm2_pytss import TPMT_SIG_SCHEME, constants
-            
+
             # Form clean SHA-256 cryptographic digest of raw telemetry data
             digest = hashlib.sha256(raw_payload_bytes).digest()
 
@@ -84,11 +84,11 @@ class HardwareTelemetrySigner:
             if self._key_handle is None:
                 raise RuntimeError("TPM Hardware Execution Aborted: Primary key context handle is unitialized.")
             signature_token, _ = self._esapi.sign(self._key_handle, digest, in_scheme, validation)
-            
+
             # HARDENING REMEDIATION: Safely serialize structured TPMT_SIGNATURE tokens to flat binary vectors
             raw_sig_bytes = signature_token.marshal()
             return raw_payload_bytes, raw_sig_bytes
-            
+
         except Exception as err:
             logger.critical(f"HARDWARE SECURE COMPLIANCE BREACH: SPI bus loop or session context failed: {repr(err)}")
             raise RuntimeError("Cryptographic Ingestion Aborted: Hardware security subsystem is offline or uncalibrated.") from err
@@ -105,7 +105,7 @@ class HardwareTelemetrySigner:
             import hashlib
             from tpm2_pytss import TPMT_SIGNATURE
             digest = hashlib.sha256(payload).digest()
-            
+
             # Unmarshal flat binary byte streams back into low-level structured tokens for hardware audit loops
             tpm_signature_obj = TPMT_SIGNATURE.unmarshal(signature)
             self._esapi.verify_signature(self._key_handle, digest, tpm_signature_obj)

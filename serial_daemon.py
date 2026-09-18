@@ -61,7 +61,7 @@ class HardwareSerialDaemon:
                 logger.warning(f"Line limit exceeded ({len(raw_line)} bytes). Purging frame.")
                 return "CORRUPTED", None
 
-            # Strips and checks raw byte anchors to eliminate redundant intermediate 
+            # Strips and checks raw byte anchors to eliminate redundant intermediate
             # re-encoding string operations from the 60Hz processing hot path.
             stripped_line = raw_line.strip()
             if not stripped_line:
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     # Target invalid address to explicitly test simulation fallback trace
     daemon = HardwareSerialDaemon(port="COM_NON_EXISTENT", use_mock_fallback=True, callback=dummy_callback)
     daemon.start()
-    
+
     try:
         while True:
             time.sleep(1)

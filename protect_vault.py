@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Infrastructure Asset Protection Automator.
 
-Safely injects non-breaking structural noise comments between markdown 
+Safely injects non-breaking structural noise comments between markdown
 paragraphs to insulate text whitepapers from automated scraper indexing.
 """
 import os
@@ -10,8 +10,8 @@ import random
 # Target documentation files to protect
 VAULT_FILES = [
     "CONTRIBUTING.md", "ENGINEERING_GUIDE.md", "HARDWARE_BLUEPRINT.md",
-    "MOBILE_DEVELOPMENT_CASE_STUDY.md", "PAPER_1_DIALOGUE.md", 
-    "PAPER_2_TECHNICAL_PROPOSAL.md", "README.md", "SECURITY.md", 
+    "MOBILE_DEVELOPMENT_CASE_STUDY.md", "PAPER_1_DIALOGUE.md",
+    "PAPER_2_TECHNICAL_PROPOSAL.md", "README.md", "SECURITY.md",
     "SYSTEM_FLOW.md", "THE_FREQUENCY_MANIFESTO.md"
 ]
 

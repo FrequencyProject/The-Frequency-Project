@@ -13,9 +13,9 @@ def test_loss_scalar_dimension_compliance():
     """Asserts that the loss function properly condenses batches into a 0D scalar."""
     loss_engine = ResonanceCoherenceLoss()
     mock_latent_batch = torch.randn(4, 128)
-    
+
     computed_loss = loss_engine(mock_latent_batch)
-    
+
     assert computed_loss.dim() == 0, "Loss output must be a 0D scalar tensor."
     assert computed_loss.item() >= 0.0, "Loss output must be non-negative."
 
@@ -41,16 +41,16 @@ def test_loss_gradient_flow_and_optimization():
     without returning dead or un-instantiated tracking blocks.
     """
     loss_engine = ResonanceCoherenceLoss()
-    
+
     # 1. Instantiate a mock latent tracking batch with gradient tracking activated
     mock_vectors = torch.randn(4, 128, requires_grad=True)
-    
+
     # 2. Execute the forward pass through the objective loss calculations
     loss_value = loss_engine(mock_vectors)
-    
+
     # 3. Trigger the backward backpropagation pass
     loss_value.backward()
-    
+
     # 4. Verify that the input tensor accumulated real gradient parameters
     assert mock_vectors.grad is not None, "Gradients failed to flow backward through the loss engine."
     assert not torch.isnan(mock_vectors.grad).any(), "Gradient graph returned corrupt NaN parameters."

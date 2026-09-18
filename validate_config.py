@@ -40,22 +40,22 @@ class InfrastructureValidator:
     def verify_repository_integrity(self) -> bool:
         """Validates core tracking modules, dependencies, and configuration constraints."""
         print('[INIT] Launching configuration and structural manifest audit...')
-        
+
         if not check_manifest_exists(self.manifest_file):
             print(f'[CRITICAL] Operational manifest missing: {self.manifest_file}')
             return False
-            
+
         try:
             with open(self.manifest_file, 'rb') as f:
                 config_data = tomllib.load(f)
-                
+
             project_section = config_data.get('project', {})
             dependencies = project_section.get('dependencies', [])
             setuptools_section = config_data.get('tool', {}).get('setuptools', {})
             modules = setuptools_section.get('py-modules', [])
             pytest_section = config_data.get('tool', {}).get('pytest', {}).get('ini_options', {})
             env_vars = pytest_section.get('env', [])
-            
+
             # CRITICAL INVARIANT: Core library dependencies must be explicitly defined
             required_dependencies = ['numpy', 'scipy', 'torch', 'tpm2-pytss', 'cryptography==50.0.0']
             for req in required_dependencies:
@@ -68,7 +68,7 @@ class InfrastructureValidator:
             for mod in core_runtime_modules:
                 if mod not in modules:
                     print(f'[WARNING] Core runtime module mapping trace omitted from setup: {mod}')
-            
+
             # FLEXIBLE WARNING: Verify environment variables
             required_env_vars = ['OMP_NUM_THREADS=1', 'MKL_NUM_THREADS=1', 'OPENBLAS_NUM_THREADS=1']
             for evar in required_env_vars:
@@ -90,7 +90,7 @@ class InfrastructureValidator:
             log_validated_component('Project dependencies and configuration structures verified.')
             log_success_matrix('pyproject.toml loaded and validated successfully.')
             return True
-            
+
         except TOMLDecodeError as err:
             print(f'[CRITICAL] Manifest parsing breakdown: {str(err)}')
             return False
