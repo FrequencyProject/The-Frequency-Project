@@ -36,7 +36,7 @@ jobs:
         # Stop build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # HARDENING REMEDIATION: Enforce explicit style rules by removing --exit-zero
-        flake8 . --count --max-complexity=10 --max-line-length=127 --statistics
+        flake8 . --count --exclude=venv,./venv,env,.env --max-complexity=10 --max-line-length=127 --statistics
 
     - name: "HARDENING REMEDIATION: Automated Dependency Vulnerability Scanning (pip-audit)"
       run: pip-audit -r requirements.txt

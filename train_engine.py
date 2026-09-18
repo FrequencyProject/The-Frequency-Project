@@ -43,23 +43,23 @@ class VivicTrainingEngine:
     def __init__(self, model: nn.Module = None, criterion: nn.Module = None, optimizer: optim.Optimizer = None, adapter: MultiChannelSensorAdapter = None, *args, **kwargs):
         """Initializes optimization loops, absorbing extra configuration keyword arguments gracefully."""
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+
         # Dependency Injection Layer with smart production fallbacks
         self.model = model.to(self.device) if model is not None else AsymmetricSpatialEncoder().to(self.device)
         self.criterion = criterion if criterion is not None else ResonanceCoherenceLoss()
-        
+
         if optimizer is not None:
             self.optimizer = optimizer
         else:
             self.optimizer = optim.AdamW(self.model.parameters(), lr=1e-3, weight_decay=1e-4)
-            
+
         # P1 DECOUPLING: Absorbs 'port' configuration passthroughs if supplied via orchestrators or tests
         if adapter is not None:
             self.adapter = adapter
         else:
             port_param = kwargs.get("port", "MOCK")
             self.adapter = MultiChannelSensorAdapter(port=port_param)
-            
+
         self.preprocessor = TelemetryPreprocessor()
         self.warmed_up = False
 

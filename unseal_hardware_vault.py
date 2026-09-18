@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Phase 6: Hardware-Bound Passphrase Retrieval Utility.
 
-Leverages a single, memory-managed ESAPI session to unseal the 
+Leverages a single, memory-managed ESAPI session to unseal the
 high-entropy storage master keys from persistent slot 0x81000003.
 """
 import sys
@@ -16,7 +16,7 @@ def unseal_from_persistent(target_port: int = 2321, persistent_handle: int = 0x8
         # Open a single, memory-managed connection to extract the passphrase
         with tpm2_pytss.ESAPI(tcti_string) as tpm_context:
             print(f" -> Resolving persistent hardware index 0x{persistent_handle:08X}...")
-            
+
             # Map the persistent index into the active session tracking table
             obj_handle = tpm_context.tr_from_tpmpublic(persistent_handle)
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Global System Configuration Parameters.
 
-Centralizes all hardware and model constraints to ensure long-term 
+Centralizes all hardware and model constraints to ensure long-term
 maintainability and allow scaling without code-level modifications.
 """
 from typing import NamedTuple

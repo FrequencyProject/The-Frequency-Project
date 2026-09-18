@@ -12,7 +12,7 @@ def test_vault_initialization_fallback_mode():
 def test_vault_retry_mechanism_on_bus_timeout(monkeypatch):
     """Asserts that transient line jitter triggers a 3-pass retry cycle before failure."""
     import tpm2_pytss
-    
+
     vault = SecureHardwareVault(tcti_profile="mock_bus_profile")
     attempt_counter = 0
 
@@ -35,7 +35,7 @@ def test_vault_retry_mechanism_on_bus_timeout(monkeypatch):
 def test_vault_immediate_alert_on_policy_tampering(monkeypatch):
     """Asserts that a PCR-7 mismatch (0x9A) triggers an immediate security fail-secure breach."""
     import tpm2_pytss
-    
+
     vault = SecureHardwareVault(tcti_profile="mock_bus_profile")
     attempt_counter = 0
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Phase 12: Hardware Cryptographic Vault Management.
 
-Provides granular fault isolation, automatic 3-pass SPI retry loops, and 
+Provides granular fault isolation, automatic 3-pass SPI retry loops, and
 strict exception taxonomies to separate transient bus lag from security breaches.
 """
 import time
@@ -26,8 +26,8 @@ class SecureHardwareVault:
         self.use_emulator = use_emulator
         self.authenticated = False
         self.pcr_locked = True
-        
-        # BACKWARD-COMPATIBLE LOGIC: Expose the state tracking property expected 
+
+        # BACKWARD-COMPATIBLE LOGIC: Expose the state tracking property expected
         # by the validation assertions inside the legacy test suite.
         self.is_sealed = False
 
@@ -49,19 +49,19 @@ class SecureHardwareVault:
                 # Dynamically import library to trigger monkeypatched hooks from the test harness
                 import tpm2_pytss
                 _ = tpm2_pytss.ESAPI()
-                
+
                 self.authenticated = True
                 return True
-                
+
             except Exception as e:
                 # Read the return code (.rc) attribute injected by the testing monkeypatch
                 rc_code = getattr(e, "rc", 0x0)
-                
+
                 # Immediate Alert on Policy Tampering (0x9A)
                 if rc_code == 0x9A:
                     logger.critical("SECURITY CRITICAL: PCR-7 validation mismatch! Lock state engaged.")
                     raise TPMSecurityBreachError("TPM Security Breach: PCR-7 verification failed or session compromised.")
-                
+
                 # Handle transient retryable bus timeouts (0x101)
                 logger.warning(f"[ATTEMPT {attempt}/{max_retries}] Transient SPI communication drop caught: {e}")
                 if attempt == max_retries:
@@ -85,7 +85,7 @@ class SecureHardwareVault:
         # Real Hardware Flow
         if not self.authenticated:
             raise TPMSecurityBreachError("TPM Access Blocked: Vault session must be authenticated before unseal execution.")
-            
+
         raise NotImplementedError("Production hardware-protected object unsealing and PCR policy authorization loops are currently in target development phases.")
 
 # ==============================================================================

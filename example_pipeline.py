@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """End-to-End Operational Pipeline Tutorial.
 
-Demonstrates the primary integration pathway by connecting raw serial line parsing, 
+Demonstrates the primary integration pathway by connecting raw serial line parsing,
 circular buffering, 1D-CNN spatial encoding, and statistical anomaly tracking.
 """
 import torch
@@ -38,7 +38,7 @@ def run_integrated_pipeline_tutorial():
     # 4. Simulate Live High-Frequency Ingestion Processing Loops via Public Endpoints
     print("[STEP 4/4] Running baseline telemetry ingestion loop...")
     print(" -> Saturating circular buffer windows with simulated baseline frames...")
-    
+
     rng = np.random.default_rng(seed=42)
     for _ in range(1280):
         # Generate random baseline values
@@ -46,13 +46,13 @@ def run_integrated_pipeline_tutorial():
         v2 = float(rng.normal(0.0, 0.1))
         v3 = float(rng.normal(0.0, 0.1))
         v4 = float(rng.normal(0.0, 0.1))
-        
+
         # Build raw string payload matching the exact output layout of the ESP32-S3 C++ firmware
         mock_raw_frame = f"V1:{v1:.4f},V2:{v2:.4f},V3:{v3:.4f},V4:{v4:.4f}\n"
-        
+
         # Public data contract method handles string decoding, parsing, and circular buffering
         adapter.process_incoming_packet(mock_raw_frame)
-        
+
     print(" -> Ingestion memory matrices fully saturated.")
 
     # 5. Extract snapshot matrices, map to PyTorch, and evaluate anomalies
@@ -60,19 +60,19 @@ def run_integrated_pipeline_tutorial():
     with torch.no_grad():
         # A. Pull the thread-safe, normalized Z-score feature snapshot out of the adapter circular view
         compiled_features = adapter.get_ai_features()  # Returns shape (4, 1280)
-        
+
         # B. Convert the arrays cleanly into a device-native single-precision tensor profile
         torch_tensor = torch.tensor(compiled_features, dtype=torch.float32, device=device)
-        
+
         # C. Map the waveform matrix straight through the 1D-CNN convolutional layers
         latent_output = model(torch_tensor)  # Emits high-dimensional shape (1, 128)
-        
+
         # D. Unwrap the latent array to pass its vector cleanly into the anomaly filters
         unwrapped_vector = latent_output.squeeze(0).cpu().numpy()
-        
+
         # E. Process through the 3-Sigma alert perimeter tracking logic
         pipeline_result = monitor.evaluate_vector(unwrapped_vector)
-        
+
         print("\n======================================================================")
         print(" PIPELINE INFERENCE EXECUTION SUCCESSFUL")
         print("======================================================================")

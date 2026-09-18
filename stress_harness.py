@@ -47,12 +47,12 @@ class TelemetryStressHarness:
 
         for _ in range(iterations):
             # 1. HARDENING REMEDIATION: Cryptographically Compliant Payload Verification.
-            # Generates synthetically valid data segments and appends real, runtime-computed 
+            # Generates synthetically valid data segments and appends real, runtime-computed
             # CRC-8 tags to force testing straight through the frontline byte-surgical verification loops.
             v1, v2, v3, v4 = self.rng.uniform(-1, 1), self.rng.uniform(-1, 1), self.rng.uniform(-1, 1), self.rng.uniform(-1, 1)
             payload_str = f"V1:{v1:.4f},V2:{v2:.4f},V3:{v3:.4f},V4:{v4:.4f}"
             expected_crc = self.compute_binary_crc8(payload_str.encode('utf-8'))
-            
+
             # Feed raw byte lines directly into the processing pipeline
             v_valid_bytes = f"{payload_str},CRC:0x{expected_crc:02X}\n".encode('utf-8')
             self.adapter.process_incoming_packet(v_valid_bytes)
@@ -62,7 +62,7 @@ class TelemetryStressHarness:
             self.adapter.process_incoming_packet(b"INVALID_PACKET_STREAM_NOISE\n")
             self.adapter.process_incoming_packet(b"\n")
             self.adapter.process_incoming_packet(b"V1:1.0,V2:2.0\n")
-            
+
             # 3. HARDENING REMEDIATION: Adversarial Cryptographic Injection.
             # Sends a structured payload with an altered data point but stale CRC tag
             # to verify that malicious spoofing attempts are caught by checksum boundaries.
@@ -71,7 +71,7 @@ class TelemetryStressHarness:
             self.adapter.process_incoming_packet(v_spoofed_bytes)
 
             # 4. HARDENING REMEDIATION: Numerical Out-of-Bounds & Finite-Value Bombardment.
-            # Injects NaNs, infinites, and over-scaled voltages directly into the data matrix 
+            # Injects NaNs, infinites, and over-scaled voltages directly into the data matrix
             # endpoints to ensure the runtime engine isolates and captures system outliers.
             self.adapter.process_incoming_packet(b"V1:NaN,V2:1.2345,V3:0.0000,V4:0.0000,CRC:0x00\n")
             self.adapter.process_incoming_packet(b"V1:inf,V2:-inf,V3:0.0000,V4:0.0000,CRC:0x00\n")
@@ -83,7 +83,7 @@ class TelemetryStressHarness:
             self.adapter.frames_dropped
         ]
         _HARNESS_CELL[0x7B](report_data)
-        
+
         return {
             "daemon_received": self.adapter.frames_received,
             "daemon_dropped": self.adapter.frames_dropped

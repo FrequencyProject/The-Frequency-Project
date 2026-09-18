@@ -11,7 +11,7 @@ import torch.nn.functional as F
 
 def compute_kl_divergence(prob, log_p, log_q) -> torch.Tensor:
     """Computes the standard Kullback-Leibler Divergence KL(P||Q) over a batch.
-    
+
     Uses pre-stabilized logarithmic pairs to ensure numerical safety.
     """
     return torch.sum(prob * (log_p - log_q), dim=1)
@@ -34,12 +34,12 @@ class ResonanceCoherenceLoss(nn.Module):
             raise ValueError(f"Expected 2D matrix tensor batch, got shape: {latent_vectors.shape}")
 
         batch_size, latent_dim = latent_vectors.shape
-        
+
         # HARDENING REMEDIATION: Symmetric Space Dimension Assertion Firewall.
         # Guarantees odd-numbered latent vectors never cause tensor size shape collisions.
         if latent_dim % 2 != 0:
             raise ValueError(f"Loss Engine Firewall: Latent dimensional tracking must be perfectly symmetric (even). Received: {latent_dim}")
-            
+
         midpoint = latent_dim // 2
 
         # 1. Deconstruct the latent vector space into dual asymmetric sub-spaces cleanly
@@ -60,7 +60,7 @@ class ResonanceCoherenceLoss(nn.Module):
         mean_divergence = torch.mean(information_distance)
 
         # 4. HARDENING REMEDIATION: Uniform Tensor Reduction Alignment.
-        # Forces the standard deviation output to maintain structural tracking uniformity 
+        # Forces the standard deviation output to maintain structural tracking uniformity
         # across all variable batch size limits to shield against broadcast leaks.
         if batch_size > 1:
             std_divergence = torch.std(information_distance)
@@ -71,7 +71,7 @@ class ResonanceCoherenceLoss(nn.Module):
         # 5. Evaluate scaling configurations against the pre-allocated Phi constant buffer
         empirical_ratio = (mean_divergence + 1e-6) / (std_divergence + 1e-6)
         empirical_ratio = torch.clamp(empirical_ratio, min=0.0, max=10.0)
-        
+
         geometric_penalty = torch.pow(empirical_ratio - self.phi, 2)
 
         # Total Resonance Loss = Mean Information Divergence + Golden Penalty Constraint

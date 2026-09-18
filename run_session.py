@@ -70,12 +70,12 @@ class MetricsHttpExporter(threading.Thread):
                 if not request:
                     client_sock.close()
                     continue
-                
+
                 if "GET /health" in request:
                     status_code = "200 OK" if self.session.is_active or self.session.is_calibrated else "503 Service Unavailable"
                     body = json.dumps({"status": "HEALTHY" if "200" in status_code else "INITIALIZING"})
                     response = f"HTTP/1.1 {status_code}\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
-                
+
                 elif "GET /metrics" in request:
                     with self.session.metrics_lock:
                         body = (
@@ -91,7 +91,7 @@ class MetricsHttpExporter(threading.Thread):
                             f'vivic_session_status{{status="calibrated"}} {1 if self.session.is_calibrated else 0}\n'
                         )
                     response = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
-                
+
                 else:
                     body = "Not Found"
                     response = f"HTTP/1.1 404 Not Found\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
@@ -117,7 +117,7 @@ class UnifiedVivicSession:
     def __init__(self, port: str = "MOCK"):
         self.adapter = MultiChannelSensorAdapter(port=port)
         self.engine = VivicTrainingEngine(port=port, adapter=self.adapter)
-        
+
         self.is_active = False
         self.monitor = VivicLatentMonitor(latent_dim=128)
         self.ambient_means = np.zeros(4, dtype=np.float32)
@@ -132,7 +132,7 @@ class UnifiedVivicSession:
         """Executes a non-blocking Quiet State Sweep to map native environment noise thresholds."""
         self.adapter.start_acquisition()
         emit_structured_log("CALIBRATION_START", "INFO", f"Launching mandatory {sweep_duration_seconds}-second ambient calibration sweep...")
-        
+
         if "MOCK" in self.adapter.daemon.port.upper() or "PORT" in self.adapter.daemon.port.upper():
             emit_structured_log("SIMULATION_DETECTED", "INFO", "Simulation track detected: Waiting for background buffer saturation (1280 frames)...")
             while True:
@@ -178,7 +178,7 @@ class UnifiedVivicSession:
                 break
 
             loss_val, latent_vector = self.engine.train_step(
-                ambient_means=self.ambient_means, 
+                ambient_means=self.ambient_means,
                 ambient_stds=self.ambient_stds
             )
 
@@ -206,7 +206,7 @@ class UnifiedVivicSession:
 
 if __name__ == "__main__":
     session = UnifiedVivicSession(port="MOCK")
-    
+
     exporter_server = MetricsHttpExporter(session=session, host="0.0.0.0", port=8000)  # nosec B104
     exporter_server.start()
 
