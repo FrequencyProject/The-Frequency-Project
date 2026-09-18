@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # HARDENING REMEDIATION: Instantly maximize build disk space using verified native unlinking hooks (<15 seconds)
       - name: Maximize Runner Disk Space Allocation
         uses: easimon/maximize-build-space@v10
         with:
@@ -22,6 +21,10 @@ jobs:
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
+
+      # HARDENING REMEDIATION: Settle the network interface after the virtual disk swap
+      - name: Await Virtual Network Interface Stabilization
+        run: sleep 10
 
       - name: Check out repository source tree files
         uses: actions/checkout@v4
@@ -37,11 +40,12 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
+      # HARDENING REMEDIATION: Enforce deep network socket retry resilience for pip
       - name: Verify pinned third-party dependencies wheel compilation
         run: |
-          python -m pip install --upgrade pip setuptools cffi
-          pip install flake8 bandit pip-audit cyclonedx-bom
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip setuptools cffi --timeout=60 --retries=5
+          pip install flake8 bandit pip-audit cyclonedx-bom --timeout=60 --retries=5
+          pip install -r requirements.txt --timeout=60 --retries=5
 
       - name: Run Code Quality Security Audit (Flake8)
         run: |
@@ -58,7 +62,7 @@ jobs:
         run: cyclonedx-py requirements requirements.txt --of XML -o bom.xml
 
       - name: Install Local Project Module Package Layout
-        run: pip install -e .
+        run: pip install -e . --timeout=60 --retries=5
 
       - name: Execute validation configuration checks
         run: python validate_config.py
