@@ -149,7 +149,7 @@ class UnifiedVivicSession:
         sample_interval = 1.0 / sample_rate_hz
 
         for _ in range(total_samples):
-            features = self.adapter.get_ai_features()
+            features = self.adapter.get_raw_features()
             channel_snapshots = np.mean(features, axis=1)
             calibration_buffer.append(channel_snapshots)
             time.sleep(sample_interval)
