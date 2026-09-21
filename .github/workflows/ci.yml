@@ -13,6 +13,7 @@ jobs:
       - name: Checkout Code Repository
         uses: actions/checkout@v4
 
+      # Note: Node 20 deprecation notices from standard actions are benign infrastructure warnings.
       - name: Setup Docker Buildx Engine
         uses: docker/setup-buildx-action@v3
 
@@ -24,32 +25,35 @@ jobs:
         run: |
           set -euxo pipefail
 
-          # 1. Initialize container mapping external port 8000 to internal application port 8080
+          # 1. Map host 8000 securely to application native 8080 
           docker run -d \
             --name frequency-runtime-test \
             -p 8000:8080 \
             the-frequency-project:ci-gate
 
-          # 2. Register global container teardown and log tracing safety trap
+          # 2. Establish high-assurance logging/removal cleanup track
           trap 'docker logs frequency-runtime-test || true; docker rm -f frequency-runtime-test || true' EXIT
 
-          # 3. High-frequency polling block to capture endpoints before simulation teardown
-          echo "Entering high-assurance container polling matrix..."
+          # 3. High-frequency polling block explicitly targeted at the host bridge port
+          echo "Waiting for metrics endpoint..."
           for attempt in $(seq 1 15); do
-            # Probe health metrics using local system loopback structure
-            if curl --fail --connect-timeout 2 http://127.0.0; then
+            if curl --fail --silent --show-error \
+              --connect-timeout 2 \
+              http://127.0.0.1:8000/metrics; then
               echo "[SUCCESS] Container service resolved and operational."
               break
             fi
 
             if [ "$attempt" -eq 15 ]; then
-              echo "[ERROR] Service gateway failed to respond on port 8000 within timeout parameters."
+              echo "[ERROR] Service failed to respond on port 8000 within timeout bounds."
               exit 1
             fi
 
             sleep 2
           done
 
-          # 4. Final functional telemetry assertion
+          # 4. Final verification metric stream sweep
           echo "Asserting metrics ingestion stream capacity..."
-          curl --fail --connect-timeout 2 http://127.0.0
+          curl --fail --silent --show-error \
+            --connect-timeout 2 \
+            http://127.0.0.1:8000/metrics
