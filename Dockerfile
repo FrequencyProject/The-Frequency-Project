@@ -18,10 +18,12 @@ WORKDIR /build
 COPY pyproject.toml README.md requirements-runtime.txt ./
 COPY . .
 
+# PRODUCTION RESOLUTION: Use PyPI as primary index-url and download.pytorch.org as extra-index-url
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools wheel && \
     python -m pip wheel \
       --wheel-dir /build/wheels \
+      --index-url https://pypi.org/simple \
       --extra-index-url https://download.pytorch.org/whl/cpu \
       -r requirements-runtime.txt .
 
@@ -43,11 +45,16 @@ COPY . /app/
 
 RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator && \
     python -m pip install \
+      --no-cache-dir \
+      --no-compile \
       --no-index \
       --find-links=/app/wheels \
       -r /app/requirements-runtime.txt \
       the-frequency-project && \
-    rm -rf /app/wheels
+    rm -rf /app/wheels /root/.cache/pip
+
+RUN find /usr/local/lib/python3.12/site-packages -type d -name '__pycache__' -prune -exec rm -rf {} + && \
+    find /usr/local/lib/python3.12/site-packages -type f -name '*.py[co]' -delete
 
 RUN mkdir -p /app/scratch && \
     chown -R root:root /app && \
@@ -55,8 +62,7 @@ RUN mkdir -p /app/scratch && \
     chmod -R 0555 /app && \
     chmod -R 0700 /app/scratch
 
-EXPOSE 8080
+EXPOSE 8000
 USER vivic_operator
 
-COPY --chmod=755 entrypoint.sh /app/
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["sh", "-c", "python validate_config.py && python run_session.py"]
