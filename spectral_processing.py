@@ -41,9 +41,15 @@ class AsymmetricTensorPipeline:
         window_1 = 0.5 - 0.5 * np.cos(2 * np.pi * np.arange(len(filtered_ch1)) / (len(filtered_ch1) - 1))
         fft_1 = np.abs(np.fft.rfft(filtered_ch1 * window_1, n=self.target_len * 2))[:self.target_len]
 
-        # Process Channel 2 & 3 (Direct Time-Series Mycelial Ingestion)
-        features_ch2 = c2
-        features_ch3 = c3
+        # Process Channel 2 (Mycelial Ingestion Track A - 500 Hz Sample Boundary)
+        filtered_ch2 = apply_60hz_notch_filter(c2, sample_rate=500.0)
+        window_2 = 0.5 - 0.5 * np.cos(2 * np.pi * np.arange(len(filtered_ch2)) / (len(filtered_ch2) - 1))
+        fft_2 = np.abs(np.fft.rfft(filtered_ch2 * window_2, n=self.target_len * 2))[:self.target_len]
+
+        # Process Channel 3 (Mycelial Ingestion Track B - 500 Hz Sample Boundary)
+        filtered_ch3 = apply_60hz_notch_filter(c3, sample_rate=500.0)
+        window_3 = 0.5 - 0.5 * np.cos(2 * np.pi * np.arange(len(filtered_ch3)) / (len(filtered_ch3) - 1))
+        fft_3 = np.abs(np.fft.rfft(filtered_ch3 * window_3, n=self.target_len * 2))[:self.target_len]
 
         # Process and filter Channel 4 (Geophysical Background Field Monitoring)
         filtered_ch4 = apply_60hz_notch_filter(c4, sample_rate=250.0)
@@ -51,7 +57,7 @@ class AsymmetricTensorPipeline:
         fft_4 = np.abs(np.fft.rfft(filtered_ch4 * window_4, n=self.target_len * 2))[:self.target_len]
 
         # Assemble the clean data rows into a single multi-channel snapshot array
-        feature_matrix = np.stack([fft_1, features_ch2, features_ch3, fft_4], axis=0)
+        feature_matrix = np.stack([fft_1, fft_2, fft_3, fft_4], axis=0)
 
         # Enforce z-score normalization along the temporal axis safely
         means = feature_matrix.mean(axis=1, keepdims=True)
