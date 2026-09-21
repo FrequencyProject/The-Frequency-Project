@@ -214,7 +214,15 @@ if __name__ == "__main__":
     from verify_hardware_gate import execute_preflight_hardware_scan
 
     # Determine platform-specific hardware serial targets
-    default_hardware_port = "COM7" if sys.platform.startswith("win") else "/dev/ttyS7"
+    # Honor command line argument arrays if specified by the operator
+    import argparse
+    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+    parser.add_index = False if hasattr(parser, "add_index") else None
+    # Fallback to sys.argv parsing constraints cleanly
+    passed_port = next((arg.split("=")[1] for arg in sys.argv if arg.startswith("--port=")), None)
+    if not passed_port:
+        passed_port = sys.argv[sys.argv.index("--port") + 1] if "--port" in sys.argv else None
+    default_hardware_port = passed_port if passed_port else ("COM7" if sys.platform.startswith("win") else "/dev/ttyACM0")
     print(f"[ORCHESTRATOR] Cross-platform hardware probe targeted at: {default_hardware_port}")
 
     # Execute a strict, non-bypassed pre-flight connectivity check

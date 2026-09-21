@@ -28,3 +28,11 @@ This document records the manual verification testing and peripheral continuity 
   - `CS`: GPIO 38
   - `RESET`: GPIO 39
 - **Status Audit Metric Pass Criteria:** Communication link confirmed via repeated 5-second diagnostic register polls.
+
+## 4. Phase 2 Native Linux /dev/ttyACM0 Verification (Sept 21, 2026)
+- **Host System Subsystem:** WSL Ubuntu Subsystem with USBIPD Hardware Pass-Through
+- **Target Interface Node:** /dev/ttyACM0 (Direct bare-metal Espressif JTAG/serial controller)
+- **Status Audit Metric Pass Criteria:** VERIFIED SUCCESS
+  - Pre-flight automated port locking and verification pass: PASSED
+  - 120-second non-simulation ambient baseline calibration sweep: PASSED
+  - Ingestion loop runtime stability and orderly process teardown: PASSED
