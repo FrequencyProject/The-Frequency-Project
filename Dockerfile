@@ -18,13 +18,14 @@ WORKDIR /build
 COPY pyproject.toml README.md requirements-runtime.txt ./
 COPY . .
 
-# PRODUCTION FIX: Point index-url directly to the raw binary download sub-directory
+# PRODUCTION RESOLUTION: Use PyPI as primary index, include PyTorch CPU as extra index, and disable build isolation
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools wheel && \
     python -m pip wheel \
+      --no-build-isolation \
       --wheel-dir /build/wheels \
-      --index-url https://pypi.org \
-      --extra-index-url https://pytorch.org \
+      --index-url https://pypi.org/simple \
+      --extra-index-url https://download.pytorch.org/whl/cpu \
       -r requirements-runtime.txt .
 
 ARG BASE_IMAGE
