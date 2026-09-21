@@ -18,13 +18,13 @@ WORKDIR /build
 COPY pyproject.toml README.md requirements-runtime.txt ./
 COPY . .
 
-# CRITICAL FIX: Make the CPU URL the primary index-url and add PyPI as the fallback extra-index-url
+# PRODUCTION RESOLUTION: Use PyPI as primary index-url and download.pytorch.org as extra-index-url
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools wheel && \
     python -m pip wheel \
       --wheel-dir /build/wheels \
-      --index-url https://pytorch.org \
-      --extra-index-url https://pypi.org \
+      --index-url https://pypi.org/simple \
+      --extra-index-url https://download.pytorch.org/whl/cpu \
       -r requirements-runtime.txt .
 
 ARG BASE_IMAGE
