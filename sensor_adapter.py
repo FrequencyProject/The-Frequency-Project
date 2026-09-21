@@ -120,10 +120,23 @@ class SensorAdapter:
         self._buffer_manager._head = value
 
     def _packet_ingestion_callback(self, data_tuple: tuple):
-        """Consumes raw tuples and offloads them directly to the decoupled storage manager."""
+        """Consumes raw tuples, filters physical voltage faults, and offloads them safely."""
         if not data_tuple or len(data_tuple) != 4:
             self.frames_dropped += 1
             return
+
+        # PHASE 2 HARDWARE VERIFICATION: Intercept clipping / full-scale saturation faults (ADS1256 Max = ±2.048V)
+        # Enforce check only if live hardware is active and simulation mode is disabled
+        is_sim = getattr(self.daemon, "use_mock_fallback", True) or getattr(self.daemon, "use_simulation", False)
+        if not is_sim:
+            for voltage in data_tuple:
+                if abs(float(voltage)) >= 2.0480:
+                    self.frames_dropped += 1
+                    import logging
+                    logging.getLogger("SensorAdapter").warning(
+                        f"[HARDWARE ALERT] Clipping Saturation Boundary Overrun detected ({voltage}V)!"
+                    )
+                    return
 
         with self.lock:
             self.frames_received += 1
