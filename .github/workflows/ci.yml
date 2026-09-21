@@ -99,3 +99,16 @@ jobs:
 
           echo "=== ERROR: Container timed out without becoming ready ==="
           exit 1
+
+      - name: Execute Automated Container Runtime Smoke Test
+        run: |
+          set -euxo pipefail
+          # 1. Spin up the production image in an isolated background container
+          docker run -d --name frequency-runtime-test -p 8000:8000 the-frequency-project:ci-gate
+          # 2. Provide a 5-second initialization window for config verification
+          sleep 5
+          # 3. Verify container responsiveness and log outputs
+          docker ps
+          docker logs frequency-runtime-test
+          # 4. Tear down the test container safely
+          docker rm -f frequency-runtime-test
