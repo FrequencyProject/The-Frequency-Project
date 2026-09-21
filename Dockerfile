@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 ARG BASE_IMAGE=python:3.12-slim
 
+# === STAGE 1: BUILDER ===
 FROM ${BASE_IMAGE} AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -18,16 +19,15 @@ WORKDIR /build
 COPY pyproject.toml README.md requirements-runtime.txt ./
 COPY . .
 
-# PRODUCTION RESOLUTION: Use PyPI as primary index-url and download.pytorch.org as extra-index-url
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools wheel && \
     python -m pip wheel \
       --wheel-dir /build/wheels \
-      --index-url https://pypi.org/simple \
-      --extra-index-url https://download.pytorch.org/whl/cpu \
+      --index-url https://pypi.org \
+      --extra-index-url https://pytorch.org \
       -r requirements-runtime.txt .
 
-ARG BASE_IMAGE
+# === STAGE 2: RUNTIME ===
 FROM ${BASE_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -39,9 +39,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Inherit pre-compiled dependencies from builder stage
 COPY --from=builder /build/wheels /app/wheels
 COPY requirements-runtime.txt /app/
 COPY . /app/
+
+# Inject native signal-forwarding entrypoint configuration block safely inside the active WORKDIR
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator && \
     python -m pip install \
@@ -64,9 +69,5 @@ RUN mkdir -p /app/scratch && \
 
 EXPOSE 8000
 USER vivic_operator
-
-# Inject native signal-forwarding entrypoint configuration block
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
 
 ENTRYPOINT ["/app/entrypoint.sh"]
