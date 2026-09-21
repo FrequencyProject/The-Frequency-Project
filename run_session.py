@@ -34,7 +34,7 @@ def emit_structured_log(event_type: str, level: str, msg: str, data: dict = None
 class MetricsHttpExporter(threading.Thread):
     """Hosts a minimal, lightweight, zero-dependency HTTP server for Prometheus scraping and health probes."""
 
-    def __init__(self, session, host: str = "0.0.0.0", port: int = 8000):  # nosec B104
+    def __init__(self, session, host: str = "0.0.0.0", port: int = 8080):  # nosec B104
         super().__init__()
         self.session = session
         self.host = host
@@ -220,7 +220,7 @@ if __name__ == "__main__":
 
     session = UnifiedVivicSession(port=assigned_port)
 
-    exporter_server = MetricsHttpExporter(session=session, host="0.0.0.0", port=8000)  # nosec B104
+    exporter_server = MetricsHttpExporter(session=session, host="0.0.0.0", port=8080)  # nosec B104
     exporter_server.start()
 
     def handle_container_shutdown(signum, frame):

@@ -66,13 +66,13 @@ jobs:
         run: |
           set -euxo pipefail
           # 1. Launch the compiled production container in background detached mode
-          docker run -d --name frequency-runtime-test -p 8000:8000 the-frequency-project:ci-gate
+          docker run -d --name frequency-runtime-test -p 8080:8080 the-frequency-project:ci-gate
           
           # 2. Allow the internal configuration validations and session initialization to settle
           sleep 5
           
           # 3. Query the core Prometheus metrics diagnostic endpoint to prove operational readiness
-          curl --fail --connect-timeout 5 --retry 3 http://localhost:8000/metrics
+          curl --fail --connect-timeout 5 --retry 3 http://localhost:8080/metrics
           
           # 4. Dump the runtime container logs to the CI output for transparency
           docker logs frequency-runtime-test
