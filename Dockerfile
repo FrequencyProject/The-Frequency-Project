@@ -18,7 +18,7 @@ WORKDIR /build
 COPY pyproject.toml README.md requirements-runtime.txt ./
 COPY . .
 
-# CRITICAL FIX: Explicitly target the lightweight CPU wheel index to strip 4+ GB of CUDA components
+# CRITICAL FIX: Make the CPU URL the primary index-url and add PyPI as the fallback extra-index-url
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools wheel && \
     python -m pip wheel \
@@ -43,7 +43,6 @@ COPY --from=builder /build/wheels /app/wheels
 COPY requirements-runtime.txt /app/
 COPY . /app/
 
-# CRITICAL FIX: Enforce --no-compile and aggressively prune bytecode directories to prevent disk spikes
 RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator && \
     python -m pip install \
       --no-cache-dir \
@@ -54,7 +53,6 @@ RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator && \
       the-frequency-project && \
     rm -rf /app/wheels /root/.cache/pip
 
-# Clean out any leftover bytecode items to protect the final overlay export
 RUN find /usr/local/lib/python3.12/site-packages -type d -name '__pycache__' -prune -exec rm -rf {} + && \
     find /usr/local/lib/python3.12/site-packages -type f -name '*.py[co]' -delete
 
@@ -64,7 +62,6 @@ RUN mkdir -p /app/scratch && \
     chmod -R 0555 /app && \
     chmod -R 0700 /app/scratch
 
-# Synchronized production application port
 EXPOSE 8000
 USER vivic_operator
 
