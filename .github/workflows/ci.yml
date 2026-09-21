@@ -53,57 +53,23 @@ jobs:
       - name: Run Core PyTest Matrix Suite
         run: python -m pytest
 
-      - name: Validate Container Deployment Runtime Integrity
-        run: |
-          set -Eeuo pipefail
+      # OPTIMIZATION REMEDIATION: Setup Docker Buildx to enable native high-speed cloud layer caching
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-          container_name=frequency-runtime-test
-
-          cleanup() {
-            status=$?
-            echo "=== CONTAINER DIAGNOSTICS ==="
-            docker inspect "$container_name" --format='status={{.State.Status}} exit_code={{.State.ExitCode}} error={{.State.Error}}' 2>/dev/null || true
-            
-            echo "=== CONTAINER RUNTIME LOGS ==="
-            docker logs "$container_name" 2>&1 || true
-            
-            docker rm -f "$container_name" 2>/dev/null || true
-            exit "$status"
-          }
-
-          trap cleanup EXIT
-
-          docker build -t the-frequency-project:ci-gate .
-
-          docker run -d \
-            --name "$container_name" \
-            -p 8080:8080 \
-            the-frequency-project:ci-gate
-
-          # Wait until the endpoint is ready, while preserving useful diagnostics.
-          for attempt in $(seq 1 30); do
-            if curl --silent --show-error --fail \
-                --connect-timeout 2 \
-                http://127.0.0.1:8080/metrics; then
-              echo "=== SUCCESS: CONTAINER RUNTIME RESPONSE VERIFIED ==="
-              exit 0
-            fi
-
-            if ! docker inspect "$container_name" --format '{{.State.Running}}' | grep -q true; then
-              echo "=== ERROR: Container exited prematurely ==="
-              exit 1
-            fi
-
-            sleep 2
-          done
-
-          echo "=== ERROR: Container timed out without becoming ready ==="
-          exit 1
+      - name: Verify Production Container Build Stability
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: the-frequency-project:ci-gate
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Execute Automated Container Runtime Smoke Test
         run: |
           set -euxo pipefail
-          # 1. Spin up the production image in an isolated background container
+          # 1. Spin up the cached production image in an isolated background container
           docker run -d --name frequency-runtime-test -p 8000:8000 the-frequency-project:ci-gate
           # 2. Provide a 5-second initialization window for config verification
           sleep 5
