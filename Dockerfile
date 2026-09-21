@@ -1,7 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG BASE_IMAGE=python:3.12-slim
 
-# === STAGE 1: BUILDER ===
 FROM ${BASE_IMAGE} AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -19,6 +18,7 @@ WORKDIR /build
 COPY pyproject.toml README.md requirements-runtime.txt ./
 COPY . .
 
+# PRODUCTION FIX: Point index-url directly to the raw binary download sub-directory
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools wheel && \
     python -m pip wheel \
@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       --extra-index-url https://pytorch.org \
       -r requirements-runtime.txt .
 
-# === STAGE 2: RUNTIME ===
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -39,14 +39,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Inherit pre-compiled dependencies from builder stage
 COPY --from=builder /build/wheels /app/wheels
 COPY requirements-runtime.txt /app/
 COPY . /app/
-
-# Inject native signal-forwarding entrypoint configuration block safely inside the active WORKDIR
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
 
 RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator && \
     python -m pip install \
@@ -70,4 +65,4 @@ RUN mkdir -p /app/scratch && \
 EXPOSE 8000
 USER vivic_operator
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["sh", "-c", "python validate_config.py && python run_session.py"]
