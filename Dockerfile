@@ -55,7 +55,7 @@ RUN mkdir -p /app/scratch && \
     chmod -R 0555 /app && \
     chmod -R 0700 /app/scratch
 
-EXPOSE 8000
+EXPOSE 8080
 USER vivic_operator
 
 COPY --chmod=755 entrypoint.sh /app/

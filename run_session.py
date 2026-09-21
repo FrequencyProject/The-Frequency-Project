@@ -34,7 +34,7 @@ def emit_structured_log(event_type: str, level: str, msg: str, data: dict = None
 class MetricsHttpExporter(threading.Thread):
     """Hosts a minimal, lightweight, zero-dependency HTTP server for Prometheus scraping and health probes."""
 
-    def __init__(self, session, host: str = "0.0.0.0", port: int = 8000):  # nosec B104
+    def __init__(self, session, host: str = "0.0.0.0", port: int = 8080):  # nosec B104
         super().__init__()
         self.session = session
         self.host = host
@@ -205,9 +205,22 @@ class UnifiedVivicSession:
 
 
 if __name__ == "__main__":
-    session = UnifiedVivicSession(port="MOCK")
+    from verify_hardware_gate import execute_preflight_hardware_scan
 
-    exporter_server = MetricsHttpExporter(session=session, host="0.0.0.0", port=8000)  # nosec B104
+    # Determine platform-specific hardware serial targets
+    default_hardware_port = "COM7" if sys.platform.startswith("win") else "/dev/ttyS7"
+    print(f"[ORCHESTRATOR] Cross-platform hardware probe targeted at: {default_hardware_port}")
+
+    # Execute a strict, non-bypassed pre-flight connectivity check
+    if execute_preflight_hardware_scan(target_port=default_hardware_port, max_discovery_wait_seconds=3.0):
+        assigned_port = default_hardware_port
+    else:
+        print("[ORCHESTRATOR] Physical device un-verified. Reverting to structural mock track.")
+        assigned_port = "MOCK"
+
+    session = UnifiedVivicSession(port=assigned_port)
+
+    exporter_server = MetricsHttpExporter(session=session, host="0.0.0.0", port=8080)  # nosec B104
     exporter_server.start()
 
     def handle_container_shutdown(signum, frame):
