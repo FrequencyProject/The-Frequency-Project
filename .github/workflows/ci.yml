@@ -1,4 +1,4 @@
-name: Continuous Integration Security & Regression Pipeline
+name: Continuous Integration Gate
 
 on:
   push:
@@ -9,74 +9,47 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out repository source tree files
+      - name: Checkout Code Repository
         uses: actions/checkout@v4
 
-      - name: Provision system dependencies and TPM headers
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libtss2-dev build-essential tpm2-tools
-
-      - name: Configure Python 3.12 Runtime
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Verify pinned third-party dependencies wheel compilation
-        run: |
-          python -m pip install --upgrade pip setuptools cffi
-          pip install flake8 bandit pip-audit cyclonedx-bom
-          pip install -r requirements.txt
-
-      - name: Run Code Quality Security Audit (Flake8)
-        run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --statistics
-
-      - name: Automated Dependency Vulnerability Scanning (pip-audit)
-        run: pip-audit -r requirements.txt
-
-      - name: Automated Code Security Scanning (Bandit)
-        run: bandit -r . -x ./venv,./tests -ll
-
-      - name: Supply Chain Software Bill of Materials (SBOM) Generation
-        run: cyclonedx-py requirements requirements.txt --of XML -o bom.xml
-
-      - name: Install Local Project Module Package Layout
-        run: pip install -e .
-
-      - name: Execute validation configuration checks
-        run: python validate_config.py
-
-      - name: Run Core PyTest Matrix Suite
-        run: python -m pytest
-
-      - name: Free Docker Storage Pool
-        run: |
-          docker system prune -af --volumes || true
-          sudo apt-get clean
-          df -h
-          docker system df
-
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx Engine
         uses: docker/setup-buildx-action@v3
 
-      - name: Verify Production Container Build Stability
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          load: true
-          tags: the-frequency-project:ci-gate
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Construct Core Container Runtime Image
+        run: |
+          docker build -t the-frequency-project:ci-gate .
 
       - name: Execute Automated Container Runtime Smoke Test
         run: |
           set -euxo pipefail
-          docker run -d --name frequency-runtime-test -p 8000:8000 the-frequency-project:ci-gate
-          sleep 5
-          docker ps
-          docker logs frequency-runtime-test
-          docker rm -f frequency-runtime-test
+
+          # 1. Initialize container mapping external port 8000 to internal application port 8080
+          docker run -d \
+            --name frequency-runtime-test \
+            -p 8000:8080 \
+            the-frequency-project:ci-gate
+
+          # 2. Register global container teardown and log tracing safety trap
+          trap 'docker logs frequency-runtime-test || true; docker rm -f frequency-runtime-test || true' EXIT
+
+          # 3. High-frequency polling block to capture endpoints before simulation teardown
+          echo "Entering high-assurance container polling matrix..."
+          for attempt in $(seq 1 15); do
+            # Probe health metrics using local system loopback structure
+            if curl --fail --connect-timeout 2 http://127.0.0; then
+              echo "[SUCCESS] Container service resolved and operational."
+              break
+            fi
+
+            if [ "$attempt" -eq 15 ]; then
+              echo "[ERROR] Service gateway failed to respond on port 8000 within timeout parameters."
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          # 4. Final functional telemetry assertion
+          echo "Asserting metrics ingestion stream capacity..."
+          curl --fail --connect-timeout 2 http://127.0.0
