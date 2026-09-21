@@ -53,29 +53,49 @@ jobs:
       - name: Run Core PyTest Matrix Suite
         run: python -m pytest
 
-      - name: Verify Production Container Build Stability
-        run: |
-          set -euxo pipefail
-          df -h
-          free -h
-          docker system df
-          docker build --progress=plain -t the-frequency-project:ci-gate .
-
-      # HARDENING REMEDIATION: Execute a non-root runtime container smoke test validation pass
       - name: Validate Container Deployment Runtime Integrity
         run: |
-          set -euxo pipefail
-          # 1. Launch the compiled production container in background detached mode
-          docker run -d --name frequency-runtime-test -p 8080:8080 the-frequency-project:ci-gate
-          
-          # 2. Allow the internal configuration validations and session initialization to settle
-          sleep 5
-          
-          # 3. Query the core Prometheus metrics diagnostic endpoint to prove operational readiness
-          curl --fail --connect-timeout 5 --retry 3 http://localhost:8080/metrics
-          
-          # 4. Dump the runtime container logs to the CI output for transparency
-          docker logs frequency-runtime-test
-          
-          # 5. Clean up the testing runner instance cleanly
-          docker rm -f frequency-runtime-test
+          set -Eeuo pipefail
+
+          container_name=frequency-runtime-test
+
+          cleanup() {
+            status=$?
+            echo "=== CONTAINER DIAGNOSTICS ==="
+            docker inspect "$container_name" --format='status={{.State.Status}} exit_code={{.State.ExitCode}} error={{.State.Error}}' 2>/dev/null || true
+            
+            echo "=== CONTAINER RUNTIME LOGS ==="
+            docker logs "$container_name" 2>&1 || true
+            
+            docker rm -f "$container_name" 2>/dev/null || true
+            exit "$status"
+          }
+
+          trap cleanup EXIT
+
+          docker build -t the-frequency-project:ci-gate .
+
+          docker run -d \
+            --name "$container_name" \
+            -p 8080:8080 \
+            the-frequency-project:ci-gate
+
+          # Wait until the endpoint is ready, while preserving useful diagnostics.
+          for attempt in $(seq 1 30); do
+            if curl --silent --show-error --fail \
+                --connect-timeout 2 \
+                http://127.0.0.1:8080/metrics; then
+              echo "=== SUCCESS: CONTAINER RUNTIME RESPONSE VERIFIED ==="
+              exit 0
+            fi
+
+            if ! docker inspect "$container_name" --format '{{.State.Running}}' | grep -q true; then
+              echo "=== ERROR: Container exited prematurely ==="
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          echo "=== ERROR: Container timed out without becoming ready ==="
+          exit 1
