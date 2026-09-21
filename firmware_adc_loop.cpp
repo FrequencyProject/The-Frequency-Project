@@ -6,7 +6,9 @@ const int ADC_CS_PIN = 10;
 const int ADC_DRDY_PIN = 4;
 
 // --- HARDWARE SIMULATION TOGGLE ---
-const bool HARDWARE_SIMULATION_MODE = true;
+#ifndef HARDWARE_SIMULATION_MODE
+#define HARDWARE_SIMULATION_MODE 0 // Default to LIVE physical data acquisition mode
+#endif
 
 struct TelemetryFrame {
     int32_t ch1;
@@ -85,7 +87,7 @@ void loop() {
     }
     interrupts();
 
-    if (HARDWARE_SIMULATION_MODE) {
+    if (HARDWARE_SIMULATION_MODE == 1) {
         static uint32_t sim_tick = 0;
         sim_tick++;
 
