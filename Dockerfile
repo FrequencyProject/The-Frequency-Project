@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 ARG BASE_IMAGE=python:3.12-slim
 
+# === STAGE 1: BUILDER ===
 FROM ${BASE_IMAGE} AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -18,7 +19,7 @@ WORKDIR /build
 COPY pyproject.toml README.md requirements-runtime.txt ./
 COPY . .
 
-# PRODUCTION RESOLUTION: Use PyPI as primary index-url and download.pytorch.org as extra-index-url
+# PRODUCTION RESOLUTION: Strip --no-build-isolation to let pip resolve its own C-bindings natively
 RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --upgrade pip setuptools wheel && \
     python -m pip wheel \
@@ -27,7 +28,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       --extra-index-url https://download.pytorch.org/whl/cpu \
       -r requirements-runtime.txt .
 
-ARG BASE_IMAGE
+# === STAGE 2: RUNTIME ===
 FROM ${BASE_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -65,4 +66,4 @@ RUN mkdir -p /app/scratch && \
 EXPOSE 8000
 USER vivic_operator
 
-ENTRYPOINT ["sh", "-c", "python validate_config.py && python run_session.py"]
+ENTRYPOINT ["/app/entrypoint.sh"]
