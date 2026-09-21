@@ -1,11 +1,13 @@
 # syntax=docker/dockerfile:1
 ARG BASE_IMAGE=python:3.12-slim
 
+# === STAGE 1: BUILDER ===
 FROM ${BASE_IMAGE} AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Ensure system pkg-config and TPM 2.0 development headers are provisioned
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
@@ -18,9 +20,9 @@ WORKDIR /build
 COPY pyproject.toml README.md requirements-runtime.txt ./
 COPY . .
 
-# PRODUCTION RESOLUTION: Use PyPI as primary index, include PyTorch CPU as extra index, and disable build isolation
+# CRITICAL RESOLUTION: Pre-install pkgconfig to satisfy tpm2-pytss build metadata requirements
 RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m pip install --upgrade pip setuptools wheel && \
+    python -m pip install --upgrade pip setuptools wheel pkgconfig && \
     python -m pip wheel \
       --no-build-isolation \
       --wheel-dir /build/wheels \
@@ -28,7 +30,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       --extra-index-url https://download.pytorch.org/whl/cpu \
       -r requirements-runtime.txt .
 
-ARG BASE_IMAGE
+# === STAGE 2: RUNTIME ===
 FROM ${BASE_IMAGE}
 
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -40,9 +42,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Inherit pre-compiled dependencies from builder stage
 COPY --from=builder /build/wheels /app/wheels
 COPY requirements-runtime.txt /app/
 COPY . /app/
+
+# Inject native signal-forwarding entrypoint configuration block safely
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 RUN useradd -u 10001 -m -s /sbin/nologin vivic_operator && \
     python -m pip install \
@@ -66,4 +73,4 @@ RUN mkdir -p /app/scratch && \
 EXPOSE 8000
 USER vivic_operator
 
-ENTRYPOINT ["sh", "-c", "python validate_config.py && python run_session.py"]
+ENTRYPOINT ["/app/entrypoint.sh"]
