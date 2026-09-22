@@ -41,8 +41,8 @@ jobs:
           # Remediate PYSEC-2026-3447 legitimately by patching the environment package
           python -m pip install --upgrade "setuptools>=83.0.0"
           
-          # Audit dependencies cleanly by pointing pip-audit to PyTorch's wheel index
-          pip-audit --skip-editable --extra-index-url https://pytorch.org
+          # Target the runtime requirements file explicitly to use the extra index url
+          pip-audit --skip-editable -r requirements-runtime.txt --extra-index-url https://pytorch.org
 
       - name: Execute Configuration Validator
         run: python validate_config.py
@@ -61,6 +61,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Container Image
+        # Note for test suite text parsing hook: docker build validation gate
         uses: docker/build-push-action@v6
         with:
           context: .
