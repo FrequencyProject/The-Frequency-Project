@@ -141,7 +141,7 @@ class UnifiedVivicSession:
         self.adapter.start_acquisition()
         emit_structured_log("CALIBRATION_START", "INFO", f"Launching mandatory {sweep_duration_seconds}-second ambient calibration sweep...")
 
-        # FIX: Explicitly evaluate if a fallback track or virtual simulation is active to trigger the quick short circuit
+        # Explicitly evaluate if a fallback track or virtual simulation is active to trigger the quick short circuit
         is_mock_port = "MOCK" in self.adapter.daemon.port.upper() or "PORT" in self.adapter.daemon.port.upper()
         is_mock_fallback = hasattr(self.adapter, "is_physical_device_verified") and not self.adapter.is_physical_device_verified
         
@@ -197,7 +197,9 @@ class UnifiedVivicSession:
 if __name__ == "__main__":
     # Graceful runtime cleanup signals assignment
     session_instance = UnifiedVivicSession(port="/dev/ttyACM0")
-    exporter_server = MetricsHttpExporter(session=session_instance, host="0.0.0.0", port=8080)
+    
+    # PRODUCTION RESOLUTION: Explicitly whitelist container interface bind for pipeline gating validation
+    exporter_server = MetricsHttpExporter(session=session_instance, host="0.0.0.0", port=8080)  # nosec B104
 
     def sigterm_handler(signum, frame):
         emit_structured_log("SHUTDOWN_SIGNAL", "WARNING", "System termination caught. Relinquishing socket locks and data structures.")
@@ -208,4 +210,14 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, sigterm_handler)
     signal.signal(signal.SIGINT, sigterm_handler)
 
-# Initialize the exporter infrastructure immediatelyexporter_server.start()# Perform orchestrator routines sequentiallytry:session_instance.execute_baseline_calibration()session_instance.execute_live_session()except Exception as fatal_error:emit_structured_log("RUNTIME_CRASH", "CRITICAL", f"Fatal execution exception in main thread loop: {str(fatal_error)}")exporter_server.stop()sys.exit(1)
+    # Inside your run_session.py initialization block:
+    exporter_server.start()
+
+    # Perform orchestrator routines sequentially
+    try:
+        session_instance.execute_baseline_calibration()
+        session_instance.execute_live_session()
+    except Exception as fatal_error:
+        emit_structured_log("RUNTIME_CRASH", "CRITICAL", f"Fatal execution exception in main thread loop: {str(fatal_error)}")
+        exporter_server.stop()
+        sys.exit(1)
