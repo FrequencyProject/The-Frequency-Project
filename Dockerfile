@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
-COPY pyproject.toml README.md requirements-runtime.txt/
+COPY pyproject.toml README.md requirements-runtime.txt ./
 COPY . .
 
 # PRODUCTION RESOLUTION: Strip --no-build-isolation to let pip resolve its own C-bindings natively
