@@ -10,7 +10,7 @@ The system is deployed using a hardened, multi-stage Docker configuration that i
 - **Rootless Execution:** The container runs under a non-privileged system user profile (`UID 10001`), preventing container-breakout escalation hazards.
 - **Read-Only Filesystem:** The container root file tree is mounted as completely read-only (`read_only: true`). Writable state requirements are restricted strictly to memory-backed volatile partitions (`/tmp`).
 - **Resource Constraints:** Heavy deep learning tensor allocations are isolated and constrained to prevent out-of-memory worker crashes or thread scheduling thrashing on shared host hardware.
-- **Network Isolation:** The observability matrix is isolated and exposed on port 8000/tcp via lightweight HTTP raw sockets, bypassing heavy application framework overhead.
+- **Network Isolation:** The observability matrix is isolated internally on port **8080/tcp** and exposed externally via lightweight HTTP raw sockets, bypassing heavy application framework overhead.
 
 ## 🎛️ 2. Environmental Configuration Profiles
 
@@ -52,7 +52,7 @@ docker build -t local/the-frequency-project:latest .
 # Instantiate the container instance with strict runtime limits and read-only mounts
 docker run -d \
   --name operational-ingestion-engine \
-  -p 8000:8000 \
+  -p 8000:8080 \
   --read-only \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   --user 10001:10001 \
@@ -64,8 +64,12 @@ docker run -d \
   -e TPM2TOOLS_TCTI="mssim:host=swtpm,port=2321" \
   --network frequency-network \
   local/the-frequency-project:latest
-
 ```
+
+| Environment Dimension | Port Target | Purpose |
+| :--- | :--- | :--- |
+| **Host Port** | `8000` | Publicly accessible edge / reverse-proxy ingestion |
+| **Container Port** | `8080` | Internal application service execution context |
 
 ## 🛑 5. Graceful Teardown and Signal Interception
 
@@ -73,11 +77,9 @@ The orchestration layer features native POSIX signal hooks capturing container t
 - When a `docker stop` or `SIGTERM` (Signal 15) code hits the process context, the runtime intercepts the trap, flips `session.is_active = False`, and calls `daemon.stop()` cleanly.
 - This guarantees background asynchronous serial ingestion frames drop out sequentially, avoiding byte-level array fragmentation on your active hardware communication lines.
 
-```
-
 ## 📊 6. Cloud Observability & Orchestrator Probes
 
-The embedded HTTP metrics server on port `8000` satisfies cloud-native infrastructure automation specifications out of the box:
+The embedded HTTP metrics server internally listens on port `8080` to satisfy cloud-native infrastructure automation specifications:
 
 ### 🐋 Docker / Kubernetes Orchestrator Probes
 The `/health` endpoint responds dynamically based on internal calibration states to drive automation pipelines:
@@ -88,7 +90,7 @@ The `/health` endpoint responds dynamically based on internal calibration states
 livenessProbe:
   httpGet:
     path: /health
-    port: 8000
+    port: 8080
   initialDelaySeconds: 5
   periodSeconds: 10
 ```
