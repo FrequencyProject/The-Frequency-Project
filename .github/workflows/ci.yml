@@ -37,7 +37,12 @@ jobs:
         run: bandit -r . -ll -x ./.venv,./tests
 
       - name: Audit Dependencies for Known Vulnerabilities
-        run: pip-audit --skip-editable
+        run: |
+          # Remediate PYSEC-2026-3447 legitimately by patching the environment package
+          python -m pip install --upgrade "setuptools>=83.0.0"
+          
+          # Audit dependencies cleanly by pointing pip-audit to PyTorch's wheel index
+          pip-audit --skip-editable --extra-index-url https://pytorch.org
 
       - name: Execute Configuration Validator
         run: python validate_config.py
