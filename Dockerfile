@@ -26,7 +26,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       --wheel-dir /build/wheels \
       --index-url https://pypi.org/simple \
       --extra-index-url https://download.pytorch.org/whl/cpu \
-      -r requirements-runtime.txt .
+      -r requirements-runtime.txt \
+      .
 
 # === STAGE 2: RUNTIME ===
 FROM ${BASE_IMAGE}
