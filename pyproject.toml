@@ -19,11 +19,20 @@ classifiers = [
 dependencies = [
     "numpy>=1.26.4",
     "scipy>=1.12.0",
-    "torch>=2.4.1",
+    "torch==2.4.1+cpu",
     "tpm2-pytss>=2.3.0,<=3.0.0",
     "pyserial>=3.5",
     "cryptography==50.0.0"
 ]
+
+# Configures pip/uv resolution mechanics to pull the specific +cpu binary variant
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://pytorch.org"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
 
 [tool.setuptools]
 py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "spectral_processing", "model_architecture", "resonance_loss", "train_engine", "latent_monitor", "prototype_simulation", "stress_harness", "config","validate_phi_hypothesis"]

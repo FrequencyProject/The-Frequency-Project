@@ -1,59 +1,68 @@
-name: Continuous Integration Gate
+name: CI Pipeline
 
 on:
   push:
-    branches: [ Main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ Main ]
+    branches: [ main ]
 
 jobs:
-  build-and-test:
+  validate-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code Repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Note: Node 20 deprecation notices from standard actions are benign infrastructure warnings.
-      - name: Setup Docker Buildx Engine
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Testing, Linting & Security Tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install flake8 bandit pytest pip-audit -r requirements-runtime.txt
+          python -m pip install -e .
+
+      - name: Execute Code Linter (Flake8)
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run Static Application Security Testing (Bandit)
+        run: bandit -r . -ll -x ./.venv,./tests
+
+      - name: Audit Dependencies for Known Vulnerabilities
+        run: pip-audit --skip-organic
+
+      - name: Execute Configuration Validator
+        run: python validate_config.py
+
+      - name: Run Test Suite (PyTest)
+        run: python -m pytest
+
+  build-and-smoke-test:
+    needs: validate-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Construct Core Container Runtime Image
+      - name: Build Container Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: the-frequency-project:ci-gate
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Execute Runtime Container Smoke Test
         run: |
-          docker build -t the-frequency-project:ci-gate .
-
-      - name: Execute Automated Container Runtime Smoke Test
-        run: |
-          set -euxo pipefail
-
-          # 1. Map host 8000 securely to application native 8080 
-          docker run -d \
-            --name frequency-runtime-test \
-            -p 8000:8080 \
-            the-frequency-project:ci-gate
-
-          # 2. Establish high-assurance logging/removal cleanup track
-          trap 'docker logs frequency-runtime-test || true; docker rm -f frequency-runtime-test || true' EXIT
-
-          # 3. High-frequency polling block explicitly targeted at the host bridge port
-          echo "Waiting for metrics endpoint..."
-          for attempt in $(seq 1 15); do
-            if curl --fail --silent --show-error \
-              --connect-timeout 2 \
-              http://127.0.0.1:8000/metrics; then
-              echo "[SUCCESS] Container service resolved and operational."
-              break
-            fi
-
-            if [ "$attempt" -eq 15 ]; then
-              echo "[ERROR] Service failed to respond on port 8000 within timeout bounds."
-              exit 1
-            fi
-
-            sleep 2
-          done
-
-          # 4. Final verification metric stream sweep
-          echo "Asserting metrics ingestion stream capacity..."
-          curl --fail --silent --show-error \
-            --connect-timeout 2 \
-            http://127.0.0.1:8000/metrics
+          docker run -d -p 8000:8080 --name smoke-check the-frequency-project:ci-gate
+          sleep 3
+          curl -f http://localhost:8000/health || (docker logs smoke-check && exit 1)
+          docker rm -f smoke-check
