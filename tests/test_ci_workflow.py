@@ -10,4 +10,3 @@ def test_ci_dependency_install_step_avoids_unquoted_version_range_specs() -> Non
 
     assert "docker build" in workflow_text
     assert "the-frequency-project:ci-gate" in workflow_text
-
