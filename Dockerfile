@@ -16,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /build
 
-COPY pyproject.toml README.md requirements-runtime.txt ./
+COPY pyproject.toml README.md requirements-runtime.txt/
 COPY . .
 
 # PRODUCTION RESOLUTION: Strip --no-build-isolation to let pip resolve its own C-bindings natively
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
       --wheel-dir /build/wheels \
       --index-url https://pypi.org/simple \
       --extra-index-url https://download.pytorch.org/whl/cpu \
-      -r requirements-runtime.txt .
+      -r requirements-runtime.txt
 
 # === STAGE 2: RUNTIME ===
 FROM ${BASE_IMAGE}
