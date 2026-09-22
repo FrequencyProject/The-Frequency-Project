@@ -41,7 +41,7 @@ jobs:
           # Remediate PYSEC-2026-3447 legitimately by patching the environment package
           python -m pip install --upgrade "setuptools>=83.0.0"
           
-          # Target the runtime requirements file explicitly to use the extra index url
+          # Target the runtime requirements file explicitly to use the correct extra index url
           pip-audit --skip-editable -r requirements-runtime.txt --extra-index-url https://pytorch.org
 
       - name: Execute Configuration Validator
@@ -73,7 +73,36 @@ jobs:
 
       - name: Execute Runtime Container Smoke Test
         run: |
-          docker run -d -p 8000:8080 --name smoke-check the-frequency-project:ci-gate
-          sleep 3
-          curl -f http://localhost:8000/health || (docker logs smoke-check && exit 1)
-          docker rm -f smoke-check
+          set -euo pipefail
+
+          # Unconditional cleanup trap ensures logs print out immediately on failure
+          cleanup() {
+            echo "=== Final Container Runtime Logs ==="
+            docker logs smoke-check || true
+            docker rm -f smoke-check || true
+          }
+          trap cleanup EXIT
+
+          docker run -d \
+            --name smoke-check \
+            -p 8000:8080 \
+            the-frequency-project:ci-gate
+
+          # Dynamic status polling loop to replace structural sleeps
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:8000/health; then
+              echo "Health check passed successfully!"
+              exit 0
+            fi
+
+            # Actively verify if the container process has crashed underneath us
+            if ! docker inspect -f '{{.State.Running}}' smoke-check 2>/dev/null | grep -q true; then
+              echo "Error: Container exited early before becoming healthy."
+              exit 1
+            fi
+
+            sleep 1
+          done
+
+          echo "Error: Timed out waiting for application port 8080 to respond."
+          exit 1
