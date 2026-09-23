@@ -38,6 +38,7 @@ class HardwareSerialDaemon:
         self.frames_parsed = 0
         self.frames_dropped = 0
         self.last_latency = 0.0
+        self.simulation_active = False
 
     @staticmethod
     def compute_binary_crc8(data: bytes) -> int:
@@ -120,7 +121,8 @@ class HardwareSerialDaemon:
             return "PARSE_EXCEPTION", None
 
     def _simulation_carrier_loop(self):
-        """Generates mock telemetry frames matching the firmwares sinusoidal logic."""
+        """Generates mock telemetry
+        self.simulation_active = True frames matching the firmwares sinusoidal logic."""
         logger.info("Launching virtual hardware simulation telemetry carrier.")
         sim_tick = 0
 
@@ -155,6 +157,7 @@ class HardwareSerialDaemon:
                     backoff = 1.0
                     ser.reset_input_buffer()
                     logger.info(f"Locked serial connection on port {self.port}.")
+                    self.simulation_active = False
 
                     while self.running:
                         line_bytes = ser.readline()
