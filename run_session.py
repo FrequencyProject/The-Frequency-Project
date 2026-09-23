@@ -144,7 +144,7 @@ class UnifiedVivicSession:
         # Explicitly evaluate if a fallback track or virtual simulation is active to trigger the quick short circuit
         is_mock_port = "MOCK" in self.adapter.daemon.port.upper() or "PORT" in self.adapter.daemon.port.upper()
         is_mock_fallback = hasattr(self.adapter, "is_physical_device_verified") and not self.adapter.is_physical_device_verified
-        
+
         # FIX: Safely query thread availability via attribute inspection to support HardwareSerialDaemon patterns without tripping an AttributeError
         daemon_alive = True
         if hasattr(self.adapter, "daemon") and self.adapter.daemon:
@@ -154,7 +154,7 @@ class UnifiedVivicSession:
                 daemon_alive = self.adapter.daemon.alive
             elif hasattr(self.adapter.daemon, "running"):
                 daemon_alive = self.adapter.daemon.running
-        
+
         if is_mock_port or is_mock_fallback or not daemon_alive:
             emit_structured_log("SIMULATION_DETECTED", "INFO", "Simulation track detected: Waiting for background buffer saturation (1280 frames)...")
             while True:
@@ -194,7 +194,7 @@ class UnifiedVivicSession:
         """Launches the primary high-frequency orchestration stream processing cycle loop."""
         self.is_active = True
         emit_structured_log("SESSION_ACTIVATED", "INFO", "Continuous streaming ingestion orchestrator thread engaged.")
-        
+
         try:
             while self.is_active:
                 time.sleep(1.0)
@@ -207,7 +207,7 @@ class UnifiedVivicSession:
 if __name__ == "__main__":
     # Graceful runtime cleanup signals assignment
     session_instance = UnifiedVivicSession(port="/dev/ttyACM0")
-    
+
     # PRODUCTION RESOLUTION: Explicitly whitelist container interface bind for pipeline gating validation
     exporter_server = MetricsHttpExporter(session=session_instance, host="0.0.0.0", port=8080)  # nosec B104
 
@@ -231,4 +231,3 @@ if __name__ == "__main__":
         emit_structured_log("RUNTIME_CRASH", "CRITICAL", f"Fatal execution exception in main thread loop: {str(fatal_error)}")
         exporter_server.stop()
         sys.exit(1)
-
