@@ -127,8 +127,8 @@ class SensorAdapter:
 
         # PHASE 2 HARDWARE VERIFICATION: Intercept clipping / full-scale saturation faults (ADS1256 Max = ±2.048V)
         # Enforce check only if live hardware is active and simulation mode is disabled
-        is_sim = getattr(self.daemon, "use_mock_fallback", True) or getattr(self.daemon, "use_simulation", False)
-        if not is_sim:
+        is_running_live = getattr(self.daemon, "running", False) and not getattr(self.daemon, "simulation_active", False)
+        if is_running_live:
             for voltage in data_tuple:
                 if abs(float(voltage)) >= 2.0480:
                     self.frames_dropped += 1

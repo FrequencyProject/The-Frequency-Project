@@ -57,3 +57,41 @@ def test_sensor_variance_firewall_with_real_signals():
 
     features = adapter.get_ai_features()
     assert np.all(features == 0.0)
+
+def test_live_hardware_enforces_voltage_limit():
+    from sensor_adapter import SensorAdapter
+    adapter = SensorAdapter(port="TEST")
+    adapter.daemon.running = True
+    adapter.daemon.simulation_active = False
+
+    adapter._packet_ingestion_callback((2.0480, 0.1, 0.1, 0.1))
+
+    assert adapter.frames_dropped == 1
+    assert adapter.frames_received == 0
+
+
+def test_simulation_mode_allows_synthetic_voltage():
+    from sensor_adapter import SensorAdapter
+    adapter = SensorAdapter(port="TEST")
+    adapter.daemon.simulation_active = True
+
+    adapter._packet_ingestion_callback((2.0480, 0.1, 0.1, 0.1))
+
+    assert adapter.frames_received == 1
+    assert adapter.frames_dropped == 0
+
+
+def test_fallback_marks_simulation_active():
+    from serial_daemon import HardwareSerialDaemon
+    import unittest.mock as mock
+    import serial
+
+    daemon = HardwareSerialDaemon(use_mock_fallback=True)
+    daemon.running = True
+
+    def check_state_on_callback():
+        assert daemon.simulation_active is True
+
+    with mock.patch('serial.Serial', side_effect=serial.SerialException("Serial port error")), mock.patch.object(daemon, '_simulation_carrier_loop', side_effect=check_state_on_callback) as mock_loop:
+        daemon._lifecycle_loop()
+        assert mock_loop.called

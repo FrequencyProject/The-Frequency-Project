@@ -181,6 +181,7 @@ class HardwareSerialDaemon:
                     break
                 if self.use_mock_fallback:
                     logger.warning(f"Physical port {self.port} unavailable. Diverting to simulation carrier...")
+                    self.simulation_active = True
                     self._simulation_carrier_loop()
                     break
                 else:
