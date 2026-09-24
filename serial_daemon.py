@@ -40,6 +40,7 @@ class HardwareSerialDaemon:
         self.last_latency = 0.0
         self.simulation_active = False
         self.simulation_active = False
+        self.simulation_active = False
 
     @staticmethod
     def compute_binary_crc8(data: bytes) -> int:
@@ -161,6 +162,7 @@ class HardwareSerialDaemon:
                     logger.info(f"Locked serial connection on port {self.port}.")
                     self.simulation_active = False
                     self.simulation_active = False
+                    self.simulation_active = False
 
                     while self.running:
                         line_bytes = ser.readline()
@@ -182,6 +184,7 @@ class HardwareSerialDaemon:
                 if self.use_mock_fallback:
                     logger.warning(f"Physical port {self.port} unavailable. Diverting to simulation carrier...")
                     self.simulation_active = True
+                    self.simulation_active = True
                     self._simulation_carrier_loop()
                     break
                 else:
@@ -201,6 +204,7 @@ class HardwareSerialDaemon:
         """Stops background polling thread loop cleanly."""
         with self.lock:
             self.running = False
+            self.simulation_active = False
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=2.0)
             logger.info("Ingestion loop deactivated cleanly.")
