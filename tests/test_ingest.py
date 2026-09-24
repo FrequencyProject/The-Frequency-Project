@@ -71,6 +71,7 @@ def test_row_independent_zscore_normalization(
     )
 
     # Multi-Version Fix: Explicitly unpack float indices to handle NumPy array string casting rules smoothly
+    clean_adapter.daemon.simulation_active = True
     for frame in mock_signals:
         packet = f"V1:{frame[0]:.4f},V2:{frame[1]:.4f},V3:{frame[2]:.4f},V4:{frame[3]:.4f}\n"
         clean_adapter.process_incoming_packet(packet, allow_missing_crc=True)

@@ -24,6 +24,7 @@ def test_training_step_backprop_pass():
     rng = np.random.default_rng(seed=101)
 
     # Force saturate the memory deques past the 1280 limit to trigger the operational path
+    engine.adapter.daemon.simulation_active = True
     for _ in range(1285):
         v1, v2, v3, v4 = rng.normal(0, 1), rng.normal(0, 1), rng.normal(0, 1), rng.normal(0, 1)
         packet = f"V1:{v1},V2:{v2},V3:{v3},V4:{v4}\n"
