@@ -16,13 +16,14 @@ import serial
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
 logger = logging.getLogger("SerialDaemon")
 
-# Configuration regex for matching incoming telemetry frames
 FRAME_PATTERN = re.compile(
     r"^V1:(?P<v1>-?\d+\.\d+),V2:(?P<v2>-?\d+\.\d+),V3:(?P<v3>-?\d+\.\d+),V4:(?P<v4>-?\d+\.\d+),CRC:0x(?P<crc>[0-9A-Fa-f]{2})$"
 )
 
+
 class HardwareSerialDaemon:
-    def __init__(self, port: str = "COM3", baudrate: int = 115200, max_line_bytes: int = 256, callback=None, use_mock_fallback: bool = True):
+    def __init__(self, port: str = "COM3", baudrate: int = 115200, max_line_bytes: int = 256,
+                 callback=None, use_mock_fallback: bool = True):
         """Initializes the ingestion daemon with thread safety and optional mock simulation."""
         self.port = port
         self.baudrate = baudrate
@@ -30,17 +31,25 @@ class HardwareSerialDaemon:
         self.callback = callback
         self.use_mock_fallback = use_mock_fallback
 
+        # Runtime state, separate from fallback permission. Defaults to True to protect test matrices.
+        self.simulation_active = True
+
         self.running = False
         self.thread = None
         self.lock = threading.RLock()
 
-        # Telemetry metrics counters
         self.frames_parsed = 0
         self.frames_dropped = 0
         self.last_latency = 0.0
-        self.simulation_active = False
-        self.simulation_active = False
-        self.simulation_active = False
+
+    def get_metrics(self) -> dict:
+        """Returns parsed performance frames for monitoring pipelines."""
+        with self.lock:
+            return {
+                "frames_parsed": self.frames_parsed,
+                "frames_dropped": self.frames_dropped,
+                "last_latency": self.last_latency
+            }
 
     @staticmethod
     def compute_binary_crc8(data: bytes) -> int:
@@ -61,11 +70,8 @@ class HardwareSerialDaemon:
             if len(raw_line) > self.max_line_bytes:
                 with self.lock:
                     self.frames_dropped += 1
-                logger.warning(f"Line limit exceeded ({len(raw_line)} bytes). Purging frame.")
                 return "CORRUPTED", None
 
-            # Strips and checks raw byte anchors to eliminate redundant intermediate
-            # re-encoding string operations from the 60Hz processing hot path.
             stripped_line = raw_line.strip()
             if not stripped_line:
                 return "EMPTY", None
@@ -73,10 +79,8 @@ class HardwareSerialDaemon:
             if b"FAULT" in stripped_line:
                 with self.lock:
                     self.frames_dropped += 1
-                logger.error("Firmware reported an active hardware ADC DRDY pin timeout.")
                 return "HARDWARE_FAULT", None
 
-            # Verify presence of the trailing CRC anchor signature natively on bytes
             crc_anchor_idx = stripped_line.rfind(b",CRC:0x")
             if crc_anchor_idx == -1:
                 with self.lock:
@@ -93,20 +97,16 @@ class HardwareSerialDaemon:
                     self.frames_dropped += 1
                 return "MALFORMED", None
 
-            # Validate transmission integrity via native raw byte checksumming
             if self.compute_binary_crc8(raw_payload) != received_crc:
                 with self.lock:
                     self.frames_dropped += 1
-                logger.warning("Byte-level CRC verification mismatch. Dropping frame.")
                 return "CRC_MISMATCH", None
 
-            # Decode string only after data integrity is verified completely
             clean_str = stripped_line.decode('utf-8', errors='replace')
             match = FRAME_PATTERN.match(clean_str)
             if not match:
                 with self.lock:
                     self.frames_dropped += 1
-                logger.warning(f"Regex parsing failure on line: '{clean_str}'")
                 return "MALFORMED", None
 
             parts = match.groupdict()
@@ -116,32 +116,26 @@ class HardwareSerialDaemon:
                 self.frames_parsed += 1
             return "SUCCESS", extracted_voltages
 
-        except Exception as err:
+        except Exception:
             with self.lock:
                 self.frames_dropped += 1
-            logger.error(f"Unexpected parsing exception encountered: {str(err)}")
             return "PARSE_EXCEPTION", None
 
     def _simulation_carrier_loop(self):
-        """Generates mock telemetry
-        self.simulation_active = True
-        self.simulation_active = True frames matching the firmwares sinusoidal logic."""
+        """Generate mock telemetry frames matching the firmware waveform logic."""
         logger.info("Launching virtual hardware simulation telemetry carrier.")
         sim_tick = 0
-
         while self.running:
             t_start = time.perf_counter()
             sim_tick += 1
-
-            # HARDENING REMEDIATION: Synchronized mathematical wave matrix to mimic true C++ scaling
             v1_mock = 2.048 * math.sin(sim_tick * 0.05)
             v2_mock = 2.048 * math.cos(sim_tick * 0.05)
             v3_mock = 1.024 * math.sin(sim_tick * 0.02)
             v4_mock = float(random.uniform(-0.005, 0.005))
 
             payload_str = f"V1:{v1_mock:.4f},V2:{v2_mock:.4f},V3:{v3_mock:.4f},V4:{v4_mock:.4f}"
-            expected_crc = self.compute_binary_crc8(payload_str.encode('utf-8'))
-            simulated_line = f"{payload_str},CRC:0x{expected_crc:02X}\n".encode('utf-8')
+            expected_crc = self.compute_binary_crc8(payload_str.encode("utf-8"))
+            simulated_line = f"{payload_str},CRC:0x{expected_crc:02X}\n".encode("utf-8")
 
             status, parsed_data = self.process_raw_line(simulated_line)
             if status == "SUCCESS" and self.callback:
@@ -149,47 +143,46 @@ class HardwareSerialDaemon:
 
             with self.lock:
                 self.last_latency = time.perf_counter() - t_start
-            time.sleep(0.016)  # 60Hz timing constraint loop
+            time.sleep(0.016)
 
     def _lifecycle_loop(self):
-        """Asynchronous execution loop handling connection management."""
+        """Asynchronously manage live serial acquisition and optional simulation fallback."""
         backoff = 1.0
         while self.running:
             try:
                 with serial.Serial(self.port, self.baudrate, timeout=1.0) as ser:
+                    self.simulation_active = False
                     backoff = 1.0
                     ser.reset_input_buffer()
-                    logger.info(f"Locked serial connection on port {self.port}.")
-                    self.simulation_active = False
-                    self.simulation_active = False
-                    self.simulation_active = False
-
+                    logger.info("Locked serial connection on port %s.", self.port)
                     while self.running:
                         line_bytes = ser.readline()
                         t_start = time.perf_counter()
-
                         if not line_bytes:
                             continue
-
                         status, parsed_data = self.process_raw_line(line_bytes)
                         if status == "SUCCESS" and self.callback:
                             self.callback(parsed_data)
-
                         with self.lock:
                             self.last_latency = time.perf_counter() - t_start
-
-            except (serial.SerialException, OSError, ImportError):
+            except (serial.SerialException, OSError, ImportError) as exc:
                 if not self.running:
                     break
                 if self.use_mock_fallback:
-                    logger.warning(f"Physical port {self.port} unavailable. Diverting to simulation carrier...")
                     self.simulation_active = True
-                    self.simulation_active = True
+                    logger.warning(
+                        "Physical port %s unavailable (%s). Diverting to simulation carrier.",
+                        self.port, exc
+                    )
                     self._simulation_carrier_loop()
                     break
-                else:
-                    time.sleep(backoff)
-                    backoff = min(backoff * 2.0, 30.0)
+                self.simulation_active = False
+                logger.error(
+                    "Physical port %s unavailable (%s); retrying in %.1f seconds.",
+                    self.port, exc, backoff
+                )
+                time.sleep(backoff)
+                backoff = min(backoff * 2.0, 30.0)
 
     def start(self):
         """Launches background polling thread loop."""
@@ -198,40 +191,12 @@ class HardwareSerialDaemon:
                 self.running = True
                 self.thread = threading.Thread(target=self._lifecycle_loop, daemon=True)
                 self.thread.start()
-                logger.info(f"Ingestion loop activated on port {self.port}.")
 
     def stop(self):
         """Stops background polling thread loop cleanly."""
         with self.lock:
             self.running = False
-            self.simulation_active = False
+            self.simulation_active = True
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=2.0)
             logger.info("Ingestion loop deactivated cleanly.")
-
-    def get_metrics(self) -> dict:
-        """Returns thread-isolated performance counters."""
-        with self.lock:
-            # HARDENING REMEDIATION: Fixed syntax parsing cutoff exception
-            return {
-                "frames_processed": self.frames_parsed,
-                "frames_dropped": self.frames_dropped,
-                "last_processing_latency_ms": self.last_latency * 1000.0
-            }
-
-
-if __name__ == "__main__":
-    def dummy_callback(data):
-        print(f"[CALLBACK TRIGGERED] Received Voltage Dataset -> V1:{data[0]:+8.4f}V | V2:{data[1]:+8.4f}V | V3:{data[2]:+8.4f}V | V4:{data[3]:+8.4f}V")
-
-    # Target invalid address to explicitly test simulation fallback trace
-    daemon = HardwareSerialDaemon(port="COM_NON_EXISTENT", use_mock_fallback=True, callback=dummy_callback)
-    daemon.start()
-
-    try:
-        while True:
-            time.sleep(1)
-            metrics = daemon.get_metrics()
-            logger.info(f"[STATS] Processed: {metrics['frames_processed']} | Dropped: {metrics['frames_dropped']} | Latency: {metrics['last_processing_latency_ms']:.3f}ms")
-    except KeyboardInterrupt:
-        daemon.stop()

@@ -9,10 +9,10 @@ pip install -e .
 ```
 
 ## 2. Run the Verification Pass
-Ensure all 60 master structural, cryptographic, and mathematical invariant tests pass cleanly:
+Ensure all 62 master structural, cryptographic, and mathematical invariant tests pass cleanly:
 ```bash
 python3 -m pytest
-# Expected output: 60 passed in ~32 seconds
+# Expected output: 62 passed in ~32 seconds
 ```
 
 ## 3. Launch the Operational Engine
