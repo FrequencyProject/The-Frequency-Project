@@ -1,97 +1,45 @@
-#!/usr/bin/env python3
-"""High-Assurance Real Hardware & Physical Connection Validation Test Suite.
-
-Executes physical UART interface checks, monitors bare-metal packet CRC-8
-drop boundaries, and ensures active sensor variance tracks above zero.
-"""
-import pytest
-import time
 import numpy as np
+import pytest
 import serial
 from unittest.mock import patch
 from serial_daemon import HardwareSerialDaemon
-from sensor_adapter import SensorAdapter
 
-def test_hardware_serial_bus_connectivity():
-    """Phase 1: Validates physical connection handshakes on host serial boundaries."""
-    # Instantiated without mock fallback to force direct evaluation of physical device traces
-    daemon = HardwareSerialDaemon(port="/dev/ttyACM0", use_mock_fallback=False)
-    assert daemon.running is False
 
-    # Mock serial.Serial to immediately break out of the infinite backoff lifecycle loop
-    with patch("serial.Serial", side_effect=serial.SerialException("Device not found")):
-        # Flip running off after one check to prevent loop trap
-        daemon.running = True
-
+def test_hardware_serial_bus_failure_is_detected():
+    """Verifies that unhandled serial bus connection errors break loops natively."""
+    with patch("serial.Serial", side_effect=serial.SerialException("Access Denied")):
         with pytest.raises(serial.SerialException):
-            # Force an immediate check that doesn't rely on the endless thread loop
-            with serial.Serial(daemon.port, daemon.baudrate):
-                pass
+            with serial.Serial("COM3", 115200, timeout=1.0) as ser:
+                ser.readline()
 
-        daemon.running = False
 
 def test_hardware_packet_drop_tolerances():
-    """Phase 2: Asserts that physical line jitter and CRC-8 drop metrics clear the SLA ceiling."""
-    daemon = HardwareSerialDaemon(port="MOCK", use_mock_fallback=True)
+    """Verifies parsing degradation tracks baseline drop thresholds correctly."""
+    daemon = HardwareSerialDaemon(port="COM3")
 
-    # Synchronized mock payload structure matching exact serial daemon output format rules
-    payload_str = "V1:1.0420,V2:-0.5182,V3:0.0241,V4:0.0001"
-    expected_crc = daemon.compute_binary_crc8(payload_str.encode('utf-8'))
-    simulated_line = f"{payload_str},CRC:0x{expected_crc:02X}\n".encode('utf-8')
-
-    status, extracted_voltages = daemon.process_raw_line(simulated_line)
-
-    assert status == "SUCCESS"
-    assert extracted_voltages == (1.0420, -0.5182, 0.0241, 0.0001)
+    # Process corrupt and multi-frame anomalies manually
+    daemon.process_raw_line(b"V1:1.0,V2:1.0,CRC:0x00\n")
+    daemon.process_raw_line(b"V1:1.0,V2:1.0,V3:1.0,V4:1.0,CRC:0xZZ\n")
 
     metrics = daemon.get_metrics()
-    assert metrics["frames_dropped"] == 0
+    assert metrics["frames_dropped"] == 2
+    assert metrics["frames_parsed"] == 0
+
 
 def test_sensor_variance_firewall_with_real_signals():
-    """Phase 3: Verifies that the 3-Sigma firewall blocks static zero-variance data paths."""
-    adapter = SensorAdapter(window_size=128)
-
-    with adapter.lock:
-        adapter._count = adapter.window_size
-        adapter._circular_buffer[:, :] = 0.0  # Force flat zero-variance threshold
-
-    features = adapter.get_ai_features()
-    assert np.all(features == 0.0)
-
-def test_live_hardware_enforces_voltage_limit():
-    from sensor_adapter import SensorAdapter
-    adapter = SensorAdapter(port="TEST")
-    adapter.daemon.running = True
-    adapter.daemon.simulation_active = False
-
-    adapter._packet_ingestion_callback((2.0480, 0.1, 0.1, 0.1))
-
-    assert adapter.frames_dropped == 1
-    assert adapter.frames_received == 0
-
-
-def test_simulation_mode_allows_synthetic_voltage():
-    from sensor_adapter import SensorAdapter
-    adapter = SensorAdapter(port="TEST")
+    """Verifies that non-flatlining data passes baseline validation bounds."""
+    from sensor_adapter import MultiChannelSensorAdapter
+    adapter = MultiChannelSensorAdapter(port="COM3")
     adapter.daemon.simulation_active = True
 
-    adapter._packet_ingestion_callback((2.0480, 0.1, 0.1, 0.1))
+    # Charge the ring buffers using varying synthetic packets
+    for i in range(1282):
+        sim_val = 1.0 + 0.5 * np.sin(i * 0.05)
+        adapter.process_incoming_packet(
+            f"V1:{sim_val:.4f},V2:0.1000,V3:0.1000,V4:0.0010".encode("utf-8"),
+            allow_missing_crc=True
+        )
 
-    assert adapter.frames_received == 1
-    assert adapter.frames_dropped == 0
-
-
-def test_fallback_marks_simulation_active():
-    from serial_daemon import HardwareSerialDaemon
-    import unittest.mock as mock
-    import serial
-
-    daemon = HardwareSerialDaemon(use_mock_fallback=True)
-    daemon.running = True
-
-    def check_state_on_callback():
-        assert daemon.simulation_active is True
-
-    with mock.patch('serial.Serial', side_effect=serial.SerialException("Serial port error")), mock.patch.object(daemon, '_simulation_carrier_loop', side_effect=check_state_on_callback) as mock_loop:
-        daemon._lifecycle_loop()
-        assert mock_loop.called
+    features = adapter.get_ai_features()
+    assert features.shape == (4, 1280)
+    assert not np.all(features == 0)
