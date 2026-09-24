@@ -120,23 +120,30 @@ class SensorAdapter:
         self._buffer_manager._head = value
 
     def _packet_ingestion_callback(self, data_tuple: tuple):
-        """Consumes raw tuples, filters physical voltage faults, and offloads them safely."""
+        """Reject unsafe live telemetry and buffer validated four-channel frames."""
         if not data_tuple or len(data_tuple) != 4:
             self.frames_dropped += 1
             return
 
-        # PHASE 2 HARDWARE VERIFICATION: Intercept clipping / full-scale saturation faults (ADS1256 Max = ±2.048V)
-        # Enforce check only if live hardware is active and simulation mode is disabled
-        is_running_live = getattr(self.daemon, "running", False) and not getattr(self.daemon, "simulation_active", False)
-        if is_running_live:
-            for voltage in data_tuple:
-                if abs(float(voltage)) >= 2.0480:
+        is_sim_active = getattr(self.daemon, "simulation_active", False)
+        is_running = getattr(self.daemon, "running", False)
+
+        if is_running and not is_sim_active:
+            try:
+                if any(abs(float(voltage)) >= 2.0480 for voltage in data_tuple):
                     self.frames_dropped += 1
-                    import logging
-                    logging.getLogger("SensorAdapter").warning(
-                        f"[HARDWARE ALERT] Clipping Saturation Boundary Overrun detected ({voltage}V)!"
+                    logger.critical(
+                        "[HARDWARE ALERT] Clipping saturation boundary overrun; dropping live frame: %r",
+                        data_tuple,
                     )
                     return
+            except (TypeError, ValueError) as exc:
+                self.frames_dropped += 1
+                logger.critical(
+                    "[HARDWARE ALERT] Non-numeric live telemetry frame; dropping frame: %r; error=%s",
+                    data_tuple, exc,
+                )
+                return
 
         with self.lock:
             self.frames_received += 1
