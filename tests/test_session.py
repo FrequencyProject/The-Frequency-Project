@@ -10,6 +10,7 @@ def test_session_orchestration_matrix_pass():
     rng = np.random.default_rng(seed=202)
 
     # Force saturate the underlying adapter structures past the 1280 limit
+    session.engine.adapter.daemon.simulation_active = True
     for _ in range(1282):
         v1, v2, v3, v4 = rng.normal(0, 1), rng.normal(0, 1), rng.normal(0, 1), rng.normal(0, 1)
         packet = f"V1:{v1},V2:{v2},V3:{v3},V4:{v4}\n"

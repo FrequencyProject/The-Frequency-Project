@@ -31,8 +31,9 @@ class HardwareSerialDaemon:
         self.callback = callback
         self.use_mock_fallback = use_mock_fallback
 
-        # Runtime state, separate from fallback permission. Defaults to True to protect test matrices.
-        self.simulation_active = True
+        # Runtime state, separate from fallback permission.
+        # True only while synthetic telemetry is actively being generated.
+        self.simulation_active = False
 
         self.running = False
         self.thread = None
@@ -196,7 +197,7 @@ class HardwareSerialDaemon:
         """Stops background polling thread loop cleanly."""
         with self.lock:
             self.running = False
-            self.simulation_active = True
+            self.simulation_active = False
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=2.0)
             logger.info("Ingestion loop deactivated cleanly.")
