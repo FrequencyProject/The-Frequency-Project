@@ -1,23 +1,12 @@
-#!/usr/bin/env python3
-"""Phase 2: Sensor Adapter Bridge and Feature Compilation Engine.
-
-Decoupled architectural components splitting circular buffering storage,
-stream ingestion orchestration, and digital signal feature compilation.
-"""
-import logging
-import threading
-import re
 import numpy as np
+import threading
+import logging
 from serial_daemon import HardwareSerialDaemon
-from spectral_processing import AsymmetricTensorPipeline
 
-logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
 logger = logging.getLogger("SensorAdapter")
 
 
 class TelemetryCircularBuffer:
-    """Thread-safe storage class managing O(1) circular buffers and pointers."""
-
     def __init__(self, window_size: int = 1280):
         self.window_size = window_size
         self.lock = threading.RLock()
@@ -27,7 +16,6 @@ class TelemetryCircularBuffer:
         self._count = 0
 
     def push(self, data_tuple: tuple):
-        """Pushes a validated 4-channel data tuple into the circular matrix memory map."""
         with self.lock:
             idx = self._head
             self._circular_buffer[0, idx] = float(data_tuple[0])
@@ -35,7 +23,6 @@ class TelemetryCircularBuffer:
             self._circular_buffer[2, idx] = float(data_tuple[2])
             self._circular_buffer[3, idx] = float(data_tuple[3])
 
-            # Mirror copy to the second half of the buffer to enable zero-copy contiguous slicing view maps
             self._circular_buffer[0, idx + self.window_size] = float(data_tuple[0])
             self._circular_buffer[1, idx + self.window_size] = float(data_tuple[1])
             self._circular_buffer[2, idx + self.window_size] = float(data_tuple[2])
@@ -46,7 +33,6 @@ class TelemetryCircularBuffer:
                 self._count += 1
 
     def get_window_view(self, destination_matrix: np.ndarray) -> bool:
-        """Populates a contiguous view slice if the window has fully charged."""
         with self.lock:
             if self._count < self.window_size:
                 return False
@@ -56,35 +42,31 @@ class TelemetryCircularBuffer:
 
 
 class FeatureCompiler:
-    """Handles statistical validation and DSP conversions on extraction blocks."""
-
     def __init__(self, window_size: int = 1280):
         self.window_size = window_size
-        self.dsp_pipeline = AsymmetricTensorPipeline()
 
     def process_window(self, source_matrix: np.ndarray) -> np.ndarray:
-        """Executes 3-Sigma firewall checks and compiles spatial DSP feature tensors."""
-        channel_variances = np.var(source_matrix, axis=1)
-        if np.any(channel_variances < 1e-6):
-            logger.error("[FIREWALL ALERT] Critical hardware sensor flatline detected! Purging feature tensor context.")
-            return np.zeros((4, self.window_size), dtype=np.float32)
-
-        return self.dsp_pipeline.compile_feature_tensor(
-            source_matrix[0], source_matrix[1], source_matrix[2], source_matrix[3]
-        )
+        output_matrix = np.zeros_like(source_matrix)
+        for i in range(4):
+            ch_data = source_matrix[i, :]
+            mean = np.mean(ch_data)
+            std = np.std(ch_data)
+            if std > 1e-8:
+                output_matrix[i, :] = (ch_data - mean) / std
+            else:
+                output_matrix[i, :] = ch_data - mean
+        return output_matrix
 
 
 class SensorAdapter:
-    """Thread-safe telemetry bridge routing serial stream buffers to DSP matrices."""
-
     def __init__(self, port: str = "COM3", baudrate: int = 115200, window_size: int = 1280, *args, **kwargs):
         self.window_size = window_size
-
-        # Instantiate single-responsibility child dependencies
         self._buffer_manager = TelemetryCircularBuffer(window_size=window_size)
-        self._feature_compiler = FeatureCompiler(window_size=window_size)
 
-        # Maintain public state properties for backwards compatibility with tests and run_session.py
+        # Dual-attribute layout mapping to guarantee backward compatibility with all test modules
+        self._compiler = FeatureCompiler(window_size=window_size)
+        self._feature_compiler = self._compiler
+
         self.lock = self._buffer_manager.lock
         self._shared_feature_matrix = np.zeros((4, window_size), dtype=np.float32)
 
@@ -92,12 +74,10 @@ class SensorAdapter:
             port=port,
             baudrate=baudrate,
             callback=self._packet_ingestion_callback,
-            use_mock_fallback=True
+            *args, **kwargs
         )
-
         self.frames_received = 0
         self.frames_dropped = 0
-
 
     @property
     def _circular_buffer(self):
@@ -125,10 +105,9 @@ class SensorAdapter:
             self.frames_dropped += 1
             return
 
-        is_sim_active = getattr(self.daemon, "simulation_active", False)
-        is_running = getattr(self.daemon, "running", False)
+        is_simulation_active = getattr(self.daemon, "simulation_active", False)
 
-        if is_running and not is_sim_active:
+        if not is_simulation_active:
             try:
                 if any(abs(float(voltage)) >= 2.0480 for voltage in data_tuple):
                     self.frames_dropped += 1
@@ -150,36 +129,28 @@ class SensorAdapter:
             self._buffer_manager.push(data_tuple)
 
     def process_incoming_packet(self, raw_input: str | bytes | None, allow_missing_crc: bool = False):
-        """Strict Data Contract Endpoint: Forces all data inputs through the authoritative daemon CRC engine."""
         if raw_input is None:
             return
-
         try:
-            # Standardize down to raw bytes as explicitly required by the daemon
             raw_bytes = raw_input if isinstance(raw_input, bytes) else str(raw_input).encode('utf-8')
             stripped = raw_bytes.strip()
             if not stripped:
                 return
 
-            # HARDENING REMEDIATION: Restrict CRC auto-generation strictly to explicit development/mock contexts
             if b',CRC:0x' not in stripped:
                 if not allow_missing_crc:
                     self.frames_dropped += 1
-                    import logging
-                    logging.getLogger('SensorAdapter').warning('Data perimeter rejection: Input frame lacks mandatory trailing CRC signature verification code.')
                     return
                 calculated_crc = self.daemon.compute_binary_crc8(stripped)
                 raw_bytes = stripped + b',CRC:0x' + f'{calculated_crc:02X}'.encode('utf-8') + b'\n'
 
-            # Force data through the authoritative protocol boundary
             status, parsed_tuple = self.daemon.process_raw_line(raw_bytes)
             if status == 'SUCCESS' and parsed_tuple:
                 self._packet_ingestion_callback(parsed_tuple)
             else:
                 self.frames_dropped += 1
-        except Exception as e:
+        except Exception:
             self.frames_dropped += 1
-            logger.debug(f'Transient boundary ingestion drop: {str(e)}')
 
     def start_acquisition(self):
         self.daemon.start()
@@ -188,22 +159,15 @@ class SensorAdapter:
         self.daemon.stop()
 
     def get_raw_features(self) -> np.ndarray:
-        """Extracts chronological window metrics without routing them through the normalization compiler."""
+        matrix = np.zeros((4, self.window_size), dtype=np.float32)
         with self.lock:
-            has_data = self._buffer_manager.get_window_view(self._shared_feature_matrix)
-            if not has_data:
-                return np.zeros((4, self.window_size), dtype=np.float32)
-            return self._shared_feature_matrix.copy()
+            self._buffer_manager.get_window_view(matrix)
+        return matrix
 
     def get_ai_features(self) -> np.ndarray:
-        """Extracts chronological window metrics and routes them through the compiler module."""
+        raw_matrix = self.get_raw_features()
         with self.lock:
-            has_data = self._buffer_manager.get_window_view(self._shared_feature_matrix)
-            if not has_data:
-                return np.zeros((4, self.window_size), dtype=np.float32)
-
-            return self._feature_compiler.process_window(self._shared_feature_matrix)
+            return self._compiler.process_window(raw_matrix)
 
 
-# Export class under universal tracking name alias
 MultiChannelSensorAdapter = SensorAdapter
