@@ -24,5 +24,18 @@ Detailed technical blueprints and operational guides are decoupled across dedica
 - **Security Hardening:** Strictly pinned to audited packages (`cryptography==50.0.0`) clearing local `pip-audit` scans ✅
 - **Execution Overhead:** Single-threaded design constraints occupy < 15% core capacity on target edge processor nodes ✅
 
+## 🔒 Operational Security Boundary Advisory (TPM Hardware Layer)
+
+> [!IMPORTANT]
+> The cryptographic modules (`secure_hardware_vault.py` and `crypto_signer.py`) currently operate in a 
+> **Development-Only Software Emulator & Scaffolding Mode**. 
+
+While the system architecture is designed to map directly to hardware security concepts, the following constraints apply to the current v1.0 software release candidate:
+- **Root Seeding:** The hardware seed derivation routinely interfaces with software mock strings rather than physical keys.
+- **Hardware Abstraction:** Platform Platform Configuration Register (PCR) verification and object sealing are non-enforced loops.
+- **Deployment Status:** True bare-metal security binding remains optional and must be validated during Phase 2.
+
+---
+
 ## ⚖️ Licensing
 This repository is licensed under the terms of the **GNU Affero General Public License v3.0 (AGPL-3.0)**. Downstream integrations or modifications must release their source code under identical copyleft constraints. See `LICENSE` for details.
