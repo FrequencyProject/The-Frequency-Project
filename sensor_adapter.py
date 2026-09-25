@@ -1,6 +1,12 @@
-import numpy as np
-import threading
+#!/usr/bin/env python3
+"""Phase 2: Sensor Adapter Bridge and Feature Compilation Engine.
+
+Thread-safe telemetry bridge routing serial stream buffers to digital signal
+processing arrays and enforcing strict live bare-metal voltage firewall guards.
+"""
 import logging
+import threading
+import numpy as np
 from serial_daemon import HardwareSerialDaemon
 
 logger = logging.getLogger("SensorAdapter")
@@ -18,15 +24,10 @@ class TelemetryCircularBuffer:
     def push(self, data_tuple: tuple):
         with self.lock:
             idx = self._head
-            self._circular_buffer[0, idx] = float(data_tuple[0])
-            self._circular_buffer[1, idx] = float(data_tuple[1])
-            self._circular_buffer[2, idx] = float(data_tuple[2])
-            self._circular_buffer[3, idx] = float(data_tuple[3])
-
-            self._circular_buffer[0, idx + self.window_size] = float(data_tuple[0])
-            self._circular_buffer[1, idx + self.window_size] = float(data_tuple[1])
-            self._circular_buffer[2, idx + self.window_size] = float(data_tuple[2])
-            self._circular_buffer[3, idx + self.window_size] = float(data_tuple[3])
+            for i in range(4):
+                val = float(data_tuple[i])
+                self._circular_buffer[i, idx] = val
+                self._circular_buffer[i, idx + self.window_size] = val
 
             self._head = (self._head + 1) % self.window_size
             if self._count < self.window_size:
@@ -63,7 +64,7 @@ class SensorAdapter:
         self.window_size = window_size
         self._buffer_manager = TelemetryCircularBuffer(window_size=window_size)
 
-        # Dual-attribute layout mapping to guarantee backward compatibility with all test modules
+        # Dual-attribute layout mapping to maintain strict backward test bed compatibility
         self._compiler = FeatureCompiler(window_size=window_size)
         self._feature_compiler = self._compiler
 
@@ -105,6 +106,7 @@ class SensorAdapter:
             self.frames_dropped += 1
             return
 
+        # Enforce fail-safe protection strictly based on actual current operational status
         is_simulation_active = getattr(self.daemon, "simulation_active", False)
 
         if not is_simulation_active:
