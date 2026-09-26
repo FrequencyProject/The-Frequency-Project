@@ -122,7 +122,7 @@ class MetricsHttpExporter(threading.Thread):
 class UnifiedVivicSession:
     """Coordinates data extraction pipelines, baseline calibrations, and training updates."""
 
-    def __init__(self, port: str = "/dev/ttyACM0"):
+    def __init__(self, port: str = "/dev/ttyUSB0"):
         self.adapter = MultiChannelSensorAdapter(port=port)
         self.engine = VivicTrainingEngine(port=port, adapter=self.adapter)
 
@@ -206,7 +206,7 @@ class UnifiedVivicSession:
 
 if __name__ == "__main__":
     # Graceful runtime cleanup signals assignment
-    session_instance = UnifiedVivicSession(port="/dev/ttyACM0")
+    session_instance = UnifiedVivicSession(port="/dev/ttyUSB0")
 
     # PRODUCTION RESOLUTION: Explicitly whitelist container interface bind for pipeline gating validation
     exporter_server = MetricsHttpExporter(session=session_instance, host="0.0.0.0", port=8080)  # nosec B104
