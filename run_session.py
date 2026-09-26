@@ -1,3 +1,11 @@
+import glob
+
+def discover_hardware_port() -> str:
+    active_ports = glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*")
+    if active_ports:
+        return active_ports[0]
+    return "/dev/ttyACM0"  # Safe architectural fallback
+
 #!/usr/bin/env python3
 """Phase 5: Core Session Orchestration with Embedded Metrics Export.
 
@@ -122,7 +130,7 @@ class MetricsHttpExporter(threading.Thread):
 class UnifiedVivicSession:
     """Coordinates data extraction pipelines, baseline calibrations, and training updates."""
 
-    def __init__(self, port: str = "/dev/ttyUSB0"):
+    def __init__(self, port: str = discover_hardware_port()):
         self.adapter = MultiChannelSensorAdapter(port=port)
         self.engine = VivicTrainingEngine(port=port, adapter=self.adapter)
 
@@ -206,7 +214,7 @@ class UnifiedVivicSession:
 
 if __name__ == "__main__":
     # Graceful runtime cleanup signals assignment
-    session_instance = UnifiedVivicSession(port="/dev/ttyUSB0")
+    session_instance = UnifiedVivicSession(port=discover_hardware_port())
 
     # PRODUCTION RESOLUTION: Explicitly whitelist container interface bind for pipeline gating validation
     exporter_server = MetricsHttpExporter(session=session_instance, host="0.0.0.0", port=8080)  # nosec B104
