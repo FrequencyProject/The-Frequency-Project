@@ -87,6 +87,9 @@ class MetricsHttpExporter(threading.Thread):
                     response = f"HTTP/1.1 {status_code}\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
 
                 elif "GET /metrics" in request:
+                    # 1. ALWAYS EXTRACT THE ARRAYS FIRST (Fixes F821 linting error)
+                    raw_features = self.session.adapter.get_raw_features()
+                    
                     with self.session.metrics_lock:
                         body = (
                             f"# HELP vivic_total_packets_parsed Total telemetry packets processed\n"
@@ -105,8 +108,15 @@ class MetricsHttpExporter(threading.Thread):
                             f"# TYPE vivic_session_status gauge\n"
                             f'vivic_session_status{{status="active"}} {1 if self.session.is_active else 0}\n'
                             f'vivic_session_status{{status="calibrated"}} {1 if self.session.is_calibrated else 0}\n'
+                            f"# HELP vivic_live_channel_1_mean Mean value of physical channel 1\n"
+                            f"# TYPE vivic_live_channel_1_mean gauge\n"
+                            f"vivic_live_channel_1_mean {np.mean(raw_features[0, :]) if np.any(raw_features) else 0}\n"
+                            f"# HELP vivic_live_channel_2_mean Mean value of physical channel 2\n"
+                            f"# TYPE vivic_live_channel_2_mean gauge\n"
+                            f"vivic_live_channel_2_mean {np.mean(raw_features[1, :]) if np.any(raw_features) else 0}\n"
                         )
                     response = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
+
 
                 else:
                     body = "Not Found"
