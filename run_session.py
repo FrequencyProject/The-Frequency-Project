@@ -114,6 +114,12 @@ class MetricsHttpExporter(threading.Thread):
                             f"# HELP vivic_live_channel_2_mean Mean value of physical channel 2\n"
                             f"# TYPE vivic_live_channel_2_mean gauge\n"
                             f"vivic_live_channel_2_mean {np.mean(raw_features[1, :]) if np.any(raw_features) else 0}\n"
+ 			    f"# HELP vivic_live_channel_3_mean Mean value of physical channel 3\n"
+                            f"# TYPE vivic_live_channel_3_mean gauge\n"
+                            f"vivic_live_channel_3_mean {np.mean(raw_features[2, :]) if np.any(raw_features) else 0}\n"
+                            f"# HELP vivic_live_channel_4_mean Mean value of physical channel 4\n"
+                            f"# TYPE vivic_live_channel_4_mean gauge\n"
+                            f"vivic_live_channel_4_mean {np.mean(raw_features[3, :]) if np.any(raw_features) else 0}\n"
                         )
                     response = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain; version=0.0.4\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}"
 
