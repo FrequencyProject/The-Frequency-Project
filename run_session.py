@@ -13,6 +13,7 @@ import json
 import threading
 import socket
 import glob
+import queue  # ← ADD THIS
 from sensor_adapter import MultiChannelSensorAdapter
 from train_engine import VivicTrainingEngine
 from latent_monitor import VivicLatentMonitor
@@ -140,6 +141,70 @@ class MetricsHttpExporter(threading.Thread):
                 self.server_socket.close()
             except Exception:
                 pass
+
+
+class CheckpointWorker(threading.Thread):
+    """Background thread that saves checkpoints without blocking the main ingestion loop."""
+    
+    def __init__(self, engine, maxsize: int = 1):
+        super().__init__()
+        self.engine = engine
+        self.checkpoint_queue = queue.Queue(maxsize=maxsize)
+        self.running = False
+        self.daemon = True
+    
+    def run(self):
+        """Worker loop that processes checkpoint save requests."""
+        self.running = True
+        emit_structured_log("CHECKPOINT_WORKER_STARTED", "INFO", "Background checkpoint saver thread initialized.")
+        
+        while self.running:
+            try:
+                cycle_num = self.checkpoint_queue.get(timeout=1.0)
+                
+                # Sentinel value to signal shutdown
+                if cycle_num is None:
+                    break
+                
+                save_start = time.time()
+                try:
+                    torch.save(self.engine.model.state_dict(), "vivic_offline_weights.pt")
+                    save_duration_ms = (time.time() - save_start) * 1000
+                    emit_structured_log("CHECKPOINT_SAVED", "INFO", 
+                                       f"Secured local progress matrix at cycle {cycle_num}",
+                                       {"save_duration_ms": save_duration_ms})
+                except Exception as e:
+                    emit_structured_log("CHECKPOINT_ERROR", "WARNING", 
+                                       f"Failed to save checkpoint at cycle {cycle_num}: {str(e)}")
+            
+            except queue.Empty:
+                continue
+            except Exception as e:
+                emit_structured_log("CHECKPOINT_WORKER_ERROR", "WARNING", 
+                                   f"Checkpoint worker exception: {str(e)}")
+    
+    def submit_checkpoint(self, cycle_num: int) -> bool:
+        """Non-blocking submission of a checkpoint save request.
+        
+        Returns True if queued, False if queue was full.
+        """
+        try:
+            self.checkpoint_queue.put(cycle_num, block=False)
+            return True
+        except queue.Full:
+            emit_structured_log("CHECKPOINT_QUEUE_FULL", "WARNING", 
+                               f"Checkpoint queue full at cycle {cycle_num}, skipping this save")
+            return False
+    
+    def shutdown(self):
+        """Signal worker thread to stop gracefully."""
+        self.running = False
+        try:
+            self.checkpoint_queue.put(None, timeout=1.0)
+        except queue.Full:
+            pass
+
+
 class UnifiedVivicSession:
     """Coordinates data extraction pipelines, baseline calibrations, and training updates."""
 
@@ -157,6 +222,10 @@ class UnifiedVivicSession:
         self.metrics_lock = threading.Lock()
         self.total_cycles_run = 0
         self.anomalies_found = 0
+        
+        # Initialize background checkpoint worker
+        self.checkpoint_worker = CheckpointWorker(self.engine, maxsize=1)
+        self.checkpoint_worker.start()
 
     def execute_baseline_calibration(self, sweep_duration_seconds: float = 120.0, sample_rate_hz: float = 100.0):
         """Executes a non-blocking Quiet State Sweep to map native environment noise thresholds."""
@@ -214,14 +283,9 @@ class UnifiedVivicSession:
                     self.anomalies_found += 1
                     emit_structured_log("ANOMALY_CAPTURED", "WARNING", "Structural anomaly signature isolated.")
 
-
-                # AUTOMATED RECOVERY SESSIONS BACKUP: Commits states cleanly to drive
+                # NON-BLOCKING checkpoint submission to background worker
                 if self.total_cycles_run % 500 == 0:
-                    try:
-                        torch.save(self.engine.model.state_dict(), "vivic_offline_weights.pt")
-                        emit_structured_log("CHECKPOINT_SAVED", "INFO", f"Secured local progress matrix at cycle {self.total_cycles_run}")
-                    except Exception as e:
-                        emit_structured_log("CHECKPOINT_ERROR", "WARNING", f"Failed to save automated backup matrix: {str(e)}")
+                    self.checkpoint_worker.submit_checkpoint(self.total_cycles_run)
 
             # Controlled execution loop cadence matching network capacity thresholds
             time.sleep(0.01)
@@ -231,6 +295,10 @@ class UnifiedVivicSession:
         emit_structured_log("SHUTDOWN_SIGNAL", "WARNING", "System termination caught. Relinquishing socket locks and data structures.")
         self.is_active = False
         self.adapter.stop_acquisition()
+        
+        # Gracefully shutdown checkpoint worker
+        self.checkpoint_worker.shutdown()
+        self.checkpoint_worker.join(timeout=5.0)
 
 
 if __name__ == "__main__":
