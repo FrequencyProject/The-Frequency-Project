@@ -1,0 +1,48 @@
+import sys
+import time
+import os
+
+print("==========================================================")
+print("  OFFLINE LATENT MATRIX VISUALIZER - COMPRESSION ENGINE")
+print("==========================================================")
+print("Awaiting incoming checkpoint tokens... (Press Ctrl+C to halt)")
+
+# Seed data matrix matching your exact running terminal logs
+historical_ratios = [1.3755, 1.4961, 1.3930, 1.3920, 1.4673, 1.6795, 1.6424, 1.5952, 1.6299, 1.6180, 1.7982, 1.8338, 1.8641, 1.8561, 1.8284, 1.7956, 1.8407, 1.8527]
+
+def render_terminal_bar(ratio, min_val=1.3, max_val=1.9, width=40):
+    """Draws a clean, text-based horizontal tracking slider."""
+    if ratio < min_val: ratio = min_val
+    if ratio > max_val: ratio = max_val
+    
+    position = int((ratio - min_val) / (max_val - min_val) * width)
+    bar = ["░"] * width
+    if position < width:
+        bar[position] = "█"
+    return "".join(bar)
+
+# Output historical trends instantly upon loading
+for idx, r in enumerate(historical_ratios):
+    bar_chart = render_terminal_bar(r)
+    print(f"Checkpoint #{idx+1:02d} | Ratio: {r:.4f} | [{bar_chart}]")
+
+print("\n[READY] Listening for new real-time log lines via standard pipe stream...")
+
+try:
+    # Continuously parse streaming data frames if piped down from run_session
+    for line in sys.stdin:
+        if "Ratio:" in line:
+            # Tokenize and extract the float value securely
+            parts = line.split("Ratio:")
+            if len(parts) > 1:
+                try:
+                    ratio_val = float(parts[1].strip().split()[0])
+                    historical_ratios.append(ratio_val)
+                    
+                    # Refresh the slider
+                    bar_chart = render_terminal_bar(ratio_val)
+                    print(f"Live Update   | Ratio: {ratio_val:.4f} | [{bar_chart}]")
+                except ValueError:
+                    continue
+except KeyboardInterrupt:
+    print("\nVisualizer tracking layer cleanly detached. Memory matrices intact.")
