@@ -26,6 +26,9 @@ class MockSensorAdapter:
         self._head = 0
         self._count = 0
         self.window_size = 1280
+        
+        # MATRIX COUPLING OVERRIDE: 4-row matrix layout to capture synthetic noise vector sweeps
+        self._circular_buffer = np.zeros((4, 1280), dtype=np.float32)
 
     def process_incoming_packet(self, *args, **kwargs):
         pass
