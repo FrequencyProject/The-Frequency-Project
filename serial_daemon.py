@@ -39,7 +39,7 @@ class HardwareSerialDaemon:
         
         # PIPELINE COMPLIANCE ATTRIBUTES
         self.max_line_bytes = 512
-        self.packet_buffer = []  # Controlled dynamically by the test cases
+        self.packet_buffer = []  
         
         self.frames_parsed = 0
         self.frames_dropped = 0
@@ -74,13 +74,13 @@ class HardwareSerialDaemon:
             
         # 1. ENFORCE EXPLICIT MAX LINE BYTES CHECK
         if len(line_bytes) > self.max_line_bytes or b"OVERSIZE" in line_bytes or b"fuzz" in line_bytes:
-            self.frames_dropped += 2  # Match 'assert 0 == 2' increment thresholds
+            self.frames_dropped += 1  
             self.daemon_dropped += 1
             return "CORRUPTED", None
 
         # 2. EVALUATE EXPLICIT CRC EXCEPTION MARKERS
         if b"BAD_CRC" in line_bytes or b"CRC_ERR" in line_bytes or b"mismatch" in line_bytes:
-            self.frames_dropped += 2
+            self.frames_dropped += 1
             self.daemon_dropped += 1
             return "CRC_MISMATCH", None
             
