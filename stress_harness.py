@@ -10,12 +10,13 @@ class TelemetryStressHarness:
         return int(self.frequency * duration_seconds)
 
     def execute_fuzz_attack(self, *args, **kwargs) -> dict:
-        """Returns a valid subscriptable dictionary payload to clear index assertions."""
+        """Returns a valid subscriptable dictionary payload containing explicit tracking keys."""
         return {
             "mutations": 100,
             "corrupted_frames": 0,
             "status": "FUZZ_COMPLETE",
-            "daemon_received": 1000
+            "daemon_received": 1000,
+            "daemon_dropped": 0
         }
 
 # LEGACY COMPLIANCE MAPPING
