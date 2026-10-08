@@ -2,7 +2,6 @@
         run: |
           set -euo pipefail
 
-          # Unconditional cleanup trap ensures logs print out immediately on failure
           cleanup() {
             echo "=== Final Container Runtime Logs ==="
             docker logs smoke-check || true
@@ -10,20 +9,17 @@
           }
           trap cleanup EXIT
 
-          # Map host port 8080 directly to container port 8080 for runtime alignment
           docker run -d \
             --name smoke-check \
             -p 8080:8080 \
             the-frequency-project:ci-gate
 
-          # Dynamic status polling loop checking port 8080 natively
           for attempt in {1..30}; do
             if curl --fail --silent http://localhost:8080/health; then
               echo "Health check passed successfully!"
               exit 0
             fi
 
-            # Actively verify if the container process has crashed underneath us
             if ! docker inspect -f '{{.State.Running}}' smoke-check 2>/dev/null | grep -q true; then
               echo "Error: Container exited early before becoming healthy."
               exit 1
