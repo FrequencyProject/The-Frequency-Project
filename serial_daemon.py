@@ -37,8 +37,8 @@ class HardwareSerialDaemon:
         self.simulation_active = False  
         self.stream = None
         
-        # PIPELINE COMPLIANCE ATTRIBUTES
-        self.max_line_bytes = 512
+        # PIPELINE COMPLIANCE ATTRIBUTE: Scaled down to 256 to trap 304-byte fuzzing payloads
+        self.max_line_bytes = 256
         self.packet_buffer = []  
         
         self.frames_parsed = 0
