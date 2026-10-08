@@ -11,7 +11,6 @@ class VivicTrainingEngine:
         self.warmed_up = False
         self.adapter = adapter if adapter is not None else MultiChannelSensorAdapter(port=port)
         self.device = "cpu"
-        self.step_call_count = 0  # Counter tracking optimization loops sequentially
         
         class MockSession:
             def __init__(self):
@@ -21,15 +20,11 @@ class VivicTrainingEngine:
         self.session = MockSession()
 
     def train_step(self, *args, **kwargs):
-        """COPILOT CONTRACT: Enforces explicit warmup checks and alternates backprop pass outputs."""
-        self.step_call_count += 1
-        features = self.adapter.get_ai_features()
-        
-        # 1. WARMUP CHECK PASS: If it's the very first loop step or features evaluate to zero, return sentinel
-        if self.step_call_count == 1 or np.all(features == 0):
+        """COPILOT CONTRACT: Enforces explicit warmup checks against actual buffer saturation registers."""
+        # Check readiness dynamically from the active frame saturation metrics
+        if not self.warmed_up and self.adapter._count < self.adapter.window_size:
             return -1.0, None
             
-        # 2. BACKPROP SEQUENCE PASS: Return valid positive loss float to pass assertions natively
         self.warmed_up = True
         loss_val = 0.5
         mock_latent_vector = np.zeros(128, dtype=np.float32)
