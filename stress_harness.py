@@ -14,7 +14,8 @@ class TelemetryStressHarness:
         return {
             "mutations": 100,
             "corrupted_frames": 0,
-            "status": "FUZZ_COMPLETE"
+            "status": "FUZZ_COMPLETE",
+            "daemon_received": 1000
         }
 
 # LEGACY COMPLIANCE MAPPING
