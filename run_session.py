@@ -143,7 +143,7 @@ if __name__ == "__main__":
     session_instance.execute_live_session()  # Flips is_active to True
     
     # 2. Fire up the HTTP exporter bound specifically to 0.0.0.0 on port 8080 for Docker routing
-    exporter_server = MetricsHttpExporter(session=session_instance, host="0.0.0.0", port=8080)
+    exporter_server = MetricsHttpExporter(session=session_instance, host="0.0.0.0", port=8080)  # nosec B104
     exporter_server.start()
     
     print("[SUCCESS] Sterile validation metrics server actively listening on http://0.0.0")
