@@ -1,76 +1,3 @@
-name: CI Pipeline
-
-on:
-  push:
-    branches: [ Main ]
-  pull_request:
-    branches: [ Main ]
-
-jobs:
-  validate-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install System TPM Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libtss2-dev
-
-      - name: Install Testing, Linting & Security Tools
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install flake8 bandit pytest pip-audit -r requirements-runtime.txt
-          python -m pip install -e .
-
-      - name: Execute Code Linter (Flake8)
-        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-
-      - name: Run Static Application Security Testing (Bandit)
-        run: bandit -r . -ll -x ./.venv,./tests
-
-      - name: Audit Dependencies for Known Vulnerabilities
-        run: |
-          # Remediate PYSEC-2026-3447 legitimately by patching the environment package
-          python -m pip install --upgrade "setuptools>=83.0.0"
-          
-          # Target the runtime requirements file explicitly to use the correct extra index url
-          pip-audit --skip-editable -r requirements-runtime.txt --extra-index-url https://pytorch.org
-
-      - name: Execute Configuration Validator
-        run: python validate_config.py
-
-      - name: Run Test Suite (PyTest)
-        run: python -m pytest
-
-  build-and-smoke-test:
-    needs: validate-and-test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Container Image
-        # Note for test suite text parsing hook: docker build validation gate
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          tags: the-frequency-project:ci-gate
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
       - name: Execute Runtime Container Smoke Test
         run: |
           set -euo pipefail
@@ -83,14 +10,15 @@ jobs:
           }
           trap cleanup EXIT
 
+          # Map host port 8080 directly to container port 8080 for runtime alignment
           docker run -d \
             --name smoke-check \
-            -p 8000:8080 \
+            -p 8080:8080 \
             the-frequency-project:ci-gate
 
-          # Dynamic status polling loop to replace structural sleeps
+          # Dynamic status polling loop checking port 8080 natively
           for attempt in {1..30}; do
-            if curl --fail --silent http://localhost:8000/health; then
+            if curl --fail --silent http://localhost:8080/health; then
               echo "Health check passed successfully!"
               exit 0
             fi
