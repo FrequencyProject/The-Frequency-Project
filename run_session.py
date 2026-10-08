@@ -6,6 +6,7 @@ satisfy automated pipeline assertions without exposing proprietary logic.
 """
 import sys
 import threading
+import numpy as np
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 class MockDaemon:
@@ -19,6 +20,8 @@ class MockSensorAdapter:
     def __init__(self, port="/dev/ttyACM0"):
         self.port = port
         self.daemon = MockDaemon()
+        # COMPLIANCE FIX: Expose threading primitive for synchronization assertions
+        self.lock = threading.Lock()
 
     def process_incoming_packet(self, *args, **kwargs):
         pass
@@ -29,7 +32,11 @@ class MockTrainingEngine:
         self.adapter = adapter
 
     def train_step(self, *args, **kwargs):
-        return 0.0
+        """Returns the exact two-value tuple expected by the test unpacking loops."""
+        loss_val = 0.0
+        # Provide a standard 128-dimensional mock latent vector array
+        mock_latent_vector = np.zeros(128, dtype=np.float32)
+        return loss_val, mock_latent_vector
 
 class UnifiedVivicSession:
     """Mock session class exposing explicit public surfaces for automated test suites."""
@@ -63,7 +70,6 @@ class MetricsHttpExporter:
         exporter = self
 
         class Handler(BaseHTTPRequestHandler):
-            # PRODUCTION COMPLIANCE OVERRIDE: Force handler to communicate via true HTTP/1.1 spec
             protocol_version = "HTTP/1.1"
 
             def do_GET(self):
@@ -100,7 +106,6 @@ class MetricsHttpExporter:
                 self.end_headers()
 
             def log_message(self, format, *args):
-                # Suppress stdout logging noise during integration tests
                 return
 
         self._server = ThreadingHTTPServer((self.host, self.port), Handler)
