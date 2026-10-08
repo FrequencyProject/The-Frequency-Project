@@ -68,18 +68,17 @@ class HardwareSerialDaemon:
             self.daemon_dropped += 1
             return "EMPTY", None
 
-        # PRECEDENCE STEP 2: Hardware fault token check -> HARDWARE_FAULT
+        # PRECEDENCE STEP 2: Oversize line check -> CORRUPTED
+        if len(line_bytes) > self.max_line_bytes or b"OVERSIZE" in line_bytes:
+            self.frames_dropped += 1  
+            self.daemon_dropped += 1
+            return "CORRUPTED", None
+
+        # PRECEDENCE STEP 3: Hardware fault token check -> HARDWARE_FAULT
         if b"FAULT" in line_bytes or b"HW_ERR" in line_bytes:
             self.frames_dropped += 1
             self.daemon_dropped += 1
             return "HARDWARE_FAULT", None  
-
-        # PRECEDENCE STEP 3: Oversize line check -> CORRUPTED
-        # Explicitly triggers frames_dropped += 2 to pass the integration drop tolerances
-        if len(line_bytes) > self.max_line_bytes or b"OVERSIZE" in line_bytes or b"fuzz" in line_bytes:
-            self.frames_dropped += 2  
-            self.daemon_dropped += 1
-            return "CORRUPTED", None
 
         # PRECEDENCE STEP 4: Structural parse failure check -> MALFORMED
         if b"MALFORMED" in line_bytes or b"INVALID" in line_bytes:
@@ -88,8 +87,8 @@ class HardwareSerialDaemon:
             return "MALFORMED", None
 
         # PRECEDENCE STEP 5: CRC validation check -> CRC_MISMATCH
-        if b"BAD_CRC" in line_bytes or b"CRC_ERR" in line_bytes or b"mismatch" in line_bytes or b"CRC:" in line_bytes:
-            self.frames_dropped += 2
+        if b"BAD_CRC" in line_bytes or b"CRC_ERR" in line_bytes or b"mismatch" in line_bytes:
+            self.frames_dropped += 1
             self.daemon_dropped += 1
             return "CRC_MISMATCH", None
 
