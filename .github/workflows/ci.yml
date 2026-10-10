@@ -22,7 +22,7 @@ jobs:
     - name: Install System and Python Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libtss2-esapi0 libtss2-esapi-dev
+        sudo apt-get install -y libtss2-dev
         python -m pip install --upgrade pip
         pip install flake8 pytest pytest-cov torch numpy tpm2-pytss
 
@@ -47,3 +47,4 @@ jobs:
         curl --fail http://localhost:8000/health
         docker stop orchestrator-smoke
         docker rm orchestrator-smoke
+
