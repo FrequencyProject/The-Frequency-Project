@@ -16,11 +16,13 @@ jobs:
     - name: Set up Python Runtime Environment
       uses: actions/setup-python@v5
       with:
-        python-python-version: '3.11'
+        python-version: '3.11'
         cache: 'pip'
 
-    - name: Install System Dependencies
+    - name: Install System and Python Dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y libtss2-esapi0 libtss2-esapi-dev
         python -m pip install --upgrade pip
         pip install flake8 pytest pytest-cov torch numpy tpm2-pytss
 
