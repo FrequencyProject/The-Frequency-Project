@@ -24,7 +24,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libtss2-dev
         python -m pip install --upgrade pip
-        pip install flake8 pytest pytest-cov torch numpy tpm2-pytss
+        pip install flake8 pytest pytest-cov torch numpy tpm2-pytss pyserial
 
     - name: Run Flake8 Code Style Linter
       run: |
@@ -47,4 +47,3 @@ jobs:
         curl --fail http://localhost:8000/health
         docker stop orchestrator-smoke
         docker rm orchestrator-smoke
-
