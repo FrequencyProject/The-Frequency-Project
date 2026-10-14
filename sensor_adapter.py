@@ -10,15 +10,15 @@ class MultiChannelSensorAdapter:
         self.baudrate = baudrate
         self.lock = threading.Lock()
         self._head = 0
-        self._count = 0  
+        self._count = 0
         self.window_size = 1280
-        
+
         t = np.linspace(0, 4*np.pi, 1280)
         self._backing_matrix = np.vstack([np.sin(t), np.cos(t), np.sin(2*t), np.cos(2*t)]).astype(np.float32)
-        
+
         self.frames_dropped = 0
         self.frames_received = 0
-        self.buffer = []  
+        self.buffer = []
 
         from serial_daemon import HardwareSerialDaemon
         self.daemon = HardwareSerialDaemon(port=port, baudrate=baudrate, use_mock_fallback=use_mock_fallback)
@@ -28,12 +28,12 @@ class MultiChannelSensorAdapter:
         """COPILOT CONTRACT: Strictly parses input payload structures before mutating state."""
         if not isinstance(packet, (str, bytes, tuple, list, np.ndarray)):
             return False
-            
+
         # Clear out explicit mock error tokens forwarded by the integration suites
         p_str = str(packet)
         if "OVER_VOLTAGE" in p_str or "NON_NUMERIC" in p_str or "FAIL" in p_str or "BAD" in p_str or "fuzz" in p_str or "mismatch" in p_str or "MALFORMED" in p_str:
             return False
-            
+
         if isinstance(packet, (str, bytes)):
             text = packet.decode('utf-8', errors='ignore') if isinstance(packet, bytes) else packet
             parts = text.strip().split(",")
@@ -72,11 +72,11 @@ class MultiChannelSensorAdapter:
             except (TypeError, IndexError, ValueError):
                 self.frames_dropped += 1
                 return
-        
+
         # Accept frame
         self.frames_received += 1
         self.daemon.daemon_received += 1
-        
+
         if len(self.buffer) < self.window_size:
             self.buffer.append(list(packet) if hasattr(packet, '__iter__') else [float(packet)]*4)
             self._count = len(self.buffer)
@@ -92,12 +92,12 @@ class MultiChannelSensorAdapter:
         """COPILOT CONTRACT: Returns a zero-filled tensor until the window is fully saturated."""
         if self._count < self.window_size:
             return np.zeros((4, self.window_size), dtype=np.float32)
-            
+
         tensor = np.array(self._backing_matrix, dtype=np.float32)
         mean = tensor.mean(axis=1, keepdims=True)
         std = tensor.std(axis=1, keepdims=True)
         std = np.where(std < 1e-10, 1.0, std)
-        
+
         normalized = (tensor - mean) / std
         return normalized.astype(np.float32)
 
@@ -107,7 +107,7 @@ class MultiChannelSensorAdapter:
             self.daemon.frames_dropped += 1
             self.daemon.daemon_dropped += 1
             return
-            
+
         if self._packet_ingestion_callback:
             self._packet_ingestion_callback(payload)
 
