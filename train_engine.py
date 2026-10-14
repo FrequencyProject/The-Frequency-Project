@@ -11,7 +11,7 @@ class VivicTrainingEngine:
         self.warmed_up = False
         self.adapter = adapter if adapter is not None else MultiChannelSensorAdapter(port=port)
         self.device = "cpu"
-        
+
         class MockSession:
             def __init__(self):
                 class MockDaemon:
@@ -24,7 +24,7 @@ class VivicTrainingEngine:
         # Check readiness dynamically from the active frame saturation metrics
         if not self.warmed_up and self.adapter._count < self.adapter.window_size:
             return -1.0, None
-            
+
         self.warmed_up = True
         loss_val = 0.5
         mock_latent_vector = np.zeros(128, dtype=np.float32)

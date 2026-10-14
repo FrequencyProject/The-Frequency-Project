@@ -41,15 +41,3 @@ py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config
 # setuptools package directory discovery map to guarantee absolute remote verifiability.
 [tool.setuptools.packages.find]
 include = ["tests*"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-# Strict single-core thread-parallelization overrides to prevent OS core thrashing
-env = [
-    "OMP_NUM_THREADS=1",
-    "MKL_NUM_THREADS=1",
-    "OPENBLAS_NUM_THREADS=1",
-    "VECLIB_MAXIMUM_THREADS=1",
-    "NUMEXPR_NUM_THREADS=1"
-]
