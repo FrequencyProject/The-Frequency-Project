@@ -19,7 +19,7 @@ classifiers = [
 dependencies = [
     "numpy>=1.26.4",
     "scipy>=1.12.0",
-    "torch==2.4.1+cpu",
+    "torch==2.4.1",
     "tpm2-pytss>=2.3.0,<=3.0.0",
     "pyserial>=3.5",
     "cryptography==50.0.0"
@@ -35,7 +35,20 @@ explicit = true
 torch = { index = "pytorch-cpu" }
 
 [tool.setuptools]
-py-modules = ["run_session", "sensor_adapter", "serial_daemon", "validate_config", "spectral_processing", "model_architecture", "resonance_loss", "train_engine", "latent_monitor", "prototype_simulation", "stress_harness", "config","validate_phi_hypothesis"]
+py-modules = [
+    "run_session", 
+    "sensor_adapter", 
+    "serial_daemon", 
+    "validate_config", 
+    "spectral_processing", 
+    "model_architecture", 
+    "resonance_loss", 
+    "train_engine", 
+    "latent_monitor", 
+    "prototype_simulation", 
+    "stress_harness", 
+    "config",
+]
 
 # HARDENING REMEDIATION: Explicitly bind the test tracking suite folder to the 
 # setuptools package directory discovery map to guarantee absolute remote verifiability.
