@@ -9,7 +9,7 @@ pip install -e .
 ```
 
 ## 2. Run the Verification Pass
-Ensure all 55 master structural, cryptographic, and mathematical invariant tests pass cleanly:
+Ensure all 56 master structural, cryptographic, and mathematical invariant tests pass cleanly:
 ```bash
 python3 -m pytest
 # Expected output: 55 passed in ~32 seconds
